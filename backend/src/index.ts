@@ -2,6 +2,7 @@ import Fastify, { FastifyReply, FastifyRequest } from "fastify";
 import dotenv from "dotenv";
 import { init } from "./db/sqlite";
 import authRoutes from "./routes/auth";
+import eventsRoutes from "./routes/events";
 
 dotenv.config();
 
@@ -23,6 +24,7 @@ async function start() {
   await init();
 
   await app.register(authRoutes, { prefix: "/auth" });
+  await app.register(eventsRoutes);
 
   try {
     await app.listen({ port: PORT, host: "0.0.0.0" });

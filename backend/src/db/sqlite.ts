@@ -36,6 +36,27 @@ async function init() {
     );
   `);
 
+  await run(`
+    CREATE TABLE IF NOT EXISTS events (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      title TEXT DEFAULT '',
+      lat REAL NOT NULL,
+      lng REAL NOT NULL,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+  `);
+
+  await run(`
+    CREATE TABLE IF NOT EXISTS map_positions (
+      user_id INTEGER PRIMARY KEY,
+      lat REAL NOT NULL,
+      lng REAL NOT NULL,
+      zoom INTEGER NOT NULL,
+      updated_at TEXT DEFAULT (datetime('now'))
+    );
+  `);
+
   persist();
 }
 
