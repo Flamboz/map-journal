@@ -19,7 +19,9 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@testing-library/react": ["./node_modules/@testing-library/react/types/index.d.ts"],
+      "vitest": ["./node_modules/vitest/dist/index.d.ts"]
     }
   },
   "include": [
