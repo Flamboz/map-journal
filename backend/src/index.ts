@@ -1,5 +1,8 @@
 import Fastify, { FastifyReply, FastifyRequest } from "fastify";
+import multipart from "@fastify/multipart";
+import fastifyStatic from "@fastify/static";
 import dotenv from "dotenv";
+import path from "path";
 import { init } from "./db/sqlite";
 import authRoutes from "./routes/auth";
 import eventsRoutes from "./routes/events";
@@ -22,6 +25,12 @@ async function start() {
   });
 
   await init();
+
+  await app.register(multipart);
+  await app.register(fastifyStatic, {
+    root: path.join(process.cwd(), "uploads"),
+    prefix: "/uploads/",
+  });
 
   await app.register(authRoutes, { prefix: "/auth" });
   await app.register(eventsRoutes);

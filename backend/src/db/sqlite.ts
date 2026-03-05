@@ -41,10 +41,36 @@ async function init() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL,
       title TEXT DEFAULT '',
+      start_date TEXT,
+      end_date TEXT,
+      description TEXT DEFAULT '',
+      rating INTEGER,
+      labels TEXT DEFAULT '[]',
+      visit_company TEXT DEFAULT '',
       lat REAL NOT NULL,
       lng REAL NOT NULL,
       created_at TEXT DEFAULT (datetime('now'))
     );
+  `);
+
+  await ensureColumn("events", "start_date TEXT");
+  await ensureColumn("events", "end_date TEXT");
+  await ensureColumn("events", "description TEXT DEFAULT ''");
+  await ensureColumn("events", "rating INTEGER");
+  await ensureColumn("events", "labels TEXT DEFAULT '[]'");
+  await ensureColumn("events", "visit_company TEXT DEFAULT ''");
+
+  await run(`
+    CREATE TABLE IF NOT EXISTS event_photos (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      event_id INTEGER NOT NULL,
+      file_path TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+  `);
+
+  await run(`
+    CREATE INDEX IF NOT EXISTS idx_event_photos_event_id ON event_photos(event_id);
   `);
 
   await run(`
@@ -58,6 +84,14 @@ async function init() {
   `);
 
   persist();
+}
+
+async function ensureColumn(tableName: string, columnSql: string) {
+  try {
+    await run(`ALTER TABLE ${tableName} ADD COLUMN ${columnSql};`);
+  } catch {
+    // Column already exists.
+  }
 }
 
 function persist() {

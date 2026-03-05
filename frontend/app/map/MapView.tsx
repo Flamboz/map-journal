@@ -2,35 +2,89 @@
 
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
-import { MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
-import type { LatLngExpression } from "leaflet";
-import { fetchLastMapPosition, fetchUserEvents, type MapEvent } from "./api";
-
-const WORLD_CENTER: LatLngExpression = [20, 0];
-const WORLD_ZOOM = 2;
-
-type CenterState = {
-  center: LatLngExpression;
-  zoom: number;
-};
-
-function RecenterMap({ center, zoom }: CenterState) {
-  const map = useMap();
-
-  useEffect(() => {
-    map.setView(center, zoom);
-  }, [map, center, zoom]);
-
-  return null;
-}
+import { MapContainer, Marker, TileLayer } from "react-leaflet";
+import {
+  createEvent,
+  fetchAllowedLabels,
+  fetchAllowedVisitCompanies,
+  fetchLastMapPosition,
+  fetchUserEvents,
+  type MapEvent,
+  uploadEventPhotos,
+} from "./api";
+import { MARKER_ICON, WORLD_CENTER, WORLD_ZOOM } from "./mapViewConstants";
+import { EventDraftForm } from "./EventDraftForm";
+import { formatShortAddress } from "./mapViewHelpers";
+import { MapClickHandler, RecenterMap } from "./MapLeafletHelpers";
+import type { CenterState, EventFormState, ReverseGeocodeAddress } from "./mapViewTypes";
 
 export default function MapView() {
   const { data: session, status } = useSession();
   const [centerState, setCenterState] = useState<CenterState>({ center: WORLD_CENTER, zoom: WORLD_ZOOM });
   const [events, setEvents] = useState<MapEvent[]>([]);
   const [eventsError, setEventsError] = useState(false);
+  const [labelOptions, setLabelOptions] = useState<string[]>([]);
+  const [visitCompanyOptions, setVisitCompanyOptions] = useState<string[]>([]);
+  const [draftPosition, setDraftPosition] = useState<{ lat: number; lng: number } | null>(null);
+  const [draftAddress, setDraftAddress] = useState<string | null>(null);
+  const [isResolvingAddress, setIsResolvingAddress] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const userId = session?.user?.id ? String(session.user.id) : null;
+
+  function resetDraftState() {
+    setDraftPosition(null);
+    setDraftAddress(null);
+    setIsResolvingAddress(false);
+    setSaveError(null);
+  }
+
+  function handleMapClick(coords: { lat: number; lng: number }) {
+    setDraftPosition(coords);
+    setDraftAddress(null);
+    setSaveError(null);
+  }
+
+  async function handleSave(formState: EventFormState) {
+    if (!userId || !draftPosition) {
+      return;
+    }
+
+    setIsSaving(true);
+    setSaveError(null);
+
+    try {
+      const createdEvent = await createEvent({
+        userId,
+        name: formState.name.trim(),
+        startDate: formState.startDate,
+        endDate: formState.endDate || undefined,
+        description: formState.description.trim() || undefined,
+        rating: formState.rating ?? undefined,
+        labels: formState.labels,
+        visitCompany: formState.visitCompany,
+        lat: draftPosition.lat,
+        lng: draftPosition.lng,
+      });
+
+      let uploadedPhotos = createdEvent.photos ?? [];
+      if (formState.photos.length > 0) {
+        try {
+          uploadedPhotos = await uploadEventPhotos(userId, createdEvent.id, formState.photos);
+        } catch {
+          setSaveError("Event saved, but photo upload failed.");
+        }
+      }
+
+      setEvents((previous) => [{ ...createdEvent, photos: uploadedPhotos }, ...previous]);
+      resetDraftState();
+    } catch {
+      setSaveError("Unable to save event. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
+  }
 
   useEffect(() => {
     if (status !== "authenticated" || !userId) {
@@ -66,11 +120,88 @@ export default function MapView() {
     }
 
     loadMapData();
-    
+
     return () => {
       isActive = false;
     };
   }, [status, userId]);
+
+  useEffect(() => {
+    let isActive = true;
+
+    Promise.all([fetchAllowedLabels(), fetchAllowedVisitCompanies()])
+      .then(([labels, visitCompanies]) => {
+        if (!isActive) {
+          return;
+        }
+
+        setLabelOptions(labels);
+        setVisitCompanyOptions(visitCompanies);
+      })
+      .catch(() => {
+        if (!isActive) {
+          return;
+        }
+
+        setLabelOptions([]);
+        setVisitCompanyOptions([]);
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!draftPosition) {
+      setDraftAddress(null);
+      setIsResolvingAddress(false);
+      return;
+    }
+
+    const position = draftPosition;
+
+    const abortController = new AbortController();
+
+    async function resolveAddress() {
+      setIsResolvingAddress(true);
+
+      try {
+        const requestUrl = new URL("https://nominatim.openstreetmap.org/reverse");
+        requestUrl.searchParams.set("format", "jsonv2");
+        requestUrl.searchParams.set("lat", String(position.lat));
+        requestUrl.searchParams.set("lon", String(position.lng));
+
+        const response = await fetch(requestUrl.toString(), {
+          signal: abortController.signal,
+          headers: {
+            Accept: "application/json",
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error("Unable to resolve address");
+        }
+
+        const result = (await response.json()) as { address?: ReverseGeocodeAddress };
+        setDraftAddress(formatShortAddress(result.address));
+      } catch {
+        if (!abortController.signal.aborted) {
+          setDraftAddress(null);
+        }
+      } finally {
+        if (!abortController.signal.aborted) {
+          setIsResolvingAddress(false);
+        }
+      }
+    }
+
+    resolveAddress();
+
+    return () => {
+      abortController.abort();
+    };
+  }, [draftPosition]);
 
   return (
     <section className="relative h-[calc(100vh-57px)] w-full" aria-label="map-view">
@@ -80,10 +211,25 @@ export default function MapView() {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         <RecenterMap center={centerState.center} zoom={centerState.zoom} />
+        <MapClickHandler onClick={handleMapClick} />
         {events.map((event) => (
-          <Marker key={event.id} position={[event.lat, event.lng]} />
+          <Marker key={event.id} position={[event.lat, event.lng]} icon={MARKER_ICON} />
         ))}
+        {draftPosition && <Marker position={[draftPosition.lat, draftPosition.lng]} icon={MARKER_ICON} />}
       </MapContainer>
+
+      <EventDraftForm
+        key={draftPosition ? `${draftPosition.lat}-${draftPosition.lng}` : "event-draft-hidden"}
+        draftPosition={draftPosition}
+        isResolvingAddress={isResolvingAddress}
+        draftAddress={draftAddress}
+        saveError={saveError}
+        isSaving={isSaving}
+        labelOptions={labelOptions}
+        visitCompanyOptions={visitCompanyOptions}
+        onCancel={resetDraftState}
+        onSave={handleSave}
+      />
 
       {eventsError && (
         <div
@@ -93,6 +239,7 @@ export default function MapView() {
           Unable to load events.
         </div>
       )}
+
     </section>
   );
 }
