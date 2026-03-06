@@ -1,3 +1,5 @@
+import { API_URL, resolveApiUrl } from "../../lib/apiUrl";
+
 export type LastMapPosition = {
   lat: number;
   lng: number;
@@ -41,11 +43,20 @@ export type CreateEventInput = {
   lng: number;
 };
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? process.env.BACKEND_URL ?? "http://localhost:4000";
 let allowedLabelsCache: string[] | null = null;
 let allowedLabelsRequest: Promise<string[]> | null = null;
 let allowedVisitCompaniesCache: string[] | null = null;
 let allowedVisitCompaniesRequest: Promise<string[]> | null = null;
+
+function normalizeEvent(event: MapEvent): MapEvent {
+  return {
+    ...event,
+    photos: (event.photos ?? []).map((photo) => ({
+      ...photo,
+      url: resolveApiUrl(photo.url),
+    })),
+  };
+}
 
 export async function fetchAllowedLabels(): Promise<string[]> {
   if (allowedLabelsCache) {
@@ -101,7 +112,7 @@ export async function fetchUserEvents(userId: string): Promise<MapEvent[]> {
     events?: MapEvent[];
   };
 
-  return data.events ?? [];
+  return (data.events ?? []).map(normalizeEvent);
 }
 
 export async function createEvent(input: CreateEventInput): Promise<MapEvent> {
@@ -125,7 +136,7 @@ export async function createEvent(input: CreateEventInput): Promise<MapEvent> {
     throw new Error("EVENT_CREATE_FAILED");
   }
 
-  return data.event;
+  return normalizeEvent(data.event);
 }
 
 export async function uploadEventPhotos(userId: string, eventId: number, files: File[]): Promise<MapEventPhoto[]> {
@@ -151,7 +162,10 @@ export async function uploadEventPhotos(userId: string, eventId: number, files: 
     photos?: MapEventPhoto[];
   };
 
-  return data.photos ?? [];
+  return (data.photos ?? []).map((photo) => ({
+    ...photo,
+    url: resolveApiUrl(photo.url),
+  }));
 }
 
 export async function fetchAllowedVisitCompanies(): Promise<string[]> {

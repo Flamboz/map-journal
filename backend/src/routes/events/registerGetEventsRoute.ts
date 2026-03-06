@@ -13,7 +13,7 @@ export function registerGetEventsRoute(fastify: FastifyInstance) {
 
       try {
         const events = (await all(
-          "SELECT id, user_id, title, start_date, end_date, description, rating, labels, visit_company, lat, lng, created_at FROM events WHERE user_id = ? ORDER BY created_at DESC",
+          "SELECT id, user_id, title, start_date, end_date, description, rating, labels, visit_company, lat, lng, created_at FROM events WHERE user_id = ? ORDER BY created_at DESC, id DESC",
           [userId],
         )) as Array<{
           id: number;
@@ -37,7 +37,7 @@ export function registerGetEventsRoute(fastify: FastifyInstance) {
                 `SELECT id, event_id, file_path, created_at
                  FROM event_photos
                  WHERE event_id IN (${eventIds.map(() => "?").join(",")})
-                 ORDER BY created_at ASC`,
+                 ORDER BY created_at ASC, id ASC`,
                 eventIds,
               )) as Array<{ id: number; event_id: number; file_path: string; created_at: string }>)
             : [];

@@ -12,9 +12,10 @@ import {
   type MapEvent,
   uploadEventPhotos,
 } from "./api";
-import { MARKER_ICON, WORLD_CENTER, WORLD_ZOOM } from "./mapViewConstants";
+import { createMarkerIconWithCount, MARKER_ICON, PIN_GROUP_DISTANCE_METERS, WORLD_CENTER, WORLD_ZOOM } from "./mapViewConstants";
 import { EventDraftForm } from "./EventDraftForm";
-import { formatShortAddress } from "./mapViewHelpers";
+import { EventPreviewModal } from "./EventPreviewModal";
+import { formatShortAddress, groupEventsByDistance } from "./mapViewHelpers";
 import { MapClickHandler, RecenterMap } from "./MapLeafletHelpers";
 import type { CenterState, EventFormState, ReverseGeocodeAddress } from "./mapViewTypes";
 
@@ -30,8 +31,12 @@ export default function MapView() {
   const [isResolvingAddress, setIsResolvingAddress] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [selectedGroupIndex, setSelectedGroupIndex] = useState<number | null>(null);
+  const [selectedEventIndex, setSelectedEventIndex] = useState(0);
 
   const userId = session?.user?.id ? String(session.user.id) : null;
+  const groupedEvents = groupEventsByDistance(events, PIN_GROUP_DISTANCE_METERS);
+  const selectedGroup = selectedGroupIndex === null ? null : groupedEvents[selectedGroupIndex] ?? null;
 
   function resetDraftState() {
     setDraftPosition(null);
@@ -41,9 +46,37 @@ export default function MapView() {
   }
 
   function handleMapClick(coords: { lat: number; lng: number }) {
+    setSelectedGroupIndex(null);
+    setSelectedEventIndex(0);
     setDraftPosition(coords);
     setDraftAddress(null);
     setSaveError(null);
+  }
+
+  function handleGroupMarkerClick(groupIndex: number) {
+    setSelectedGroupIndex(groupIndex);
+    setSelectedEventIndex(0);
+  }
+
+  function handleClosePreview() {
+    setSelectedGroupIndex(null);
+    setSelectedEventIndex(0);
+  }
+
+  function handleNextPreviewEvent() {
+    if (!selectedGroup) {
+      return;
+    }
+
+    setSelectedEventIndex((previous) => (previous + 1) % selectedGroup.events.length);
+  }
+
+  function handlePreviousPreviewEvent() {
+    if (!selectedGroup) {
+      return;
+    }
+
+    setSelectedEventIndex((previous) => (previous - 1 + selectedGroup.events.length) % selectedGroup.events.length);
   }
 
   async function handleSave(formState: EventFormState) {
@@ -212,8 +245,15 @@ export default function MapView() {
         />
         <RecenterMap center={centerState.center} zoom={centerState.zoom} />
         <MapClickHandler onClick={handleMapClick} />
-        {events.map((event) => (
-          <Marker key={event.id} position={[event.lat, event.lng]} icon={MARKER_ICON} />
+        {groupedEvents.map((group, groupIndex) => (
+          <Marker
+            key={group.id}
+            position={[group.lat, group.lng]}
+            icon={group.events.length > 1 ? createMarkerIconWithCount(group.events.length) : MARKER_ICON}
+            eventHandlers={{
+              click: () => handleGroupMarkerClick(groupIndex),
+            }}
+          />
         ))}
         {draftPosition && <Marker position={[draftPosition.lat, draftPosition.lng]} icon={MARKER_ICON} />}
       </MapContainer>
@@ -238,6 +278,16 @@ export default function MapView() {
         >
           Unable to load events.
         </div>
+      )}
+
+      {selectedGroup && (
+        <EventPreviewModal
+          events={selectedGroup.events}
+          currentIndex={selectedEventIndex}
+          onClose={handleClosePreview}
+          onPrevious={handlePreviousPreviewEvent}
+          onNext={handleNextPreviewEvent}
+        />
       )}
 
     </section>

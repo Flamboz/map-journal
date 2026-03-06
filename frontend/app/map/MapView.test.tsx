@@ -31,7 +31,17 @@ vi.mock("./api", () => ({
 vi.mock("react-leaflet", () => ({
   MapContainer: ({ children }: { children: ReactNode }) => <div data-testid="map-container">{children}</div>,
   TileLayer: () => <div data-testid="tile-layer" />,
-  Marker: ({ position }: { position: [number, number] }) => <div data-testid="marker">{position.join(",")}</div>,
+  Marker: ({
+    position,
+    eventHandlers,
+  }: {
+    position: [number, number];
+    eventHandlers?: { click?: () => void };
+  }) => (
+    <button type="button" data-testid="marker" onClick={() => eventHandlers?.click?.()}>
+      {position.join(",")}
+    </button>
+  ),
   useMap: () => ({ setView: mockSetView }),
   useMapEvents: (handlers: { click?: (event: { latlng: { lat: number; lng: number } }) => void }) => {
     clickHandlers = handlers;
@@ -80,6 +90,208 @@ describe("MapView", () => {
     render(<MapView />);
 
     expect(await screen.findByText("Unable to load events.")).toBeInTheDocument();
+  });
+
+  it("opens preview modal when pin is clicked", async () => {
+    vi.mocked(fetchUserEvents).mockResolvedValue([
+      {
+        id: 20,
+        user_id: 1,
+        title: "River Walk",
+        name: "River Walk",
+        startDate: "2026-03-03",
+        endDate: null,
+        description: "",
+        rating: 6,
+        labels: [],
+        visitCompany: "",
+        lat: 50.45,
+        lng: 30.52,
+        created_at: "2026-03-03T10:00:00.000Z",
+        photos: [{ id: 1, path: "p.jpg", url: "/uploads/user-1/event-20/p.jpg", createdAt: "2026-03-03T10:00:00.000Z" }],
+      },
+    ]);
+
+    render(<MapView />);
+
+    const marker = await screen.findByTestId("marker");
+    fireEvent.click(marker);
+
+    expect(await screen.findByRole("dialog")).toBeInTheDocument();
+    expect(screen.getByText("River Walk")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "See More" })).toBeInTheDocument();
+  });
+
+  it("groups events within 20m into one marker", async () => {
+    vi.mocked(fetchUserEvents).mockResolvedValue([
+      {
+        id: 30,
+        user_id: 1,
+        title: "Near One",
+        name: "Near One",
+        startDate: "2026-03-01",
+        endDate: null,
+        description: "",
+        rating: 5,
+        labels: [],
+        visitCompany: "",
+        lat: 50.45,
+        lng: 30.52,
+        created_at: "2026-03-01T10:00:00.000Z",
+        photos: [],
+      },
+      {
+        id: 31,
+        user_id: 1,
+        title: "Near Two",
+        name: "Near Two",
+        startDate: "2026-03-02",
+        endDate: null,
+        description: "",
+        rating: 5,
+        labels: [],
+        visitCompany: "",
+        lat: 50.4501,
+        lng: 30.52,
+        created_at: "2026-03-02T10:00:00.000Z",
+        photos: [],
+      },
+      {
+        id: 32,
+        user_id: 1,
+        title: "Far Away",
+        name: "Far Away",
+        startDate: "2026-03-03",
+        endDate: null,
+        description: "",
+        rating: 5,
+        labels: [],
+        visitCompany: "",
+        lat: 50.46,
+        lng: 30.52,
+        created_at: "2026-03-03T10:00:00.000Z",
+        photos: [],
+      },
+    ]);
+
+    render(<MapView />);
+
+    await waitFor(() => {
+      expect(screen.getAllByTestId("marker")).toHaveLength(2);
+    });
+  });
+
+  it("shows carousel controls and cycles grouped events deterministically", async () => {
+    vi.mocked(fetchUserEvents).mockResolvedValue([
+      {
+        id: 40,
+        user_id: 1,
+        title: "First Grouped",
+        name: "First Grouped",
+        startDate: "2026-03-01",
+        endDate: null,
+        description: "",
+        rating: 7,
+        labels: [],
+        visitCompany: "",
+        lat: 50.45,
+        lng: 30.52,
+        created_at: "2026-03-05T10:00:00.000Z",
+        photos: [{ id: 1, path: "a.jpg", url: "/uploads/user-1/event-40/a.jpg", createdAt: "2026-03-05T10:00:00.000Z" }],
+      },
+      {
+        id: 41,
+        user_id: 1,
+        title: "Second Grouped",
+        name: "Second Grouped",
+        startDate: "2026-03-02",
+        endDate: null,
+        description: "",
+        rating: 8,
+        labels: [],
+        visitCompany: "",
+        lat: 50.4501,
+        lng: 30.52,
+        created_at: "2026-03-04T10:00:00.000Z",
+        photos: [{ id: 2, path: "b.jpg", url: "/uploads/user-1/event-41/b.jpg", createdAt: "2026-03-04T10:00:00.000Z" }],
+      },
+    ]);
+
+    render(<MapView />);
+
+    const marker = await screen.findByTestId("marker");
+    fireEvent.click(marker);
+
+    expect(await screen.findByText("First Grouped")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Previous event" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Next event" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Next event" }));
+    expect(await screen.findByText("Second Grouped")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Previous event" }));
+    expect(await screen.findByText("First Grouped")).toBeInTheDocument();
+  });
+
+  it("renders date range, 10-star rating and preview photo", async () => {
+    vi.mocked(fetchUserEvents).mockResolvedValue([
+      {
+        id: 50,
+        user_id: 1,
+        title: "Gallery Day",
+        name: "Gallery Day",
+        startDate: "2026-03-01",
+        endDate: "2026-03-03",
+        description: "",
+        rating: 7,
+        labels: [],
+        visitCompany: "",
+        lat: 50.45,
+        lng: 30.52,
+        created_at: "2026-03-03T10:00:00.000Z",
+        photos: [{ id: 5, path: "c.jpg", url: "/uploads/user-1/event-50/c.jpg", createdAt: "2026-03-03T10:00:00.000Z" }],
+      },
+    ]);
+
+    render(<MapView />);
+
+    const marker = await screen.findByTestId("marker");
+    fireEvent.click(marker);
+
+    expect(await screen.findByText("2026-03-01 – 2026-03-03")).toBeInTheDocument();
+    expect(screen.getByLabelText("Event rating")).toHaveTextContent("★★★★★★★☆☆☆");
+
+    const image = screen.getByAltText("Gallery Day preview") as HTMLImageElement;
+    expect(image.src).toContain("/uploads/user-1/event-50/c.jpg");
+  });
+
+  it("does not render rating stars when event has no rating", async () => {
+    vi.mocked(fetchUserEvents).mockResolvedValue([
+      {
+        id: 51,
+        user_id: 1,
+        title: "No Rating Event",
+        name: "No Rating Event",
+        startDate: "2026-03-06",
+        endDate: null,
+        description: "",
+        rating: null,
+        labels: [],
+        visitCompany: "",
+        lat: 50.451,
+        lng: 30.521,
+        created_at: "2026-03-06T10:00:00.000Z",
+        photos: [{ id: 6, path: "d.jpg", url: "/uploads/user-1/event-51/d.jpg", createdAt: "2026-03-06T10:00:00.000Z" }],
+      },
+    ]);
+
+    render(<MapView />);
+
+    const marker = await screen.findByTestId("marker");
+    fireEvent.click(marker);
+
+    expect(await screen.findByText("No Rating Event")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Event rating")).not.toBeInTheDocument();
   });
 
   it("opens draft form when map is clicked and validates required fields", async () => {

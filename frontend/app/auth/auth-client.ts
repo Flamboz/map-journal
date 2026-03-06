@@ -1,12 +1,11 @@
 import { signIn, type SignInResponse } from "next-auth/react";
 import { getAuthErrorMessage } from "./auth-error";
 import type { AuthFormValues } from "./auth-schema";
+import { API_URL } from "../../lib/apiUrl";
 
 type AuthResult =
   | { ok: true }
   | { ok: false; error: string };
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? process.env.BACKEND_URL ?? "http://localhost:4000";
 
 export async function registerAndSignIn(values: AuthFormValues): Promise<AuthResult> {
   try {
