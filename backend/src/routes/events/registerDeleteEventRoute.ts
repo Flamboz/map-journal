@@ -42,6 +42,16 @@ export function registerDeleteEventRoute(fastify: FastifyInstance) {
           }
         }
 
+        const eventUploadDirectory = path.join(process.cwd(), "uploads", `user-${userId}`, `event-${eventId}`);
+        if (fs.existsSync(eventUploadDirectory)) {
+          fs.rmSync(eventUploadDirectory, { recursive: true, force: true });
+        }
+
+        const userUploadDirectory = path.join(process.cwd(), "uploads", `user-${userId}`);
+        if (fs.existsSync(userUploadDirectory) && fs.readdirSync(userUploadDirectory).length === 0) {
+          fs.rmdirSync(userUploadDirectory);
+        }
+
         return reply.status(200).send({ success: true });
       } catch (error) {
         request.log.error(error);

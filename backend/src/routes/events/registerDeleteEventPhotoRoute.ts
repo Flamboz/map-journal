@@ -60,6 +60,18 @@ export function registerDeleteEventPhotoRoute(fastify: FastifyInstance) {
           [eventId],
         )) as Array<{ id: number }>;
 
+        if (remainingPhotos.length === 0) {
+          const eventUploadDirectory = path.join(process.cwd(), "uploads", `user-${userId}`, `event-${eventId}`);
+          if (fs.existsSync(eventUploadDirectory)) {
+            fs.rmSync(eventUploadDirectory, { recursive: true, force: true });
+          }
+
+          const userUploadDirectory = path.join(process.cwd(), "uploads", `user-${userId}`);
+          if (fs.existsSync(userUploadDirectory) && fs.readdirSync(userUploadDirectory).length === 0) {
+            fs.rmdirSync(userUploadDirectory);
+          }
+        }
+
         let sortOrder = 1;
         for (const photo of remainingPhotos) {
           await run("UPDATE event_photos SET sort_order = ? WHERE id = ?", [sortOrder, photo.id]);
