@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { MapContainer, Marker, TileLayer } from "react-leaflet";
+import MarkerClusterGroup from "react-leaflet-cluster";
 import {
   createEvent,
   fetchAllowedLabels,
@@ -245,16 +246,18 @@ export default function MapView() {
         />
         <RecenterMap center={centerState.center} zoom={centerState.zoom} />
         <MapClickHandler onClick={handleMapClick} />
-        {groupedEvents.map((group, groupIndex) => (
-          <Marker
-            key={group.id}
-            position={[group.lat, group.lng]}
-            icon={group.events.length > 1 ? createMarkerIconWithCount(group.events.length) : MARKER_ICON}
-            eventHandlers={{
-              click: () => handleGroupMarkerClick(groupIndex),
-            }}
-          />
-        ))}
+        <MarkerClusterGroup>
+          {groupedEvents.map((group, groupIndex) => (
+            <Marker
+              key={group.id}
+              position={[group.lat, group.lng]}
+              icon={group.events.length > 1 ? createMarkerIconWithCount(group.events.length) : MARKER_ICON}
+              eventHandlers={{
+                click: () => handleGroupMarkerClick(groupIndex),
+              }}
+            />
+          ))}
+        </MarkerClusterGroup>
         {draftPosition && <Marker position={[draftPosition.lat, draftPosition.lng]} icon={MARKER_ICON} />}
       </MapContainer>
 

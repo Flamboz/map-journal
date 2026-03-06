@@ -48,6 +48,10 @@ vi.mock("react-leaflet", () => ({
   },
 }));
 
+vi.mock("react-leaflet-cluster", () => ({
+  default: ({ children }: { children: ReactNode }) => <div data-testid="marker-cluster">{children}</div>,
+}));
+
 describe("MapView", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -177,6 +181,7 @@ describe("MapView", () => {
     render(<MapView />);
 
     await waitFor(() => {
+      expect(screen.getByTestId("marker-cluster")).toBeInTheDocument();
       expect(screen.getAllByTestId("marker")).toHaveLength(2);
     });
   });
