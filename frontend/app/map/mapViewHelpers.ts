@@ -7,7 +7,7 @@ export function formatShortAddress(address?: ReverseGeocodeAddress): string | nu
     return null;
   }
 
-  const street = address.road ?? address.pedestrian ?? address.footway;
+  const street = address.road ?? address.pedestrian ?? address.footway ?? address.suburb;
   const buildingNumber = address.house_number;
   const city = address.city ?? address.town ?? address.village ?? address.municipality;
   const country = address.country;

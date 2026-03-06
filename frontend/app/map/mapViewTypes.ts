@@ -29,6 +29,7 @@ export type ReverseGeocodeAddress = {
   road?: string;
   pedestrian?: string;
   footway?: string;
+  suburb?: string;
   house_number?: string;
   city?: string;
   town?: string;
