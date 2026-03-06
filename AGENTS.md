@@ -10,6 +10,13 @@ location‑based events (pins, photos, filters, user auth).
 This AGENTS.md is a minimal root index. Detailed guidelines and the
 full style & workflow docs live in the `docs/` folder linked below.
 
+Key guardrail:
+
+- Keep source files under 350 lines whenever practical.
+- If a file approaches 300 lines, proactively extract components, hooks,
+  utilities, or route modules before adding more logic.
+- Treat 350+ lines as a refactor trigger, not a target.
+
 Docs:
 
 - [docs/tech-stack.md](docs/tech-stack.md)
