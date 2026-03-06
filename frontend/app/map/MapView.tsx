@@ -20,7 +20,11 @@ import { formatShortAddress, groupEventsByDistance } from "./mapViewHelpers";
 import { MapClickHandler, RecenterMap } from "./MapLeafletHelpers";
 import type { CenterState, EventFormState, ReverseGeocodeAddress } from "./mapViewTypes";
 
-export default function MapView() {
+type MapViewProps = {
+  initialError?: string | null;
+};
+
+export default function MapView({ initialError = null }: MapViewProps) {
   const { data: session, status } = useSession();
   const [centerState, setCenterState] = useState<CenterState>({ center: WORLD_CENTER, zoom: WORLD_ZOOM });
   const [events, setEvents] = useState<MapEvent[]>([]);
@@ -34,6 +38,7 @@ export default function MapView() {
   const [isSaving, setIsSaving] = useState(false);
   const [selectedGroupIndex, setSelectedGroupIndex] = useState<number | null>(null);
   const [selectedEventIndex, setSelectedEventIndex] = useState(0);
+  const [globalError, setGlobalError] = useState<string | null>(initialError);
 
   const userId = session?.user?.id ? String(session.user.id) : null;
   const groupedEvents = groupEventsByDistance(events, PIN_GROUP_DISTANCE_METERS);
@@ -119,6 +124,10 @@ export default function MapView() {
       setIsSaving(false);
     }
   }
+
+  useEffect(() => {
+    setGlobalError(initialError);
+  }, [initialError]);
 
   useEffect(() => {
     if (status !== "authenticated" || !userId) {
@@ -280,6 +289,15 @@ export default function MapView() {
           className="pointer-events-none absolute left-1/2 top-4 z-[1000] -translate-x-1/2 rounded bg-black/75 px-4 py-2 text-sm text-white"
         >
           Unable to load events.
+        </div>
+      )}
+
+      {globalError && (
+        <div
+          role="status"
+          className="pointer-events-none absolute left-1/2 top-16 z-[1000] -translate-x-1/2 rounded bg-black/75 px-4 py-2 text-sm text-white"
+        >
+          {globalError}
         </div>
       )}
 

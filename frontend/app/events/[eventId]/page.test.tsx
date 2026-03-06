@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import EventDetailsPage from "./page";
 import { getServerSession } from "next-auth";
 import { fetchEventById } from "../../map/api";
+import { redirect } from "next/navigation";
 
 vi.mock("next/navigation", () => ({
   notFound: vi.fn(),
@@ -17,8 +18,14 @@ vi.mock("../../map/api", () => ({
   fetchEventById: vi.fn(),
 }));
 
-vi.mock("./EventPhotosCarousel", () => ({
-  default: ({ photos }: { photos: Array<{ id: number }> }) => <div data-testid="photos-carousel">Photos: {photos.length}</div>,
+vi.mock("./EventDetailsClient", () => ({
+  default: ({
+    initialEvent,
+    userId,
+  }: {
+    initialEvent: { id: number; title: string };
+    userId: string;
+  }) => <div data-testid="event-details-client">{`${initialEvent.id}-${initialEvent.title}-${userId}`}</div>,
 }));
 
 describe("Event details page", () => {
@@ -26,7 +33,7 @@ describe("Event details page", () => {
     vi.clearAllMocks();
   });
 
-  it("renders required event fields in order and disabled placeholder actions", async () => {
+  it("passes loaded event into details client", async () => {
     vi.mocked(getServerSession).mockResolvedValue({
       user: {
         id: "1",
@@ -61,27 +68,28 @@ describe("Event details page", () => {
     render(view);
 
     expect(fetchEventById).toHaveBeenCalledWith("10", "1");
-    expect(screen.getByTestId("photos-carousel")).toHaveTextContent("Photos: 2");
+    expect(screen.getByTestId("event-details-client")).toHaveTextContent("10-River Walk-1");
+  });
 
-    expect(screen.getByText("Name")).toBeInTheDocument();
-    expect(screen.getByText("Date")).toBeInTheDocument();
-    expect(screen.getByText("Description")).toBeInTheDocument();
-    expect(screen.getByText("Rating")).toBeInTheDocument();
-    expect(screen.getByText("Labels")).toBeInTheDocument();
-    expect(screen.getByText("Visit company")).toBeInTheDocument();
+  it("redirects to map with error when event no longer exists", async () => {
+    vi.mocked(getServerSession).mockResolvedValue({
+      user: {
+        id: "1",
+      },
+    } as Awaited<ReturnType<typeof getServerSession>>);
 
-    expect(screen.getByText("River Walk")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Go back to map" })).toHaveAttribute("href", "/");
-    expect(screen.getByRole("link", { name: "Previous event at this pin" })).toHaveAttribute("href", "/events/12");
-    expect(screen.getByRole("link", { name: "Next event at this pin" })).toHaveAttribute("href", "/events/8");
-    expect(screen.getByText("Event 2 of 3 at this pin")).toBeInTheDocument();
-    expect(screen.getByText("2026-03-01 – 2026-03-03")).toBeInTheDocument();
-    expect(screen.getByText("A calm evening walk by the river.")).toBeInTheDocument();
-    expect(screen.getByLabelText("Event rating")).toHaveTextContent("★★★★★★★★☆☆ (8/10)");
-    expect(screen.getByText("Trip, Lake")).toBeInTheDocument();
-    expect(screen.getByText("Friends")).toBeInTheDocument();
+    vi.mocked(fetchEventById).mockRejectedValue(new Error("EVENT_NOT_FOUND"));
 
-    expect(screen.getByRole("button", { name: "Edit event" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Delete event" })).toBeDisabled();
+    vi.mocked(redirect).mockImplementation(() => {
+      throw new Error("REDIRECT_TRIGGERED");
+    });
+
+    await expect(
+      EventDetailsPage({
+        params: Promise.resolve({ eventId: "10" }),
+      }),
+    ).rejects.toThrow("REDIRECT_TRIGGERED");
+
+    expect(redirect).toHaveBeenCalledWith("/?error=event-not-found");
   });
 });

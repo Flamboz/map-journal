@@ -65,9 +65,12 @@ async function init() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       event_id INTEGER NOT NULL,
       file_path TEXT NOT NULL,
+      sort_order INTEGER DEFAULT 0,
       created_at TEXT DEFAULT (datetime('now'))
     );
   `);
+
+  await ensureColumn("event_photos", "sort_order INTEGER DEFAULT 0");
 
   await run(`
     CREATE INDEX IF NOT EXISTS idx_event_photos_event_id ON event_photos(event_id);

@@ -44,6 +44,18 @@ export type CreateEventInput = {
   lng: number;
 };
 
+export type UpdateEventInput = {
+  userId: string;
+  eventId: number;
+  name: string;
+  startDate: string;
+  endDate?: string;
+  description?: string;
+  rating?: number | null;
+  labels?: string[];
+  visitCompany?: string;
+};
+
 let allowedLabelsCache: string[] | null = null;
 let allowedLabelsRequest: Promise<string[]> | null = null;
 let allowedVisitCompaniesCache: string[] | null = null;
@@ -198,6 +210,10 @@ export async function uploadEventPhotos(userId: string, eventId: number, files: 
   });
 
   if (!response.ok) {
+    if (response.status === 404) {
+      throw new Error("EVENT_NOT_FOUND");
+    }
+
     throw new Error("EVENT_PHOTOS_UPLOAD_FAILED");
   }
 
@@ -240,4 +256,110 @@ export async function fetchAllowedVisitCompanies(): Promise<string[]> {
   } finally {
     allowedVisitCompaniesRequest = null;
   }
+}
+
+export async function updateEvent(input: UpdateEventInput): Promise<MapEvent> {
+  const response = await fetch(`${API_URL}/events/${encodeURIComponent(String(input.eventId))}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      userId: input.userId,
+      name: input.name,
+      startDate: input.startDate,
+      endDate: input.endDate,
+      description: input.description,
+      rating: input.rating,
+      labels: input.labels,
+      visitCompany: input.visitCompany,
+    }),
+  });
+
+  if (response.status === 404) {
+    throw new Error("EVENT_NOT_FOUND");
+  }
+
+  if (!response.ok) {
+    throw new Error("EVENT_UPDATE_FAILED");
+  }
+
+  const data = (await response.json()) as {
+    event?: MapEvent;
+  };
+
+  if (!data.event) {
+    throw new Error("EVENT_UPDATE_FAILED");
+  }
+
+  return normalizeEvent(data.event);
+}
+
+export async function deleteEventPhoto(userId: string, eventId: number, photoId: number): Promise<MapEventPhoto[]> {
+  const response = await fetch(
+    buildApiUrl(`/events/${encodeURIComponent(String(eventId))}/photos/${encodeURIComponent(String(photoId))}`, {
+      userId,
+    }),
+    {
+      method: "DELETE",
+    },
+  );
+
+  if (response.status === 404) {
+    const errorBody = (await response.json().catch(() => null)) as { error?: string } | null;
+    if (errorBody?.error === "EVENT_NOT_FOUND") {
+      throw new Error("EVENT_NOT_FOUND");
+    }
+
+    throw new Error("EVENT_PHOTO_NOT_FOUND");
+  }
+
+  if (!response.ok) {
+    throw new Error("EVENT_PHOTO_DELETE_FAILED");
+  }
+
+  const data = (await response.json()) as {
+    photos?: MapEventPhoto[];
+  };
+
+  return (data.photos ?? []).map((photo) => ({
+    ...photo,
+    url: resolveApiUrl(photo.url),
+  }));
+}
+
+export async function setEventPreviewPhoto(userId: string, eventId: number, photoId: number): Promise<MapEventPhoto[]> {
+  const response = await fetch(
+    buildApiUrl(
+      `/events/${encodeURIComponent(String(eventId))}/photos/${encodeURIComponent(String(photoId))}/preview`,
+      {
+        userId,
+      },
+    ),
+    {
+      method: "PATCH",
+    },
+  );
+
+  if (response.status === 404) {
+    const errorBody = (await response.json().catch(() => null)) as { error?: string } | null;
+    if (errorBody?.error === "EVENT_NOT_FOUND") {
+      throw new Error("EVENT_NOT_FOUND");
+    }
+
+    throw new Error("EVENT_PHOTO_NOT_FOUND");
+  }
+
+  if (!response.ok) {
+    throw new Error("EVENT_PREVIEW_PHOTO_UPDATE_FAILED");
+  }
+
+  const data = (await response.json()) as {
+    photos?: MapEventPhoto[];
+  };
+
+  return (data.photos ?? []).map((photo) => ({
+    ...photo,
+    url: resolveApiUrl(photo.url),
+  }));
 }

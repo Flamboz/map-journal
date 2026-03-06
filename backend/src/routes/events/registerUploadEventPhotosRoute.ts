@@ -52,6 +52,11 @@ export function registerUploadEventPhotosRoute(fastify: FastifyInstance) {
         const eventPhotosColumns = (await all("PRAGMA table_info(event_photos)")) as EventPhotosTableColumn[];
         const eventPhotosColumnSet = new Set(eventPhotosColumns.map((column) => column.name));
 
+        const maxSortOrderResult = (await get("SELECT MAX(sort_order) AS maxSortOrder FROM event_photos WHERE event_id = ?", [
+          eventId,
+        ])) as { maxSortOrder?: number | null } | null;
+        let nextSortOrder = Number(maxSortOrderResult?.maxSortOrder ?? 0);
+
         const uploadedPhotos: Array<{ id: number; path: string; url: string; createdAt: string }> = [];
         let fileIndex = 0;
 
@@ -84,6 +89,11 @@ export function registerUploadEventPhotosRoute(fastify: FastifyInstance) {
             event_id: eventId,
             file_path: relativePath,
           };
+
+          if (eventPhotosColumnSet.has("sort_order")) {
+            nextSortOrder += 1;
+            insertPayload.sort_order = nextSortOrder;
+          }
 
           if (eventPhotosColumnSet.has("secure_url")) {
             insertPayload.secure_url = `/uploads/${relativePath}`;

@@ -17,7 +17,7 @@ async function start() {
   // Simple CORS handling to avoid plugin-version mismatch issues
   app.addHook("onRequest", async (request: FastifyRequest, reply: FastifyReply) => {
     reply.header("Access-Control-Allow-Origin", "*");
-    reply.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
+    reply.header("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
     reply.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
     if (request.method === "OPTIONS") {
       reply.code(204).send();

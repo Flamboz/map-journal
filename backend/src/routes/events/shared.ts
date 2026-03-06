@@ -16,8 +16,25 @@ export type CreateEventBody = {
   lng?: number;
 };
 
+export type UpdateEventBody = {
+  userId?: string | number;
+  name?: string;
+  date?: string;
+  startDate?: string;
+  endDate?: string;
+  description?: string;
+  rating?: number | string | null;
+  labels?: string[];
+  visitCompany?: string;
+};
+
 export type EventParams = {
   eventId?: string;
+};
+
+export type EventPhotoParams = {
+  eventId?: string;
+  photoId?: string;
 };
 
 export type EventPhotosTableColumn = {
@@ -48,6 +65,7 @@ export type EventPhotoRow = {
   id: number;
   event_id: number;
   file_path: string;
+  sort_order?: number | null;
   created_at: string;
 };
 
@@ -153,6 +171,15 @@ export function normalizeLabels(labels: unknown): string[] {
 
 export function parseEventId(eventId: string | undefined): number | null {
   const parsed = Number(eventId);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    return null;
+  }
+
+  return parsed;
+}
+
+export function parsePhotoId(photoId: string | undefined): number | null {
+  const parsed = Number(photoId);
   if (!Number.isInteger(parsed) || parsed <= 0) {
     return null;
   }

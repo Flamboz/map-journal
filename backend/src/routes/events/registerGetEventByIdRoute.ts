@@ -63,10 +63,10 @@ export function registerGetEventByIdRoute(fastify: FastifyInstance) {
         }
 
         const photos = (await all(
-          `SELECT id, event_id, file_path, created_at
+          `SELECT id, event_id, file_path, sort_order, created_at
            FROM event_photos
            WHERE event_id = ?
-           ORDER BY created_at ASC, id ASC`,
+           ORDER BY sort_order ASC, created_at ASC, id ASC`,
           [eventId],
         )) as EventPhotoRow[];
 

@@ -24,7 +24,7 @@ export function registerGetEventsRoute(fastify: FastifyInstance) {
                 `SELECT id, event_id, file_path, created_at
                  FROM event_photos
                  WHERE event_id IN (${eventIds.map(() => "?").join(",")})
-                 ORDER BY created_at ASC, id ASC`,
+                 ORDER BY sort_order ASC, created_at ASC, id ASC`,
                 eventIds,
               )) as EventPhotoRow[])
             : [];
