@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { formatEventDateRange } from "./mapViewHelpers";
 import type { MapEvent } from "./api";
 
@@ -129,18 +130,17 @@ export function EventPreviewModal({ events, currentIndex, onClose, onPrevious, o
           <h3 className="text-lg font-semibold text-gray-900">{currentEvent.name ?? currentEvent.title}</h3>
           {hasRating && (
             <p aria-label="Event rating" className="text-base">
-              <span className="text-yellow-500">{filledStars}</span>
-              <span className="text-gray-300">{emptyStars}</span>
+              <span className="text-yellow-400">{filledStars}</span>
+              <span className="text-slate-300">{emptyStars}</span>
             </p>
           )}
           <p className="text-sm text-gray-700">{formatEventDateRange(currentEvent.startDate, currentEvent.endDate)}</p>
-          <button
-            type="button"
-            disabled
-            className="inline-flex cursor-not-allowed rounded-md bg-gray-300 px-3 py-2 text-sm font-medium text-gray-600"
+          <Link
+            href={`/events/${currentEvent.id}`}
+            className="inline-flex rounded-md bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-gray-800"
           >
             See More
-          </button>
+          </Link>
         </div>
       </div>
     </div>

@@ -123,7 +123,7 @@ describe("MapView", () => {
 
     expect(await screen.findByRole("dialog")).toBeInTheDocument();
     expect(screen.getByText("River Walk")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "See More" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "See More" })).toBeInTheDocument();
   });
 
   it("groups events within 20m into one marker", async () => {

@@ -21,6 +21,7 @@ export type MapEvent = {
   lng: number;
   created_at: string;
   photos?: MapEventPhoto[];
+  samePinEventIds?: number[];
 };
 
 export type MapEventPhoto = {
@@ -47,6 +48,24 @@ let allowedLabelsCache: string[] | null = null;
 let allowedLabelsRequest: Promise<string[]> | null = null;
 let allowedVisitCompaniesCache: string[] | null = null;
 let allowedVisitCompaniesRequest: Promise<string[]> | null = null;
+
+type ApiQuery = Record<string, string | number | null | undefined>;
+
+function buildApiUrl(pathname: string, query?: ApiQuery): string {
+  const url = new URL(pathname, API_URL);
+
+  if (query) {
+    for (const [key, value] of Object.entries(query)) {
+      if (value === undefined || value === null || value === "") {
+        continue;
+      }
+
+      url.searchParams.set(key, String(value));
+    }
+  }
+
+  return url.toString();
+}
 
 function normalizeEvent(event: MapEvent): MapEvent {
   return {
@@ -90,7 +109,7 @@ export async function fetchAllowedLabels(): Promise<string[]> {
 }
 
 export async function fetchLastMapPosition(userId: string): Promise<LastMapPosition | null> {
-  const response = await fetch(`${API_URL}/map-position?userId=${encodeURIComponent(userId)}`);
+  const response = await fetch(buildApiUrl("/map-position", { userId }));
   if (!response.ok) {
     throw new Error("MAP_POSITION_FETCH_FAILED");
   }
@@ -103,7 +122,7 @@ export async function fetchLastMapPosition(userId: string): Promise<LastMapPosit
 }
 
 export async function fetchUserEvents(userId: string): Promise<MapEvent[]> {
-  const response = await fetch(`${API_URL}/events?userId=${encodeURIComponent(userId)}`);
+  const response = await fetch(buildApiUrl("/events", { userId }));
   if (!response.ok) {
     throw new Error("EVENTS_FETCH_FAILED");
   }
@@ -113,6 +132,30 @@ export async function fetchUserEvents(userId: string): Promise<MapEvent[]> {
   };
 
   return (data.events ?? []).map(normalizeEvent);
+}
+
+export async function fetchEventById(eventId: string, userId: string): Promise<MapEvent> {
+  const response = await fetch(buildApiUrl(`/events/${encodeURIComponent(eventId)}`, { userId }), {
+    cache: "no-store",
+  });
+
+  if (response.status === 404) {
+    throw new Error("EVENT_NOT_FOUND");
+  }
+
+  if (!response.ok) {
+    throw new Error("EVENTS_FETCH_FAILED");
+  }
+
+  const data = (await response.json()) as {
+    event?: MapEvent;
+  };
+
+  if (!data.event) {
+    throw new Error("EVENTS_FETCH_FAILED");
+  }
+
+  return normalizeEvent(data.event);
 }
 
 export async function createEvent(input: CreateEventInput): Promise<MapEvent> {
@@ -149,7 +192,7 @@ export async function uploadEventPhotos(userId: string, eventId: number, files: 
     formData.append("photos", file);
   }
 
-  const response = await fetch(`${API_URL}/events/${eventId}/photos?userId=${encodeURIComponent(userId)}`, {
+  const response = await fetch(buildApiUrl(`/events/${eventId}/photos`, { userId }), {
     method: "POST",
     body: formData,
   });

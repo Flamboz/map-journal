@@ -29,6 +29,35 @@ export type EventPhotosTableColumn = {
   pk: number;
 };
 
+export type EventRow = {
+  id: number;
+  user_id: number;
+  title: string;
+  start_date?: string | null;
+  end_date?: string | null;
+  description?: string | null;
+  rating?: number | null;
+  labels?: string | null;
+  visit_company?: string | null;
+  lat: number;
+  lng: number;
+  created_at: string;
+};
+
+export type EventPhotoRow = {
+  id: number;
+  event_id: number;
+  file_path: string;
+  created_at: string;
+};
+
+export type NormalizedEventPhoto = {
+  id: number;
+  path: string;
+  url: string;
+  createdAt: string;
+};
+
 export const ALLOWED_LABEL_VALUES: string[] = [
   "Cafe",
   "Museum",
@@ -55,6 +84,57 @@ export const ALLOWED_VISIT_COMPANIES = new Set(ALLOWED_VISIT_COMPANY_VALUES);
 
 export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 export const DEFAULT_PIN_ZOOM = 13;
+
+export function groupPhotosByEvent(
+  photos: EventPhotoRow[],
+): Map<number, Array<{ id: number; path: string; url: string; createdAt: string }>> {
+  const photosByEvent = new Map<number, NormalizedEventPhoto[]>();
+
+  for (const photo of photos) {
+    const list = photosByEvent.get(photo.event_id) ?? [];
+    list.push({
+      id: photo.id,
+      path: photo.file_path,
+      url: `/uploads/${photo.file_path}`,
+      createdAt: photo.created_at,
+    });
+    photosByEvent.set(photo.event_id, list);
+  }
+
+  return photosByEvent;
+}
+
+export function normalizeEventRows(events: EventRow[], photosByEvent: Map<number, NormalizedEventPhoto[]> = new Map()) {
+  return events.map((event) => ({
+    id: event.id,
+    user_id: event.user_id,
+    title: event.title,
+    name: event.title,
+    startDate: event.start_date ?? null,
+    endDate: event.end_date ?? null,
+    description: event.description ?? "",
+    rating: event.rating ?? null,
+    labels: parseEventLabels(event.labels),
+    visitCompany: event.visit_company || "",
+    lat: event.lat,
+    lng: event.lng,
+    created_at: event.created_at,
+    photos: photosByEvent.get(event.id) ?? [],
+  }));
+}
+
+function parseEventLabels(rawLabels?: string | null): string[] {
+  if (!rawLabels) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(rawLabels);
+    return Array.isArray(parsed) ? parsed.filter((label): label is string => typeof label === "string") : [];
+  } catch {
+    return [];
+  }
+}
 
 export function sanitizeFilename(filename: string): string {
   return filename.replace(/[^a-zA-Z0-9._-]/g, "_");
