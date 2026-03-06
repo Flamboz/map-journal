@@ -8,6 +8,7 @@ import {
   fetchAllowedVisitCompanies,
   fetchLastMapPosition,
   fetchUserEvents,
+  searchPlaces,
   uploadEventPhotos,
 } from "./api";
 import type { ReactNode } from "react";
@@ -24,6 +25,7 @@ vi.mock("./api", () => ({
   fetchAllowedVisitCompanies: vi.fn(),
   fetchLastMapPosition: vi.fn(),
   fetchUserEvents: vi.fn(),
+  searchPlaces: vi.fn(),
   createEvent: vi.fn(),
   uploadEventPhotos: vi.fn(),
 }));
@@ -71,6 +73,7 @@ describe("MapView", () => {
     vi.mocked(fetchUserEvents).mockResolvedValue([]);
     vi.mocked(fetchAllowedLabels).mockResolvedValue([]);
     vi.mocked(fetchAllowedVisitCompanies).mockResolvedValue([]);
+    vi.mocked(searchPlaces).mockResolvedValue([]);
     vi.mocked(uploadEventPhotos).mockResolvedValue([]);
   });
 
@@ -372,5 +375,38 @@ describe("MapView", () => {
       );
       expect(uploadEventPhotos).toHaveBeenCalledWith("1", 10, expect.any(Array));
     });
+  });
+
+  it("searches a place, recenters, and keeps typed form values", async () => {
+    vi.mocked(searchPlaces).mockResolvedValue([
+      {
+        displayName: "Eiffel Tower, Paris, France",
+        lat: 48.8584,
+        lng: 2.2945,
+      },
+    ]);
+
+    render(<MapView />);
+
+    act(() => {
+      clickHandlers.click?.({ latlng: { lat: 50.45, lng: 30.52 } });
+    });
+
+    const nameInput = (await screen.findByLabelText("Name *")) as HTMLInputElement;
+    fireEvent.change(nameInput, { target: { value: "Draft title" } });
+
+    fireEvent.change(screen.getByLabelText("Search place"), { target: { value: "Eiffel Tower" } });
+    fireEvent.click(screen.getByRole("button", { name: "Search" }));
+
+    const placeButton = await screen.findByRole("button", { name: "Eiffel Tower, Paris, France" });
+    fireEvent.click(placeButton);
+
+    await waitFor(() => {
+      expect(searchPlaces).toHaveBeenCalledWith("Eiffel Tower", expect.anything());
+      expect(mockSetView).toHaveBeenCalledWith([48.8584, 2.2945], expect.any(Number));
+    });
+
+    expect((screen.getByLabelText("Name *") as HTMLInputElement).value).toBe("Draft title");
+    expect(screen.getByText("48.8584,2.2945")).toBeInTheDocument();
   });
 });

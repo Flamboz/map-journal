@@ -6,6 +6,7 @@ import { registerGetEventByIdRoute } from "./events/registerGetEventByIdRoute";
 import { registerGetEventsRoute } from "./events/registerGetEventsRoute";
 import { registerMapPositionRoute } from "./events/registerMapPositionRoute";
 import { registerMetadataRoutes } from "./events/registerMetadataRoutes";
+import { registerPlaceSearchRoute } from "./events/registerPlaceSearchRoute";
 import { registerSetPreviewPhotoRoute } from "./events/registerSetPreviewPhotoRoute";
 import { registerUpdateEventRoute } from "./events/registerUpdateEventRoute";
 import { registerUploadEventPhotosRoute } from "./events/registerUploadEventPhotosRoute";
@@ -21,4 +22,5 @@ export default async function eventsRoutes(fastify: FastifyInstance) {
   registerDeleteEventPhotoRoute(fastify);
   registerSetPreviewPhotoRoute(fastify);
   registerMapPositionRoute(fastify);
+  registerPlaceSearchRoute(fastify);
 }

@@ -6,6 +6,12 @@ export type LastMapPosition = {
   zoom: number;
 };
 
+export type PlaceSearchResult = {
+  displayName: string;
+  lat: number;
+  lng: number;
+};
+
 export type MapEvent = {
   id: number;
   user_id: number;
@@ -131,6 +137,29 @@ export async function fetchLastMapPosition(userId: string): Promise<LastMapPosit
   };
 
   return data.lastMapPosition ?? null;
+}
+
+export async function searchPlaces(
+  query: string,
+  options?: { lat?: number; lng?: number },
+): Promise<PlaceSearchResult[]> {
+  const response = await fetch(
+    buildApiUrl("/place-search", {
+      q: query.trim(),
+      lat: options?.lat,
+      lng: options?.lng,
+    }),
+  );
+
+  if (!response.ok) {
+    throw new Error("PLACE_SEARCH_FAILED");
+  }
+
+  const data = (await response.json()) as {
+    places?: PlaceSearchResult[];
+  };
+
+  return Array.isArray(data.places) ? data.places : [];
 }
 
 export async function fetchUserEvents(userId: string): Promise<MapEvent[]> {

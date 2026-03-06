@@ -11,11 +11,13 @@ import {
   fetchLastMapPosition,
   fetchUserEvents,
   type MapEvent,
+  type PlaceSearchResult,
   uploadEventPhotos,
 } from "./api";
 import { createMarkerIconWithCount, MARKER_ICON, PIN_GROUP_DISTANCE_METERS, WORLD_CENTER, WORLD_ZOOM } from "./mapViewConstants";
 import { EventDraftForm } from "./EventDraftForm";
 import { EventPreviewModal } from "./EventPreviewModal";
+import { PlaceSearchPanel } from "./PlaceSearchPanel";
 import { formatShortAddress, groupEventsByDistance } from "./mapViewHelpers";
 import { MapClickHandler, RecenterMap } from "./MapLeafletHelpers";
 import type { CenterState, EventFormState, ReverseGeocodeAddress } from "./mapViewTypes";
@@ -67,6 +69,18 @@ export default function MapView({ initialError = null }: MapViewProps) {
   function handleClosePreview() {
     setSelectedGroupIndex(null);
     setSelectedEventIndex(0);
+  }
+
+  function handlePlaceSelect(place: PlaceSearchResult) {
+    setSelectedGroupIndex(null);
+    setSelectedEventIndex(0);
+    setDraftPosition({ lat: place.lat, lng: place.lng });
+    setDraftAddress(place.displayName);
+    setSaveError(null);
+    setCenterState((previous) => ({
+      center: [place.lat, place.lng],
+      zoom: previous.zoom,
+    }));
   }
 
   function handleNextPreviewEvent() {
@@ -248,6 +262,8 @@ export default function MapView({ initialError = null }: MapViewProps) {
 
   return (
     <section className="relative h-[calc(100vh-57px)] w-full" aria-label="map-view">
+      <PlaceSearchPanel centerState={centerState} onPlaceSelect={handlePlaceSelect} />
+
       <MapContainer center={centerState.center} zoom={centerState.zoom} className="h-full w-full" scrollWheelZoom>
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -271,7 +287,6 @@ export default function MapView({ initialError = null }: MapViewProps) {
       </MapContainer>
 
       <EventDraftForm
-        key={draftPosition ? `${draftPosition.lat}-${draftPosition.lng}` : "event-draft-hidden"}
         draftPosition={draftPosition}
         isResolvingAddress={isResolvingAddress}
         draftAddress={draftAddress}
