@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
-import { MapContainer, Marker, TileLayer } from "react-leaflet";
+import { MapContainer, Marker, TileLayer, ZoomControl } from "react-leaflet";
 import MarkerClusterGroup from "react-leaflet-cluster";
 import {
   createEvent,
@@ -264,11 +264,12 @@ export default function MapView({ initialError = null }: MapViewProps) {
     <section className="relative h-[calc(100vh-57px)] w-full" aria-label="map-view">
       <PlaceSearchPanel centerState={centerState} onPlaceSelect={handlePlaceSelect} />
 
-      <MapContainer center={centerState.center} zoom={centerState.zoom} className="h-full w-full" scrollWheelZoom>
+      <MapContainer center={centerState.center} zoom={centerState.zoom} className="h-full w-full" scrollWheelZoom zoomControl={false}>
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
+        <ZoomControl position="bottomleft" />
         <RecenterMap center={centerState.center} zoom={centerState.zoom} />
         <MapClickHandler onClick={handleMapClick} />
         <MarkerClusterGroup>

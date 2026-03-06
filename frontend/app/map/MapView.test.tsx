@@ -33,6 +33,7 @@ vi.mock("./api", () => ({
 vi.mock("react-leaflet", () => ({
   MapContainer: ({ children }: { children: ReactNode }) => <div data-testid="map-container">{children}</div>,
   TileLayer: () => <div data-testid="tile-layer" />,
+  ZoomControl: () => <div data-testid="zoom-control" />,
   Marker: ({
     position,
     eventHandlers,
