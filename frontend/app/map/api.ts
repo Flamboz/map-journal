@@ -295,6 +295,20 @@ export async function updateEvent(input: UpdateEventInput): Promise<MapEvent> {
   return normalizeEvent(data.event);
 }
 
+export async function deleteEvent(userId: string, eventId: number): Promise<void> {
+  const response = await fetch(buildApiUrl(`/events/${encodeURIComponent(String(eventId))}`, { userId }), {
+    method: "DELETE",
+  });
+
+  if (response.status === 404) {
+    throw new Error("EVENT_NOT_FOUND");
+  }
+
+  if (!response.ok) {
+    throw new Error("EVENT_DELETE_FAILED");
+  }
+}
+
 export async function deleteEventPhoto(userId: string, eventId: number, photoId: number): Promise<MapEventPhoto[]> {
   const response = await fetch(
     buildApiUrl(`/events/${encodeURIComponent(String(eventId))}/photos/${encodeURIComponent(String(photoId))}`, {

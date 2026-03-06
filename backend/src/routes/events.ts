@@ -1,5 +1,6 @@
 import { FastifyInstance } from "fastify";
 import { registerCreateEventRoute } from "./events/registerCreateEventRoute";
+import { registerDeleteEventRoute } from "./events/registerDeleteEventRoute";
 import { registerDeleteEventPhotoRoute } from "./events/registerDeleteEventPhotoRoute";
 import { registerGetEventByIdRoute } from "./events/registerGetEventByIdRoute";
 import { registerGetEventsRoute } from "./events/registerGetEventsRoute";
@@ -15,6 +16,7 @@ export default async function eventsRoutes(fastify: FastifyInstance) {
   registerGetEventByIdRoute(fastify);
   registerCreateEventRoute(fastify);
   registerUpdateEventRoute(fastify);
+  registerDeleteEventRoute(fastify);
   registerUploadEventPhotosRoute(fastify);
   registerDeleteEventPhotoRoute(fastify);
   registerSetPreviewPhotoRoute(fastify);
