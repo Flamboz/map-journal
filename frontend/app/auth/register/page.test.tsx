@@ -6,9 +6,11 @@ import RegisterPage from "./page";
 
 const mockPush = vi.hoisted(() => vi.fn());
 const mockRegisterAndSignIn = vi.hoisted(() => vi.fn());
+const mockSearchParamGet = vi.hoisted(() => vi.fn());
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush }),
+  useSearchParams: () => ({ get: mockSearchParamGet }),
 }));
 
 vi.mock("next/link", () => ({
@@ -22,6 +24,7 @@ vi.mock("../auth-client", () => ({
 describe("RegisterPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockSearchParamGet.mockReturnValue(null);
   });
 
   it("shows password validation for short password", async () => {

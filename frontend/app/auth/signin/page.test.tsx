@@ -6,9 +6,11 @@ import SignInPage from "./page";
 
 const mockPush = vi.hoisted(() => vi.fn());
 const mockSignInWithCredentials = vi.hoisted(() => vi.fn());
+const mockSearchParamGet = vi.hoisted(() => vi.fn());
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush }),
+  useSearchParams: () => ({ get: mockSearchParamGet }),
 }));
 
 vi.mock("next/link", () => ({
@@ -22,6 +24,7 @@ vi.mock("../auth-client", () => ({
 describe("SignInPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockSearchParamGet.mockReturnValue(null);
   });
 
   it("shows validation and blocks submit for invalid form", async () => {
@@ -74,6 +77,27 @@ describe("SignInPage", () => {
       });
     });
     expect(mockPush).toHaveBeenCalledWith("/");
+  });
+
+  it("redirects to callbackUrl on success", async () => {
+    const user = userEvent.setup();
+    mockSearchParamGet.mockReturnValue("/events/17");
+    mockSignInWithCredentials.mockResolvedValue({ ok: true });
+
+    const { container } = render(<SignInPage />);
+    const emailInput = container.querySelector("input[name='email']");
+    const passwordInput = container.querySelector("input[type='password']");
+
+    expect(emailInput).not.toBeNull();
+    expect(passwordInput).not.toBeNull();
+
+    await user.type(emailInput as HTMLInputElement, "user@example.com");
+    await user.type(passwordInput as HTMLInputElement, "password123");
+    await user.click(screen.getByRole("button", { name: "Sign in" }));
+
+    await waitFor(() => {
+      expect(mockPush).toHaveBeenCalledWith("/events/17");
+    });
   });
 
   it("shows server error and does not redirect on failed sign in", async () => {

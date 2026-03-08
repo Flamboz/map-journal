@@ -2,17 +2,19 @@
 import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useState } from "react";
 import { registerAndSignIn } from "../auth-client";
 import { AuthForm } from "../AuthForm";
 import { registerSchema, type AuthFormValues } from "../auth-schema";
+import { getSafeCallbackUrl } from "../callback-url";
 
 const schema = registerSchema;
 
 export default function RegisterPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const {
     register,
     handleSubmit,
@@ -20,6 +22,7 @@ export default function RegisterPage() {
   } = useForm<AuthFormValues>({ resolver: zodResolver(schema) });
 
   const [serverError, setServerError] = useState<string | null>(null);
+  const callbackUrl = getSafeCallbackUrl(searchParams.get("callbackUrl"));
 
   async function onSubmit(values: AuthFormValues) {
     setServerError(null);
@@ -30,7 +33,7 @@ export default function RegisterPage() {
       return;
     }
 
-    router.push("/");
+    router.push(callbackUrl);
   }
 
   return (
@@ -46,7 +49,7 @@ export default function RegisterPage() {
       />
       <p className="text-center text-sm mt-6">
         Already have an account?{" "}
-        <Link href="/auth/signin" className="text-blue-600 hover:underline">
+        <Link href={`/auth/signin?callbackUrl=${encodeURIComponent(callbackUrl)}`} className="text-blue-600 hover:underline">
           Sign in
         </Link>
       </p>
