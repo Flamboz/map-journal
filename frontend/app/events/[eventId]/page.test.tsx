@@ -10,9 +10,13 @@ vi.mock("next/navigation", () => ({
   redirect: vi.fn(),
 }));
 
-vi.mock("next-auth", () => ({
-  getServerSession: vi.fn(),
-}));
+vi.mock("next-auth", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("next-auth")>();
+  return {
+    ...actual,
+    getServerSession: vi.fn(),
+  };
+});
 
 vi.mock("../../map/api", () => ({
   fetchEventById: vi.fn(),
