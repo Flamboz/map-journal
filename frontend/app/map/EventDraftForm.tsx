@@ -34,10 +34,13 @@ export function EventDraftForm({
   const [selectedRating, setSelectedRating] = useState<number | null>(EMPTY_FORM_STATE.rating);
   const [selectedLabels, setSelectedLabels] = useState<string[]>(EMPTY_FORM_STATE.labels);
   const [selectedPhotos, setSelectedPhotos] = useState<File[]>(EMPTY_FORM_STATE.photos);
+  const [startDateMin, setStartDateMin] = useState<string>(EMPTY_FORM_STATE.startDate);
   const {
     register,
     handleSubmit,
     reset,
+    getValues,
+    setValue,
     formState: { errors },
   } = useForm<EventFormState>({
     resolver: zodResolver(eventDraftValidationSchema),
@@ -56,6 +59,7 @@ export function EventDraftForm({
     setSelectedRating(EMPTY_FORM_STATE.rating);
     setSelectedLabels(EMPTY_FORM_STATE.labels);
     setSelectedPhotos(EMPTY_FORM_STATE.photos);
+    setStartDateMin(EMPTY_FORM_STATE.startDate);
     onCancel();
   }
 
@@ -98,7 +102,18 @@ export function EventDraftForm({
             <input
               id="event-start-date"
               type="date"
-              {...register("startDate")}
+              lang="en-GB"
+              {...register("startDate", {
+                onChange: (event) => {
+                  const nextStartDate = event.target.value;
+                  setStartDateMin(nextStartDate);
+                  const currentEndDate = getValues("endDate");
+
+                  if (currentEndDate && nextStartDate && currentEndDate < nextStartDate) {
+                    setValue("endDate", "", { shouldValidate: true, shouldDirty: true });
+                  }
+                },
+              })}
               className="w-full rounded border border-slate-300 px-3 py-2 text-sm text-slate-900"
             />
             {errors.startDate && <p className="mt-1 text-sm text-red-600">{errors.startDate.message}</p>}
@@ -111,6 +126,8 @@ export function EventDraftForm({
             <input
               id="event-end-date"
               type="date"
+              lang="en-GB"
+              min={startDateMin || undefined}
               {...register("endDate")}
               className="w-full rounded border border-slate-300 px-3 py-2 text-sm text-slate-900"
             />

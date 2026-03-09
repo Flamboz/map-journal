@@ -267,7 +267,7 @@ describe("MapView", () => {
     const marker = await screen.findByTestId("marker");
     fireEvent.click(marker);
 
-    expect(await screen.findByText("2026-03-01 – 2026-03-03")).toBeInTheDocument();
+    expect(await screen.findByText("01/03/2026 – 03/03/2026")).toBeInTheDocument();
     expect(screen.getByLabelText("Event rating")).toHaveTextContent("★★★★★★★☆☆☆");
 
     const image = screen.getByAltText("Gallery Day preview") as HTMLImageElement;

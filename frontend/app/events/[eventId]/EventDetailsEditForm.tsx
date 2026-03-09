@@ -12,6 +12,8 @@ type EventDetailsEditFormProps = {
   setSelectedRating: (rating: number | null) => void;
   hoveredRating: number | null;
   setHoveredRating: (rating: number | null) => void;
+  startDateMin: string;
+  onStartDateChange: (startDate: string) => void;
   saveError: string | null;
   isSaving: boolean;
   isPhotoActionRunning: boolean;
@@ -30,6 +32,8 @@ export default function EventDetailsEditForm({
   setSelectedRating,
   hoveredRating,
   setHoveredRating,
+  startDateMin,
+  onStartDateChange,
   saveError,
   isSaving,
   isPhotoActionRunning,
@@ -54,7 +58,10 @@ export default function EventDetailsEditForm({
           <input
             id="event-start-date"
             type="date"
-            {...register("startDate")}
+            lang="en-GB"
+            {...register("startDate", {
+              onChange: (event) => onStartDateChange(event.target.value),
+            })}
             className="w-full rounded border border-slate-300 px-3 py-2 text-sm text-slate-900"
           />
           {errors.startDate && <p className="mt-1 text-sm text-red-600">{errors.startDate.message}</p>}
@@ -67,6 +74,8 @@ export default function EventDetailsEditForm({
           <input
             id="event-end-date"
             type="date"
+            lang="en-GB"
+            min={startDateMin || undefined}
             {...register("endDate")}
             className="w-full rounded border border-slate-300 px-3 py-2 text-sm text-slate-900"
           />

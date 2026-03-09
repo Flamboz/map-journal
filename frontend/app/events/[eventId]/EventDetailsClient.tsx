@@ -55,11 +55,14 @@ export default function EventDetailsClient({ initialEvent, userId }: EventDetail
   const [selectedRating, setSelectedRating] = useState<number | null>(initialEvent.rating ?? null);
   const [hoveredRating, setHoveredRating] = useState<number | null>(null);
   const [selectedLabels, setSelectedLabels] = useState<string[]>(initialEvent.labels ?? []);
+  const [startDateMin, setStartDateMin] = useState<string>(initialEvent.startDate ?? "");
 
   const {
     register,
     handleSubmit,
     reset,
+    getValues,
+    setValue,
     formState: { errors },
   } = useForm<EventFormState>({
     resolver: zodResolver(eventDraftValidationSchema),
@@ -107,6 +110,7 @@ export default function EventDetailsClient({ initialEvent, userId }: EventDetail
   function startEditing() {
     setSaveError(null);
     reset(mapEventToFormState(event));
+    setStartDateMin(event.startDate ?? "");
     setSelectedRating(event.rating ?? null);
     setHoveredRating(null);
     setSelectedLabels(event.labels ?? []);
@@ -116,6 +120,7 @@ export default function EventDetailsClient({ initialEvent, userId }: EventDetail
   function cancelEditing() {
     setSaveError(null);
     reset(mapEventToFormState(event));
+    setStartDateMin(event.startDate ?? "");
     setSelectedRating(event.rating ?? null);
     setHoveredRating(null);
     setSelectedLabels(event.labels ?? []);
@@ -133,6 +138,15 @@ export default function EventDetailsClient({ initialEvent, userId }: EventDetail
     }
 
     setIsDeleteModalOpen(false);
+  }
+
+  function handleStartDateChange(nextStartDate: string) {
+    setStartDateMin(nextStartDate);
+    const currentEndDate = getValues("endDate");
+
+    if (currentEndDate && nextStartDate && currentEndDate < nextStartDate) {
+      setValue("endDate", "", { shouldValidate: true, shouldDirty: true });
+    }
   }
 
   async function confirmDeleteEvent() {
@@ -328,6 +342,8 @@ export default function EventDetailsClient({ initialEvent, userId }: EventDetail
           setSelectedRating={setSelectedRating}
           hoveredRating={hoveredRating}
           setHoveredRating={setHoveredRating}
+          startDateMin={startDateMin}
+          onStartDateChange={handleStartDateChange}
           saveError={saveError}
           isSaving={isSaving}
           isPhotoActionRunning={isPhotoActionRunning}

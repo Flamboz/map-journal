@@ -101,11 +101,24 @@ export function formatEventDateRange(startDate?: string | null, endDate?: string
     return "";
   }
 
+  const formattedStartDate = formatIsoDateToDayMonthYear(startDate);
+
   if (endDate) {
-    return `${startDate} – ${endDate}`;
+    const formattedEndDate = formatIsoDateToDayMonthYear(endDate);
+    return `${formattedStartDate} – ${formattedEndDate}`;
   }
 
-  return startDate;
+  return formattedStartDate;
+}
+
+function formatIsoDateToDayMonthYear(isoDate: string): string {
+  const [year, month, day] = isoDate.split("-");
+
+  if (!year || !month || !day) {
+    return isoDate;
+  }
+
+  return `${day}/${month}/${year}`;
 }
 
 export function formatRatingStars(rating?: number | null): string {
