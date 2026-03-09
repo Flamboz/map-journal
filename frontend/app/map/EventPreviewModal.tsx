@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import StarRating from "../components/StarRating";
 import { formatEventDateRange } from "./mapViewHelpers";
 import type { MapEvent } from "./api";
 
@@ -32,8 +33,6 @@ export function EventPreviewModal({ events, currentIndex, onClose, onPrevious, o
   const ratingValue = currentEvent.rating;
   const safeRating = typeof ratingValue === "number" && ratingValue > 0 ? Math.max(0, Math.min(10, ratingValue)) : 0;
   const hasRating = safeRating > 0;
-  const filledStars = "★".repeat(safeRating);
-  const emptyStars = "☆".repeat(10 - safeRating);
 
   return (
     <div className="absolute inset-0 z-[1200] flex items-center justify-center p-4" role="dialog" aria-modal="true">
@@ -129,10 +128,7 @@ export function EventPreviewModal({ events, currentIndex, onClose, onPrevious, o
         <div className="space-y-2">
           <h3 className="text-lg font-semibold text-gray-900">{currentEvent.name ?? currentEvent.title}</h3>
           {hasRating && (
-            <p aria-label="Event rating" className="text-base">
-              <span className="text-yellow-400">{filledStars}</span>
-              <span className="text-slate-300">{emptyStars}</span>
-            </p>
+            <StarRating rating={safeRating} className="text-base" />
           )}
           <p className="text-sm text-gray-700">{formatEventDateRange(currentEvent.startDate, currentEvent.endDate)}</p>
           <Link

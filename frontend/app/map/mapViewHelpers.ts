@@ -120,10 +120,3 @@ function formatIsoDateToDayMonthYear(isoDate: string): string {
 
   return `${day}/${month}/${year}`;
 }
-
-export function formatRatingStars(rating?: number | null): string {
-  const safeRating = Math.max(0, Math.min(10, rating ?? 0));
-  const filled = "★".repeat(safeRating);
-  const empty = "☆".repeat(10 - safeRating);
-  return `${filled}${empty}`;
-}

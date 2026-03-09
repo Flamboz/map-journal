@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import StarRating from "../components/StarRating";
 import { EMPTY_FORM_STATE } from "./mapViewConstants";
 import { eventDraftValidationSchema } from "./mapViewHelpers";
 import type { EventFormState } from "./mapViewTypes";
@@ -50,8 +51,6 @@ export function EventDraftForm({
   if (!draftPosition) {
     return null;
   }
-
-  const activeRating = hoveredRating ?? selectedRating ?? 0;
 
   function handleCancel() {
     reset(EMPTY_FORM_STATE);
@@ -149,26 +148,12 @@ export function EventDraftForm({
 
         <div>
           <p className="mb-1 text-sm font-medium text-slate-800">Rating</p>
-          <div className="flex flex-wrap gap-1">
-            {Array.from({ length: 10 }).map((_, index) => {
-              const value = index + 1;
-              const isActive = value <= activeRating;
-
-              return (
-                <button
-                  key={value}
-                  type="button"
-                  aria-label={`Set rating to ${value}`}
-                  onMouseEnter={() => setHoveredRating(value)}
-                  onMouseLeave={() => setHoveredRating(null)}
-                  onClick={() => setSelectedRating(value)}
-                  className={`text-xl leading-none ${isActive ? "text-yellow-400" : "text-slate-300"}`}
-                >
-                  ★
-                </button>
-              );
-            })}
-          </div>
+          <StarRating
+            rating={selectedRating}
+            hoveredRating={hoveredRating}
+            onHoveredRatingChange={setHoveredRating}
+            onRatingChange={setSelectedRating}
+          />
         </div>
 
         <div>

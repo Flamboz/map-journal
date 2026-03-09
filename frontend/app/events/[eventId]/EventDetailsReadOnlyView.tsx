@@ -1,4 +1,5 @@
 import type { MapEvent } from "../../map/api";
+import StarRating from "../../components/StarRating";
 
 type EventDetailsReadOnlyViewProps = {
   event: MapEvent;
@@ -59,21 +60,12 @@ export default function EventDetailsReadOnlyView({
               {buildRatingText(event.rating)}
             </p>
           ) : (
-            <div aria-label="Event rating" className="flex items-center gap-2 text-base text-gray-900">
-              <div className="flex flex-wrap gap-1">
-                {Array.from({ length: 10 }).map((_, index) => {
-                  const value = index + 1;
-                  const isActive = value <= safeRating;
-
-                  return (
-                    <span key={value} className={`text-xl leading-none ${isActive ? "text-yellow-400" : "text-slate-300"}`}>
-                      ★
-                    </span>
-                  );
-                })}
-              </div>
-              <span>({safeRating}/10)</span>
-            </div>
+            <StarRating
+              rating={safeRating}
+              className="flex items-center gap-2 text-base text-gray-900"
+              showNumericValue
+              numericClassName="text-base text-gray-900"
+            />
           )}
         </div>
 

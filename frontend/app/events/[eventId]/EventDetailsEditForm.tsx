@@ -1,4 +1,5 @@
 import type { FieldErrors, UseFormRegister } from "react-hook-form";
+import StarRating from "../../components/StarRating";
 import type { EventFormState } from "../../map/mapViewTypes";
 
 type EventDetailsEditFormProps = {
@@ -97,34 +98,13 @@ export default function EventDetailsEditForm({
 
       <div>
         <p className="mb-1 text-sm font-medium text-slate-800">Rating</p>
-        <div className="flex flex-wrap gap-1">
-          {Array.from({ length: 10 }).map((_, index) => {
-            const value = index + 1;
-            const activeRating = hoveredRating ?? selectedRating ?? 0;
-            const isActive = value <= activeRating;
-
-            return (
-              <button
-                key={value}
-                type="button"
-                aria-label={`Set rating to ${value}`}
-                onMouseEnter={() => setHoveredRating(value)}
-                onMouseLeave={() => setHoveredRating(null)}
-                onClick={() => setSelectedRating(value)}
-                className={`text-xl leading-none ${isActive ? "text-yellow-400" : "text-slate-300"}`}
-              >
-                ★
-              </button>
-            );
-          })}
-          <button
-            type="button"
-            onClick={() => setSelectedRating(null)}
-            className="ml-2 rounded border border-slate-300 px-2 py-1 text-xs text-slate-700"
-          >
-            Clear
-          </button>
-        </div>
+        <StarRating
+          rating={selectedRating}
+          hoveredRating={hoveredRating}
+          onHoveredRatingChange={setHoveredRating}
+          onRatingChange={setSelectedRating}
+          allowClear
+        />
       </div>
 
       <div>
