@@ -12,6 +12,13 @@ export const MARKER_ICON = new Icon({
   popupAnchor: [0, -28],
 });
 
+export const DRAFT_MARKER_ICON = new Icon({
+  iconUrl: "/leaflet/draft-pin.svg",
+  iconSize: [32, 32],
+  iconAnchor: [16, 32],
+  popupAnchor: [0, -28],
+});
+
 export function createMarkerIconWithCount(eventCount: number): DivIcon {
   const safeCount = Math.max(1, Math.floor(eventCount));
 

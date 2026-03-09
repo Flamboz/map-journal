@@ -14,7 +14,14 @@ import {
   type PlaceSearchResult,
   uploadEventPhotos,
 } from "./api";
-import { createMarkerIconWithCount, MARKER_ICON, PIN_GROUP_DISTANCE_METERS, WORLD_CENTER, WORLD_ZOOM } from "./mapViewConstants";
+import {
+  createMarkerIconWithCount,
+  DRAFT_MARKER_ICON,
+  MARKER_ICON,
+  PIN_GROUP_DISTANCE_METERS,
+  WORLD_CENTER,
+  WORLD_ZOOM,
+} from "./mapViewConstants";
 import { EventDraftForm } from "./EventDraftForm";
 import { EventPreviewModal } from "./EventPreviewModal";
 import { PlaceSearchPanel } from "./PlaceSearchPanel";
@@ -284,7 +291,7 @@ export default function MapView({ initialError = null }: MapViewProps) {
             />
           ))}
         </MarkerClusterGroup>
-        {draftPosition && <Marker position={[draftPosition.lat, draftPosition.lng]} icon={MARKER_ICON} />}
+        {draftPosition && <Marker position={[draftPosition.lat, draftPosition.lng]} icon={DRAFT_MARKER_ICON} />}
       </MapContainer>
 
       <EventDraftForm
