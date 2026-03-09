@@ -1,4 +1,5 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { randomUUID } from "crypto";
 import fs from "fs";
 import path from "path";
 import { all, get, run } from "../../db/sqlite";
@@ -57,7 +58,7 @@ export function registerUploadEventPhotosRoute(fastify: FastifyInstance) {
         ])) as { maxSortOrder?: number | null } | null;
         let nextSortOrder = Number(maxSortOrderResult?.maxSortOrder ?? 0);
 
-        const uploadedPhotos: Array<{ id: number; path: string; url: string; createdAt: string }> = [];
+        const uploadedPhotos: Array<{ id: string; path: string; url: string; createdAt: string }> = [];
         let fileIndex = 0;
 
         for await (const part of request.parts()) {
@@ -86,6 +87,7 @@ export function registerUploadEventPhotosRoute(fastify: FastifyInstance) {
           const relativePath = path.posix.join(`user-${userId}`, `event-${eventId}`, storedFileName);
 
           const insertPayload: Record<string, unknown> = {
+            id: randomUUID(),
             event_id: eventId,
             file_path: relativePath,
           };
@@ -138,12 +140,9 @@ export function registerUploadEventPhotosRoute(fastify: FastifyInstance) {
           const insertValues = insertColumns.map((columnName) => insertPayload[columnName]);
           const placeholders = insertColumns.map(() => "?").join(", ");
 
-          const insertResult = (await run(
-            `INSERT INTO event_photos (${insertColumns.join(", ")}) VALUES (${placeholders})`,
-            insertValues,
-          )) as { lastID?: number };
+          await run(`INSERT INTO event_photos (${insertColumns.join(", ")}) VALUES (${placeholders})`, insertValues);
 
-          const photo = await get("SELECT id, file_path, created_at FROM event_photos WHERE id = ?", [insertResult.lastID]);
+          const photo = await get("SELECT id, file_path, created_at FROM event_photos WHERE id = ?", [insertPayload.id]);
           if (photo) {
             uploadedPhotos.push({
               id: photo.id,

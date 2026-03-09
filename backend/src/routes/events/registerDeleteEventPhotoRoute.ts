@@ -39,7 +39,7 @@ export function registerDeleteEventPhotoRoute(fastify: FastifyInstance) {
         const existingPhoto = (await get("SELECT id, event_id, file_path FROM event_photos WHERE id = ? AND event_id = ?", [
           photoId,
           eventId,
-        ])) as { id: number; event_id: number; file_path: string } | null;
+        ])) as { id: string; event_id: string; file_path: string } | null;
 
         if (!existingPhoto) {
           return reply.status(404).send({ error: "PHOTO_NOT_FOUND", message: "Photo not found." });
@@ -58,7 +58,7 @@ export function registerDeleteEventPhotoRoute(fastify: FastifyInstance) {
            WHERE event_id = ?
            ORDER BY sort_order ASC, created_at ASC, id ASC`,
           [eventId],
-        )) as Array<{ id: number }>;
+        )) as Array<{ id: string }>;
 
         if (remainingPhotos.length === 0) {
           const eventUploadDirectory = path.join(process.cwd(), "uploads", `user-${userId}`, `event-${eventId}`);
@@ -84,7 +84,7 @@ export function registerDeleteEventPhotoRoute(fastify: FastifyInstance) {
            WHERE event_id = ?
            ORDER BY sort_order ASC, created_at ASC, id ASC`,
           [eventId],
-        )) as Array<{ id: number; file_path: string; created_at: string }>;
+        )) as Array<{ id: string; file_path: string; created_at: string }>;
 
         return reply.status(200).send({
           photos: orderedPhotos.map((photo) => ({

@@ -90,7 +90,7 @@ export function registerGetEventByIdRoute(fastify: FastifyInstance) {
             event.lng - longitudeDelta,
             event.lng + longitudeDelta,
           ],
-        )) as Array<{ id: number; lat: number; lng: number }>;
+        )) as Array<{ id: string; lat: number; lng: number }>;
 
         const normalizedEvent = normalizeEventRows([event], groupPhotosByEvent(photos))[0];
 
@@ -99,7 +99,7 @@ export function registerGetEventByIdRoute(fastify: FastifyInstance) {
             getDistanceMeters({ lat: event.lat, lng: event.lng }, { lat: candidate.lat, lng: candidate.lng }) <=
             SAME_PIN_DISTANCE_METERS,
           )
-          .map((samePinEvent) => Number(samePinEvent.id));
+          .map((samePinEvent) => samePinEvent.id);
 
         return reply.status(200).send({
           event: {

@@ -47,7 +47,7 @@ export type EventPhotosTableColumn = {
 };
 
 export type EventRow = {
-  id: number;
+  id: string;
   user_id: number;
   title: string;
   start_date?: string | null;
@@ -62,15 +62,15 @@ export type EventRow = {
 };
 
 export type EventPhotoRow = {
-  id: number;
-  event_id: number;
+  id: string;
+  event_id: string;
   file_path: string;
   sort_order?: number | null;
   created_at: string;
 };
 
 export type NormalizedEventPhoto = {
-  id: number;
+  id: string;
   path: string;
   url: string;
   createdAt: string;
@@ -105,8 +105,8 @@ export const DEFAULT_PIN_ZOOM = 13;
 
 export function groupPhotosByEvent(
   photos: EventPhotoRow[],
-): Map<number, Array<{ id: number; path: string; url: string; createdAt: string }>> {
-  const photosByEvent = new Map<number, NormalizedEventPhoto[]>();
+): Map<string, Array<{ id: string; path: string; url: string; createdAt: string }>> {
+  const photosByEvent = new Map<string, NormalizedEventPhoto[]>();
 
   for (const photo of photos) {
     const list = photosByEvent.get(photo.event_id) ?? [];
@@ -122,7 +122,7 @@ export function groupPhotosByEvent(
   return photosByEvent;
 }
 
-export function normalizeEventRows(events: EventRow[], photosByEvent: Map<number, NormalizedEventPhoto[]> = new Map()) {
+export function normalizeEventRows(events: EventRow[], photosByEvent: Map<string, NormalizedEventPhoto[]> = new Map()) {
   return events.map((event) => ({
     id: event.id,
     user_id: event.user_id,
@@ -169,22 +169,24 @@ export function normalizeLabels(labels: unknown): string[] {
     .filter((label) => ALLOWED_LABELS.has(label));
 }
 
-export function parseEventId(eventId: string | undefined): number | null {
-  const parsed = Number(eventId);
-  if (!Number.isInteger(parsed) || parsed <= 0) {
-    return null;
-  }
-
-  return parsed;
+function isValidUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }
 
-export function parsePhotoId(photoId: string | undefined): number | null {
-  const parsed = Number(photoId);
-  if (!Number.isInteger(parsed) || parsed <= 0) {
+export function parseEventId(eventId: string | undefined): string | null {
+  if (!eventId || !isValidUuid(eventId)) {
     return null;
   }
 
-  return parsed;
+  return eventId;
+}
+
+export function parsePhotoId(photoId: string | undefined): string | null {
+  if (!photoId || !isValidUuid(photoId)) {
+    return null;
+  }
+
+  return photoId;
 }
 
 export function parseUserId(userId: string | undefined): number | null {

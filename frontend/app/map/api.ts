@@ -13,7 +13,7 @@ export type PlaceSearchResult = {
 };
 
 export type MapEvent = {
-  id: number;
+  id: string;
   user_id: number;
   title: string;
   name?: string;
@@ -27,11 +27,11 @@ export type MapEvent = {
   lng: number;
   created_at: string;
   photos?: MapEventPhoto[];
-  samePinEventIds?: number[];
+  samePinEventIds?: string[];
 };
 
 export type MapEventPhoto = {
-  id: number;
+  id: string;
   path: string;
   url: string;
   createdAt: string;
@@ -52,7 +52,7 @@ export type CreateEventInput = {
 
 export type UpdateEventInput = {
   userId: string;
-  eventId: number;
+  eventId: string;
   name: string;
   startDate: string;
   endDate?: string;
@@ -184,6 +184,15 @@ export async function fetchEventById(eventId: string, userId: string): Promise<M
     throw new Error("EVENT_NOT_FOUND");
   }
 
+  if (response.status === 400) {
+    const errorBody = (await response.json().catch(() => null)) as { error?: string } | null;
+    if (errorBody?.error === "INVALID_EVENT") {
+      throw new Error("EVENT_NOT_FOUND");
+    }
+
+    throw new Error("EVENTS_FETCH_FAILED");
+  }
+
   if (!response.ok) {
     throw new Error("EVENTS_FETCH_FAILED");
   }
@@ -223,7 +232,7 @@ export async function createEvent(input: CreateEventInput): Promise<MapEvent> {
   return normalizeEvent(data.event);
 }
 
-export async function uploadEventPhotos(userId: string, eventId: number, files: File[]): Promise<MapEventPhoto[]> {
+export async function uploadEventPhotos(userId: string, eventId: string, files: File[]): Promise<MapEventPhoto[]> {
   if (files.length === 0) {
     return [];
   }
@@ -288,7 +297,7 @@ export async function fetchAllowedVisitCompanies(): Promise<string[]> {
 }
 
 export async function updateEvent(input: UpdateEventInput): Promise<MapEvent> {
-  const response = await fetch(`${API_URL}/events/${encodeURIComponent(String(input.eventId))}`, {
+  const response = await fetch(`${API_URL}/events/${encodeURIComponent(input.eventId)}`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
@@ -324,8 +333,8 @@ export async function updateEvent(input: UpdateEventInput): Promise<MapEvent> {
   return normalizeEvent(data.event);
 }
 
-export async function deleteEvent(userId: string, eventId: number): Promise<void> {
-  const response = await fetch(buildApiUrl(`/events/${encodeURIComponent(String(eventId))}`, { userId }), {
+export async function deleteEvent(userId: string, eventId: string): Promise<void> {
+  const response = await fetch(buildApiUrl(`/events/${encodeURIComponent(eventId)}`, { userId }), {
     method: "DELETE",
   });
 
@@ -338,9 +347,9 @@ export async function deleteEvent(userId: string, eventId: number): Promise<void
   }
 }
 
-export async function deleteEventPhoto(userId: string, eventId: number, photoId: number): Promise<MapEventPhoto[]> {
+export async function deleteEventPhoto(userId: string, eventId: string, photoId: string): Promise<MapEventPhoto[]> {
   const response = await fetch(
-    buildApiUrl(`/events/${encodeURIComponent(String(eventId))}/photos/${encodeURIComponent(String(photoId))}`, {
+    buildApiUrl(`/events/${encodeURIComponent(eventId)}/photos/${encodeURIComponent(photoId)}`, {
       userId,
     }),
     {
@@ -371,14 +380,11 @@ export async function deleteEventPhoto(userId: string, eventId: number, photoId:
   }));
 }
 
-export async function setEventPreviewPhoto(userId: string, eventId: number, photoId: number): Promise<MapEventPhoto[]> {
+export async function setEventPreviewPhoto(userId: string, eventId: string, photoId: string): Promise<MapEventPhoto[]> {
   const response = await fetch(
-    buildApiUrl(
-      `/events/${encodeURIComponent(String(eventId))}/photos/${encodeURIComponent(String(photoId))}/preview`,
-      {
-        userId,
-      },
-    ),
+    buildApiUrl(`/events/${encodeURIComponent(eventId)}/photos/${encodeURIComponent(photoId)}/preview`, {
+      userId,
+    }),
     {
       method: "PATCH",
     },

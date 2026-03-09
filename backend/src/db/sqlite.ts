@@ -36,45 +36,7 @@ async function init() {
     );
   `);
 
-  await run(`
-    CREATE TABLE IF NOT EXISTS events (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
-      title TEXT DEFAULT '',
-      start_date TEXT,
-      end_date TEXT,
-      description TEXT DEFAULT '',
-      rating INTEGER,
-      labels TEXT DEFAULT '[]',
-      visit_company TEXT DEFAULT '',
-      lat REAL NOT NULL,
-      lng REAL NOT NULL,
-      created_at TEXT DEFAULT (datetime('now'))
-    );
-  `);
-
-  await ensureColumn("events", "start_date TEXT");
-  await ensureColumn("events", "end_date TEXT");
-  await ensureColumn("events", "description TEXT DEFAULT ''");
-  await ensureColumn("events", "rating INTEGER");
-  await ensureColumn("events", "labels TEXT DEFAULT '[]'");
-  await ensureColumn("events", "visit_company TEXT DEFAULT ''");
-
-  await run(`
-    CREATE TABLE IF NOT EXISTS event_photos (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      event_id INTEGER NOT NULL,
-      file_path TEXT NOT NULL,
-      sort_order INTEGER DEFAULT 0,
-      created_at TEXT DEFAULT (datetime('now'))
-    );
-  `);
-
-  await ensureColumn("event_photos", "sort_order INTEGER DEFAULT 0");
-
-  await run(`
-    CREATE INDEX IF NOT EXISTS idx_event_photos_event_id ON event_photos(event_id);
-  `);
+  await ensureEventsAndPhotosSchema();
 
   await run(`
     CREATE TABLE IF NOT EXISTS map_positions (
@@ -95,6 +57,71 @@ async function ensureColumn(tableName: string, columnSql: string) {
   } catch {
     // Column already exists.
   }
+}
+
+async function tableExists(tableName: string): Promise<boolean> {
+  const row = (await get(`SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?`, [tableName])) as
+    | { name?: string }
+    | null;
+  return Boolean(row?.name);
+}
+
+async function createEventsTable() {
+  await run(`
+    CREATE TABLE IF NOT EXISTS events (
+      id TEXT PRIMARY KEY,
+      user_id INTEGER NOT NULL,
+      title TEXT DEFAULT '',
+      start_date TEXT,
+      end_date TEXT,
+      description TEXT DEFAULT '',
+      rating INTEGER,
+      labels TEXT DEFAULT '[]',
+      visit_company TEXT DEFAULT '',
+      lat REAL NOT NULL,
+      lng REAL NOT NULL,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+  `);
+}
+
+async function createEventPhotosTable() {
+  await run(`
+    CREATE TABLE IF NOT EXISTS event_photos (
+      id TEXT PRIMARY KEY,
+      event_id TEXT NOT NULL,
+      file_path TEXT NOT NULL,
+      sort_order INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY(event_id) REFERENCES events(id)
+    );
+  `);
+}
+
+async function ensureEventsAndPhotosSchema() {
+  const hasEventsTable = await tableExists("events");
+  if (!hasEventsTable) {
+    await createEventsTable();
+    await createEventPhotosTable();
+  } else {
+    await ensureColumn("events", "start_date TEXT");
+    await ensureColumn("events", "end_date TEXT");
+    await ensureColumn("events", "description TEXT DEFAULT ''");
+    await ensureColumn("events", "rating INTEGER");
+    await ensureColumn("events", "labels TEXT DEFAULT '[]'");
+    await ensureColumn("events", "visit_company TEXT DEFAULT ''");
+
+    const hasEventPhotosTable = await tableExists("event_photos");
+    if (!hasEventPhotosTable) {
+      await createEventPhotosTable();
+    } else {
+      await ensureColumn("event_photos", "sort_order INTEGER DEFAULT 0");
+    }
+  }
+
+  await run(`
+    CREATE INDEX IF NOT EXISTS idx_event_photos_event_id ON event_photos(event_id);
+  `);
 }
 
 function persist() {

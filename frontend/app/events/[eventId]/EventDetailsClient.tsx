@@ -173,7 +173,7 @@ export default function EventDetailsClient({ initialEvent, userId }: EventDetail
         visitCompany: values.visitCompany,
       });
 
-      const refreshedEvent = await fetchEventById(String(event.id), userId);
+      const refreshedEvent = await fetchEventById(event.id, userId);
       setEvent(refreshedEvent);
       setIsEditing(false);
       reset(mapEventToFormState(refreshedEvent));
@@ -206,7 +206,7 @@ export default function EventDetailsClient({ initialEvent, userId }: EventDetail
 
     try {
       await uploadEventPhotos(userId, event.id, files);
-      const refreshedEvent = await fetchEventById(String(event.id), userId);
+      const refreshedEvent = await fetchEventById(event.id, userId);
       setEvent(refreshedEvent);
     } catch (error) {
       if (error instanceof Error && error.message === "EVENT_NOT_FOUND") {
@@ -220,7 +220,7 @@ export default function EventDetailsClient({ initialEvent, userId }: EventDetail
     }
   }
 
-  async function handleDeletePhoto(photoId: number) {
+  async function handleDeletePhoto(photoId: string) {
     setSaveError(null);
     setIsPhotoActionRunning(true);
 
@@ -239,7 +239,7 @@ export default function EventDetailsClient({ initialEvent, userId }: EventDetail
     }
   }
 
-  async function handleSetPreviewPhoto(photoId: number) {
+  async function handleSetPreviewPhoto(photoId: string) {
     setSaveError(null);
     setIsPhotoActionRunning(true);
 

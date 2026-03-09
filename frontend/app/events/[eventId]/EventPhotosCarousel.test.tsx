@@ -14,9 +14,24 @@ describe("EventPhotosCarousel", () => {
       <EventPhotosCarousel
         eventName="River Walk"
         photos={[
-          { id: 1, path: "a.jpg", url: "/uploads/user-1/event-10/a.jpg", createdAt: "2026-03-01T10:00:00.000Z" },
-          { id: 2, path: "b.jpg", url: "/uploads/user-1/event-10/b.jpg", createdAt: "2026-03-01T10:01:00.000Z" },
-          { id: 3, path: "c.jpg", url: "/uploads/user-1/event-10/c.jpg", createdAt: "2026-03-01T10:02:00.000Z" },
+          {
+            id: "550e8400-e29b-41d4-a716-446655440011",
+            path: "a.jpg",
+            url: "/uploads/user-1/event-550e8400-e29b-41d4-a716-446655440001/a.jpg",
+            createdAt: "2026-03-01T10:00:00.000Z",
+          },
+          {
+            id: "550e8400-e29b-41d4-a716-446655440012",
+            path: "b.jpg",
+            url: "/uploads/user-1/event-550e8400-e29b-41d4-a716-446655440001/b.jpg",
+            createdAt: "2026-03-01T10:01:00.000Z",
+          },
+          {
+            id: "550e8400-e29b-41d4-a716-446655440013",
+            path: "c.jpg",
+            url: "/uploads/user-1/event-550e8400-e29b-41d4-a716-446655440001/c.jpg",
+            createdAt: "2026-03-01T10:02:00.000Z",
+          },
         ]}
       />,
     );
@@ -42,9 +57,24 @@ describe("EventPhotosCarousel", () => {
       <EventPhotosCarousel
         eventName="River Walk"
         photos={[
-          { id: 1, path: "a.jpg", url: "/uploads/user-1/event-10/a.jpg", createdAt: "2026-03-01T10:00:00.000Z" },
-          { id: 2, path: "b.jpg", url: "/uploads/user-1/event-10/b.jpg", createdAt: "2026-03-01T10:01:00.000Z" },
-          { id: 3, path: "c.jpg", url: "/uploads/user-1/event-10/c.jpg", createdAt: "2026-03-01T10:02:00.000Z" },
+          {
+            id: "550e8400-e29b-41d4-a716-446655440011",
+            path: "a.jpg",
+            url: "/uploads/user-1/event-550e8400-e29b-41d4-a716-446655440001/a.jpg",
+            createdAt: "2026-03-01T10:00:00.000Z",
+          },
+          {
+            id: "550e8400-e29b-41d4-a716-446655440012",
+            path: "b.jpg",
+            url: "/uploads/user-1/event-550e8400-e29b-41d4-a716-446655440001/b.jpg",
+            createdAt: "2026-03-01T10:01:00.000Z",
+          },
+          {
+            id: "550e8400-e29b-41d4-a716-446655440013",
+            path: "c.jpg",
+            url: "/uploads/user-1/event-550e8400-e29b-41d4-a716-446655440001/c.jpg",
+            createdAt: "2026-03-01T10:02:00.000Z",
+          },
         ]}
       />,
     );
@@ -73,8 +103,18 @@ describe("EventPhotosCarousel", () => {
       <EventPhotosCarousel
         eventName="River Walk"
         photos={[
-          { id: 1, path: "a.jpg", url: "/uploads/user-1/event-10/a.jpg", createdAt: "2026-03-01T10:00:00.000Z" },
-          { id: 2, path: "b.jpg", url: "/uploads/user-1/event-10/b.jpg", createdAt: "2026-03-01T10:01:00.000Z" },
+          {
+            id: "550e8400-e29b-41d4-a716-446655440011",
+            path: "a.jpg",
+            url: "/uploads/user-1/event-550e8400-e29b-41d4-a716-446655440001/a.jpg",
+            createdAt: "2026-03-01T10:00:00.000Z",
+          },
+          {
+            id: "550e8400-e29b-41d4-a716-446655440012",
+            path: "b.jpg",
+            url: "/uploads/user-1/event-550e8400-e29b-41d4-a716-446655440001/b.jpg",
+            createdAt: "2026-03-01T10:01:00.000Z",
+          },
         ]}
         onAddPhotos={onAddPhotos}
         onDeletePhoto={onDeletePhoto}
@@ -84,10 +124,10 @@ describe("EventPhotosCarousel", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Next photo" }));
     fireEvent.click(screen.getByRole("button", { name: "Set as preview" }));
-    expect(onSetPreviewPhoto).toHaveBeenCalledWith(2);
+    expect(onSetPreviewPhoto).toHaveBeenCalledWith("550e8400-e29b-41d4-a716-446655440012");
 
     fireEvent.click(screen.getByRole("button", { name: "Delete photo" }));
-    expect(onDeletePhoto).toHaveBeenCalledWith(2);
+    expect(onDeletePhoto).toHaveBeenCalledWith("550e8400-e29b-41d4-a716-446655440012");
 
     const input = screen.getByLabelText("Add photos") as HTMLInputElement;
     const file = new File(["content"], "new.jpg", { type: "image/jpeg" });

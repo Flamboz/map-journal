@@ -33,6 +33,7 @@ vi.mock("./EventPhotosCarousel", () => ({
 }));
 
 describe("EventDetailsClient delete flow", () => {
+  const eventId = "550e8400-e29b-41d4-a716-446655440001";
   const pushMock = vi.fn();
   const refreshMock = vi.fn();
 
@@ -47,7 +48,7 @@ describe("EventDetailsClient delete flow", () => {
     vi.mocked(fetchAllowedLabels).mockResolvedValue([]);
     vi.mocked(fetchAllowedVisitCompanies).mockResolvedValue([]);
     vi.mocked(fetchEventById).mockResolvedValue({
-      id: 10,
+      id: eventId,
       user_id: 1,
       title: "River Walk",
       name: "River Walk",
@@ -61,7 +62,7 @@ describe("EventDetailsClient delete flow", () => {
       lng: 30.52,
       created_at: "2026-03-01T10:00:00.000Z",
       photos: [],
-      samePinEventIds: [10],
+      samePinEventIds: [eventId],
     });
     vi.mocked(updateEvent).mockResolvedValue({} as Awaited<ReturnType<typeof updateEvent>>);
     vi.mocked(uploadEventPhotos).mockResolvedValue([]);
@@ -71,7 +72,7 @@ describe("EventDetailsClient delete flow", () => {
   });
 
   const initialEvent = {
-    id: 10,
+    id: eventId,
     user_id: 1,
     title: "River Walk",
     name: "River Walk",
@@ -85,7 +86,7 @@ describe("EventDetailsClient delete flow", () => {
     lng: 30.52,
     created_at: "2026-03-01T10:00:00.000Z",
     photos: [],
-    samePinEventIds: [10],
+    samePinEventIds: [eventId],
   };
 
   it("opens delete confirmation modal when user clicks delete", async () => {
@@ -105,7 +106,7 @@ describe("EventDetailsClient delete flow", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Delete" }));
 
     await waitFor(() => {
-      expect(deleteEvent).toHaveBeenCalledWith("1", 10);
+      expect(deleteEvent).toHaveBeenCalledWith("1", eventId);
       expect(pushMock).toHaveBeenCalledWith("/");
       expect(refreshMock).toHaveBeenCalled();
     });

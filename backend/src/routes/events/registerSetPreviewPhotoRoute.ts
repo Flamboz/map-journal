@@ -45,7 +45,7 @@ export function registerSetPreviewPhotoRoute(fastify: FastifyInstance) {
            WHERE event_id = ?
            ORDER BY sort_order ASC, created_at ASC, id ASC`,
           [eventId],
-        )) as Array<{ id: number }>;
+        )) as Array<{ id: string }>;
 
         const orderedPhotoIds = [photoId, ...allEventPhotos.map((photo) => photo.id).filter((id) => id !== photoId)];
         let sortOrder = 1;
@@ -60,7 +60,7 @@ export function registerSetPreviewPhotoRoute(fastify: FastifyInstance) {
            WHERE event_id = ?
            ORDER BY sort_order ASC, created_at ASC, id ASC`,
           [eventId],
-        )) as Array<{ id: number; file_path: string; created_at: string }>;
+        )) as Array<{ id: string; file_path: string; created_at: string }>;
 
         return reply.status(200).send({
           photos: orderedPhotos.map((photo) => ({

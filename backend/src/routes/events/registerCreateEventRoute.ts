@@ -1,4 +1,5 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { randomUUID } from "crypto";
 import { get, run } from "../../db/sqlite";
 import { ALLOWED_VISIT_COMPANIES, CreateEventBody, normalizeLabels, parseUserId } from "./shared";
 
@@ -47,10 +48,13 @@ export function registerCreateEventRoute(fastify: FastifyInstance) {
       }
 
       try {
-        const insertResult = (await run(
-          `INSERT INTO events (user_id, title, start_date, end_date, description, rating, labels, visit_company, lat, lng)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        const eventId = randomUUID();
+
+        await run(
+          `INSERT INTO events (id, user_id, title, start_date, end_date, description, rating, labels, visit_company, lat, lng)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
+            eventId,
             userId,
             name,
             startDate,
@@ -62,12 +66,7 @@ export function registerCreateEventRoute(fastify: FastifyInstance) {
             lat,
             lng,
           ],
-        )) as { lastID?: number };
-
-        const eventId = insertResult.lastID;
-        if (!eventId) {
-          return reply.status(500).send({ error: "SERVER_ERROR", message: "Failed to create event." });
-        }
+        );
 
         const event = await get(
           `SELECT id, user_id, title, start_date, end_date, description, rating, labels, visit_company, lat, lng, created_at

@@ -9,8 +9,8 @@ type EventPhotosCarouselProps = {
   eventName: string;
   isUpdatingPhotos?: boolean;
   onAddPhotos?: (files: File[]) => void | Promise<void>;
-  onDeletePhoto?: (photoId: number) => void | Promise<void>;
-  onSetPreviewPhoto?: (photoId: number) => void | Promise<void>;
+  onDeletePhoto?: (photoId: string) => void | Promise<void>;
+  onSetPreviewPhoto?: (photoId: string) => void | Promise<void>;
 };
 
 export default function EventPhotosCarousel({

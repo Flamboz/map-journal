@@ -23,7 +23,7 @@ vi.mock("./EventDetailsClient", () => ({
     initialEvent,
     userId,
   }: {
-    initialEvent: { id: number; title: string };
+    initialEvent: { id: string; title: string };
     userId: string;
   }) => <div data-testid="event-details-client">{`${initialEvent.id}-${initialEvent.title}-${userId}`}</div>,
 }));
@@ -34,6 +34,8 @@ describe("Event details page", () => {
   });
 
   it("passes loaded event into details client", async () => {
+    const eventId = "550e8400-e29b-41d4-a716-446655440001";
+
     vi.mocked(getServerSession).mockResolvedValue({
       user: {
         id: "1",
@@ -41,7 +43,7 @@ describe("Event details page", () => {
     } as Awaited<ReturnType<typeof getServerSession>>);
 
     vi.mocked(fetchEventById).mockResolvedValue({
-      id: 10,
+      id: eventId,
       user_id: 1,
       title: "River Walk",
       name: "River Walk",
@@ -54,21 +56,35 @@ describe("Event details page", () => {
       lat: 50.45,
       lng: 30.52,
       created_at: "2026-03-01T10:00:00.000Z",
-      samePinEventIds: [12, 10, 8],
+      samePinEventIds: [
+        "550e8400-e29b-41d4-a716-446655440003",
+        eventId,
+        "550e8400-e29b-41d4-a716-446655440002",
+      ],
       photos: [
-        { id: 1, path: "a.jpg", url: "/uploads/user-1/event-10/a.jpg", createdAt: "2026-03-01T10:00:00.000Z" },
-        { id: 2, path: "b.jpg", url: "/uploads/user-1/event-10/b.jpg", createdAt: "2026-03-01T10:01:00.000Z" },
+        {
+          id: "550e8400-e29b-41d4-a716-446655440011",
+          path: "a.jpg",
+          url: `/uploads/user-1/event-${eventId}/a.jpg`,
+          createdAt: "2026-03-01T10:00:00.000Z",
+        },
+        {
+          id: "550e8400-e29b-41d4-a716-446655440012",
+          path: "b.jpg",
+          url: `/uploads/user-1/event-${eventId}/b.jpg`,
+          createdAt: "2026-03-01T10:01:00.000Z",
+        },
       ],
     });
 
     const view = await EventDetailsPage({
-      params: Promise.resolve({ eventId: "10" }),
+      params: Promise.resolve({ eventId }),
     });
 
     render(view);
 
-    expect(fetchEventById).toHaveBeenCalledWith("10", "1");
-    expect(screen.getByTestId("event-details-client")).toHaveTextContent("10-River Walk-1");
+    expect(fetchEventById).toHaveBeenCalledWith(eventId, "1");
+    expect(screen.getByTestId("event-details-client")).toHaveTextContent(`${eventId}-River Walk-1`);
   });
 
   it("redirects to map with error when event no longer exists", async () => {
@@ -86,7 +102,7 @@ describe("Event details page", () => {
 
     await expect(
       EventDetailsPage({
-        params: Promise.resolve({ eventId: "10" }),
+        params: Promise.resolve({ eventId: "550e8400-e29b-41d4-a716-446655440001" }),
       }),
     ).rejects.toThrow("REDIRECT_TRIGGERED");
 
