@@ -103,7 +103,7 @@ describe("MapView", () => {
   it("opens preview modal when pin is clicked", async () => {
     vi.mocked(fetchUserEvents).mockResolvedValue([
       {
-        id: 20,
+        id: "00000000-0000-4000-8000-000000000020",
         user_id: 1,
         title: "River Walk",
         name: "River Walk",
@@ -116,7 +116,14 @@ describe("MapView", () => {
         lat: 50.45,
         lng: 30.52,
         created_at: "2026-03-03T10:00:00.000Z",
-        photos: [{ id: 1, path: "p.jpg", url: "/uploads/user-1/event-20/p.jpg", createdAt: "2026-03-03T10:00:00.000Z" }],
+        photos: [
+          {
+            id: "00000000-0000-4000-8000-000000000001",
+            path: "p.jpg",
+            url: "/uploads/user-1/event-20/p.jpg",
+            createdAt: "2026-03-03T10:00:00.000Z",
+          },
+        ],
       },
     ]);
 
@@ -133,7 +140,7 @@ describe("MapView", () => {
   it("groups events within 20m into one marker", async () => {
     vi.mocked(fetchUserEvents).mockResolvedValue([
       {
-        id: 30,
+        id: "00000000-0000-4000-8000-000000000030",
         user_id: 1,
         title: "Near One",
         name: "Near One",
@@ -149,7 +156,7 @@ describe("MapView", () => {
         photos: [],
       },
       {
-        id: 31,
+        id: "00000000-0000-4000-8000-000000000031",
         user_id: 1,
         title: "Near Two",
         name: "Near Two",
@@ -165,7 +172,7 @@ describe("MapView", () => {
         photos: [],
       },
       {
-        id: 32,
+        id: "00000000-0000-4000-8000-000000000032",
         user_id: 1,
         title: "Far Away",
         name: "Far Away",
@@ -193,7 +200,7 @@ describe("MapView", () => {
   it("shows carousel controls and cycles grouped events deterministically", async () => {
     vi.mocked(fetchUserEvents).mockResolvedValue([
       {
-        id: 40,
+        id: "00000000-0000-4000-8000-000000000040",
         user_id: 1,
         title: "First Grouped",
         name: "First Grouped",
@@ -206,10 +213,17 @@ describe("MapView", () => {
         lat: 50.45,
         lng: 30.52,
         created_at: "2026-03-05T10:00:00.000Z",
-        photos: [{ id: 1, path: "a.jpg", url: "/uploads/user-1/event-40/a.jpg", createdAt: "2026-03-05T10:00:00.000Z" }],
+        photos: [
+          {
+            id: "00000000-0000-4000-8000-000000000101",
+            path: "a.jpg",
+            url: "/uploads/user-1/event-40/a.jpg",
+            createdAt: "2026-03-05T10:00:00.000Z",
+          },
+        ],
       },
       {
-        id: 41,
+        id: "00000000-0000-4000-8000-000000000041",
         user_id: 1,
         title: "Second Grouped",
         name: "Second Grouped",
@@ -222,7 +236,14 @@ describe("MapView", () => {
         lat: 50.4501,
         lng: 30.52,
         created_at: "2026-03-04T10:00:00.000Z",
-        photos: [{ id: 2, path: "b.jpg", url: "/uploads/user-1/event-41/b.jpg", createdAt: "2026-03-04T10:00:00.000Z" }],
+        photos: [
+          {
+            id: "00000000-0000-4000-8000-000000000102",
+            path: "b.jpg",
+            url: "/uploads/user-1/event-41/b.jpg",
+            createdAt: "2026-03-04T10:00:00.000Z",
+          },
+        ],
       },
     ]);
 
@@ -245,7 +266,7 @@ describe("MapView", () => {
   it("renders date range, 10-star rating and preview photo", async () => {
     vi.mocked(fetchUserEvents).mockResolvedValue([
       {
-        id: 50,
+        id: "00000000-0000-4000-8000-000000000050",
         user_id: 1,
         title: "Gallery Day",
         name: "Gallery Day",
@@ -258,7 +279,14 @@ describe("MapView", () => {
         lat: 50.45,
         lng: 30.52,
         created_at: "2026-03-03T10:00:00.000Z",
-        photos: [{ id: 5, path: "c.jpg", url: "/uploads/user-1/event-50/c.jpg", createdAt: "2026-03-03T10:00:00.000Z" }],
+        photos: [
+          {
+            id: "00000000-0000-4000-8000-000000000005",
+            path: "c.jpg",
+            url: "/uploads/user-1/event-50/c.jpg",
+            createdAt: "2026-03-03T10:00:00.000Z",
+          },
+        ],
       },
     ]);
 
@@ -277,7 +305,7 @@ describe("MapView", () => {
   it("does not render rating stars when event has no rating", async () => {
     vi.mocked(fetchUserEvents).mockResolvedValue([
       {
-        id: 51,
+        id: "00000000-0000-4000-8000-000000000051",
         user_id: 1,
         title: "No Rating Event",
         name: "No Rating Event",
@@ -290,7 +318,14 @@ describe("MapView", () => {
         lat: 50.451,
         lng: 30.521,
         created_at: "2026-03-06T10:00:00.000Z",
-        photos: [{ id: 6, path: "d.jpg", url: "/uploads/user-1/event-51/d.jpg", createdAt: "2026-03-06T10:00:00.000Z" }],
+        photos: [
+          {
+            id: "00000000-0000-4000-8000-000000000006",
+            path: "d.jpg",
+            url: "/uploads/user-1/event-51/d.jpg",
+            createdAt: "2026-03-06T10:00:00.000Z",
+          },
+        ],
       },
     ]);
 
@@ -324,7 +359,7 @@ describe("MapView", () => {
 
   it("creates an event and uploads photos", async () => {
     vi.mocked(createEvent).mockResolvedValue({
-      id: 10,
+      id: "00000000-0000-4000-8000-000000000010",
       user_id: 1,
       title: "City Walk",
       name: "City Walk",
@@ -342,7 +377,7 @@ describe("MapView", () => {
 
     vi.mocked(uploadEventPhotos).mockResolvedValue([
       {
-        id: 1,
+        id: "00000000-0000-4000-8000-000000000201",
         path: "user-1/event-10/test.jpg",
         url: "/uploads/user-1/event-10/test.jpg",
         createdAt: "2026-03-04T10:00:00.000Z",
@@ -374,7 +409,11 @@ describe("MapView", () => {
           lng: 30.52,
         }),
       );
-      expect(uploadEventPhotos).toHaveBeenCalledWith("1", 10, expect.any(Array));
+      expect(uploadEventPhotos).toHaveBeenCalledWith(
+        "1",
+        "00000000-0000-4000-8000-000000000010",
+        expect.any(Array),
+      );
     });
   });
 
