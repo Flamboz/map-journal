@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../../auth.config";
 import { fetchEventById } from "../../map/api";
+import { isApiErrorCode } from "../../map/apiErrors";
 import EventDetailsClient from "./EventDetailsClient";
 
 type EventDetailsPageProps = {
@@ -23,7 +24,7 @@ export default async function EventDetailsPage({ params }: EventDetailsPageProps
   try {
     event = await fetchEventById(eventId, userId);
   } catch (error) {
-    if (error instanceof Error && error.message === "EVENT_NOT_FOUND") {
+    if (isApiErrorCode(error, "EVENT_NOT_FOUND")) {
       redirect("/?error=event-not-found");
     }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useReducer, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
@@ -16,12 +16,15 @@ import {
   updateEvent,
   uploadEventPhotos,
 } from "../../map/api";
+import { isApiErrorCode } from "../../map/apiErrors";
+import { formatLabelsText, formatVisitCompanyText } from "../../map/eventDisplay";
 import { eventDraftValidationSchema, formatEventDateRange } from "../../map/mapViewHelpers";
 import type { EventFormState } from "../../map/mapViewTypes";
 import DeleteEventConfirmationModal from "./DeleteEventConfirmationModal";
 import EventDetailsEditForm from "./EventDetailsEditForm";
 import EventDetailsReadOnlyView from "./EventDetailsReadOnlyView";
 import EventPhotosCarousel from "./EventPhotosCarousel";
+import { createInitialEventDetailsState, eventDetailsReducer } from "./eventDetailsReducer";
 
 type EventDetailsClientProps = {
   initialEvent: MapEvent;
@@ -43,19 +46,9 @@ function mapEventToFormState(event: MapEvent): EventFormState {
 
 export default function EventDetailsClient({ initialEvent, userId }: EventDetailsClientProps) {
   const router = useRouter();
-  const [event, setEvent] = useState<MapEvent>(initialEvent);
-  const [isEditing, setIsEditing] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isDeletingEvent, setIsDeletingEvent] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [isPhotoActionRunning, setIsPhotoActionRunning] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
+  const [state, dispatch] = useReducer(eventDetailsReducer, initialEvent, createInitialEventDetailsState);
   const [labelOptions, setLabelOptions] = useState<string[]>([]);
   const [visitCompanyOptions, setVisitCompanyOptions] = useState<string[]>([]);
-  const [selectedRating, setSelectedRating] = useState<number | null>(initialEvent.rating ?? null);
-  const [hoveredRating, setHoveredRating] = useState<number | null>(null);
-  const [selectedLabels, setSelectedLabels] = useState<string[]>(initialEvent.labels ?? []);
-  const [startDateMin, setStartDateMin] = useState<string>(initialEvent.startDate ?? "");
 
   const {
     register,
@@ -69,8 +62,8 @@ export default function EventDetailsClient({ initialEvent, userId }: EventDetail
     defaultValues: mapEventToFormState(initialEvent),
   });
 
-  const samePinEventIds = useMemo(() => event.samePinEventIds ?? [event.id], [event.id, event.samePinEventIds]);
-  const currentPinEventIndex = samePinEventIds.indexOf(event.id);
+  const samePinEventIds = useMemo(() => state.event.samePinEventIds ?? [state.event.id], [state.event.id, state.event.samePinEventIds]);
+  const currentPinEventIndex = samePinEventIds.indexOf(state.event.id);
   const hasPinNavigation = samePinEventIds.length > 1 && currentPinEventIndex >= 0;
   const previousPinEventId = hasPinNavigation
     ? samePinEventIds[(currentPinEventIndex - 1 + samePinEventIds.length) % samePinEventIds.length]
@@ -108,40 +101,29 @@ export default function EventDetailsClient({ initialEvent, userId }: EventDetail
   }
 
   function startEditing() {
-    setSaveError(null);
-    reset(mapEventToFormState(event));
-    setStartDateMin(event.startDate ?? "");
-    setSelectedRating(event.rating ?? null);
-    setHoveredRating(null);
-    setSelectedLabels(event.labels ?? []);
-    setIsEditing(true);
+    dispatch({ type: "START_EDIT" });
+    reset(mapEventToFormState(state.event));
   }
 
   function cancelEditing() {
-    setSaveError(null);
-    reset(mapEventToFormState(event));
-    setStartDateMin(event.startDate ?? "");
-    setSelectedRating(event.rating ?? null);
-    setHoveredRating(null);
-    setSelectedLabels(event.labels ?? []);
-    setIsEditing(false);
+    dispatch({ type: "CANCEL_EDIT" });
+    reset(mapEventToFormState(state.event));
   }
 
   function openDeleteModal() {
-    setSaveError(null);
-    setIsDeleteModalOpen(true);
+    dispatch({ type: "OPEN_DELETE_MODAL" });
   }
 
   function closeDeleteModal() {
-    if (isDeletingEvent) {
+    if (state.isDeletingEvent) {
       return;
     }
 
-    setIsDeleteModalOpen(false);
+    dispatch({ type: "CLOSE_DELETE_MODAL" });
   }
 
   function handleStartDateChange(nextStartDate: string) {
-    setStartDateMin(nextStartDate);
+    dispatch({ type: "SET_START_DATE_MIN", payload: nextStartDate });
     const currentEndDate = getValues("endDate");
 
     if (currentEndDate && nextStartDate && currentEndDate < nextStartDate) {
@@ -150,63 +132,59 @@ export default function EventDetailsClient({ initialEvent, userId }: EventDetail
   }
 
   async function confirmDeleteEvent() {
-    setSaveError(null);
-    setIsDeletingEvent(true);
+    dispatch({ type: "SET_SAVE_ERROR", payload: null });
+    dispatch({ type: "SET_DELETING_EVENT", payload: true });
 
     try {
-      await deleteEvent(userId, event.id);
+      await deleteEvent(userId, state.event.id);
       router.push("/");
       router.refresh();
     } catch (error) {
-      if (error instanceof Error && error.message === "EVENT_NOT_FOUND") {
+      if (isApiErrorCode(error, "EVENT_NOT_FOUND")) {
         redirectMissingEvent();
         return;
       }
 
-      setSaveError("Unable to delete event. Please try again.");
-      setIsDeleteModalOpen(false);
+      dispatch({ type: "SET_SAVE_ERROR", payload: "Unable to delete event. Please try again." });
+      dispatch({ type: "CLOSE_DELETE_MODAL" });
     } finally {
-      setIsDeletingEvent(false);
+      dispatch({ type: "SET_DELETING_EVENT", payload: false });
     }
   }
 
   async function saveChanges(values: EventFormState) {
-    setSaveError(null);
-    setIsSaving(true);
+    dispatch({ type: "SET_SAVE_ERROR", payload: null });
+    dispatch({ type: "SET_SAVING", payload: true });
 
     try {
       const updatedEvent = await updateEvent({
         userId,
-        eventId: event.id,
+        eventId: state.event.id,
         name: values.name.trim(),
         startDate: values.startDate,
         endDate: values.endDate || undefined,
         description: values.description.trim(),
-        rating: selectedRating,
-        labels: selectedLabels,
+        rating: state.selectedRating,
+        labels: state.selectedLabels,
         visitCompany: values.visitCompany,
       });
 
-      const refreshedEvent = await fetchEventById(event.id, userId);
-      setEvent(refreshedEvent);
-      setIsEditing(false);
+      const refreshedEvent = await fetchEventById(state.event.id, userId);
+      dispatch({ type: "SAVE_SUCCESS", payload: refreshedEvent });
       reset(mapEventToFormState(refreshedEvent));
-      setSelectedRating(refreshedEvent.rating ?? null);
-      setSelectedLabels(refreshedEvent.labels ?? []);
-      setHoveredRating(null);
 
       if (!updatedEvent) {
-        setSaveError("Unable to save event. Please try again.");
+        dispatch({ type: "SET_SAVE_ERROR", payload: "Unable to save event. Please try again." });
       }
     } catch (error) {
-      if (error instanceof Error && error.message === "EVENT_NOT_FOUND") {
+      if (isApiErrorCode(error, "EVENT_NOT_FOUND")) {
         redirectMissingEvent();
         return;
       }
 
-      setSaveError("Unable to save event. Please try again.");
+      dispatch({ type: "SET_SAVE_ERROR", payload: "Unable to save event. Please try again." });
     } finally {
-      setIsSaving(false);
+      dispatch({ type: "SET_SAVING", payload: false });
     }
   }
 
@@ -215,66 +193,66 @@ export default function EventDetailsClient({ initialEvent, userId }: EventDetail
       return;
     }
 
-    setSaveError(null);
-    setIsPhotoActionRunning(true);
+    dispatch({ type: "SET_SAVE_ERROR", payload: null });
+    dispatch({ type: "SET_PHOTO_ACTION_RUNNING", payload: true });
 
     try {
-      await uploadEventPhotos(userId, event.id, files);
-      const refreshedEvent = await fetchEventById(event.id, userId);
-      setEvent(refreshedEvent);
+      await uploadEventPhotos(userId, state.event.id, files);
+      const refreshedEvent = await fetchEventById(state.event.id, userId);
+      dispatch({ type: "SET_EVENT", payload: refreshedEvent });
     } catch (error) {
-      if (error instanceof Error && error.message === "EVENT_NOT_FOUND") {
+      if (isApiErrorCode(error, "EVENT_NOT_FOUND")) {
         redirectMissingEvent();
         return;
       }
 
-      setSaveError("Unable to update photos. Please try again.");
+      dispatch({ type: "SET_SAVE_ERROR", payload: "Unable to update photos. Please try again." });
     } finally {
-      setIsPhotoActionRunning(false);
+      dispatch({ type: "SET_PHOTO_ACTION_RUNNING", payload: false });
     }
   }
 
   async function handleDeletePhoto(photoId: string) {
-    setSaveError(null);
-    setIsPhotoActionRunning(true);
+    dispatch({ type: "SET_SAVE_ERROR", payload: null });
+    dispatch({ type: "SET_PHOTO_ACTION_RUNNING", payload: true });
 
     try {
-      const photos = await deleteEventPhoto(userId, event.id, photoId);
-      setEvent((previous) => ({ ...previous, photos }));
+      const photos = await deleteEventPhoto(userId, state.event.id, photoId);
+      dispatch({ type: "SET_EVENT", payload: { ...state.event, photos } });
     } catch (error) {
-      if (error instanceof Error && error.message === "EVENT_NOT_FOUND") {
+      if (isApiErrorCode(error, "EVENT_NOT_FOUND")) {
         redirectMissingEvent();
         return;
       }
 
-      setSaveError("Unable to update photos. Please try again.");
+      dispatch({ type: "SET_SAVE_ERROR", payload: "Unable to update photos. Please try again." });
     } finally {
-      setIsPhotoActionRunning(false);
+      dispatch({ type: "SET_PHOTO_ACTION_RUNNING", payload: false });
     }
   }
 
   async function handleSetPreviewPhoto(photoId: string) {
-    setSaveError(null);
-    setIsPhotoActionRunning(true);
+    dispatch({ type: "SET_SAVE_ERROR", payload: null });
+    dispatch({ type: "SET_PHOTO_ACTION_RUNNING", payload: true });
 
     try {
-      const photos = await setEventPreviewPhoto(userId, event.id, photoId);
-      setEvent((previous) => ({ ...previous, photos }));
+      const photos = await setEventPreviewPhoto(userId, state.event.id, photoId);
+      dispatch({ type: "SET_EVENT", payload: { ...state.event, photos } });
     } catch (error) {
-      if (error instanceof Error && error.message === "EVENT_NOT_FOUND") {
+      if (isApiErrorCode(error, "EVENT_NOT_FOUND")) {
         redirectMissingEvent();
         return;
       }
 
-      setSaveError("Unable to update photos. Please try again.");
+      dispatch({ type: "SET_SAVE_ERROR", payload: "Unable to update photos. Please try again." });
     } finally {
-      setIsPhotoActionRunning(false);
+      dispatch({ type: "SET_PHOTO_ACTION_RUNNING", payload: false });
     }
   }
 
-  const dateText = formatEventDateRange(event.startDate, event.endDate) || "None";
-  const labelsText = event.labels && event.labels.length > 0 ? event.labels.join(", ") : "None";
-  const visitCompanyText = event.visitCompany?.trim() ? event.visitCompany : "None";
+  const dateText = formatEventDateRange(state.event.startDate, state.event.endDate) || "None";
+  const labelsText = formatLabelsText(state.event.labels);
+  const visitCompanyText = formatVisitCompanyText(state.event.visitCompany);
 
   return (
     <section className="mx-auto w-full max-w-3xl space-y-6 p-6">
@@ -308,53 +286,53 @@ export default function EventDetailsClient({ initialEvent, userId }: EventDetail
       )}
 
       <EventPhotosCarousel
-        photos={event.photos ?? []}
-        eventName={event.name ?? event.title}
-        isUpdatingPhotos={isEditing ? isPhotoActionRunning || isSaving : false}
-        onAddPhotos={isEditing ? handleAddPhotos : undefined}
-        onDeletePhoto={isEditing ? handleDeletePhoto : undefined}
-        onSetPreviewPhoto={isEditing ? handleSetPreviewPhoto : undefined}
+        photos={state.event.photos ?? []}
+        eventName={state.event.name ?? state.event.title}
+        isUpdatingPhotos={state.isEditing ? state.isPhotoActionRunning || state.isSaving : false}
+        onAddPhotos={state.isEditing ? handleAddPhotos : undefined}
+        onDeletePhoto={state.isEditing ? handleDeletePhoto : undefined}
+        onSetPreviewPhoto={state.isEditing ? handleSetPreviewPhoto : undefined}
       />
 
-      {!isEditing && (
+      {!state.isEditing && (
         <>
           <EventDetailsReadOnlyView
-            event={event}
+            event={state.event}
             dateText={dateText}
             labelsText={labelsText}
             visitCompanyText={visitCompanyText}
-            isDeletingEvent={isDeletingEvent}
+            isDeletingEvent={state.isDeletingEvent}
             onStartEditing={startEditing}
             onOpenDeleteModal={openDeleteModal}
           />
         </>
       )}
 
-      {isEditing && (
+      {state.isEditing && (
         <EventDetailsEditForm
           register={register}
           errors={errors}
           labelOptions={labelOptions}
           visitCompanyOptions={visitCompanyOptions}
-          selectedLabels={selectedLabels}
-          setSelectedLabels={setSelectedLabels}
-          selectedRating={selectedRating}
-          setSelectedRating={setSelectedRating}
-          hoveredRating={hoveredRating}
-          setHoveredRating={setHoveredRating}
-          startDateMin={startDateMin}
+          selectedLabels={state.selectedLabels}
+          setSelectedLabels={(labels) => dispatch({ type: "SET_SELECTED_LABELS", payload: labels })}
+          selectedRating={state.selectedRating}
+          setSelectedRating={(rating) => dispatch({ type: "SET_SELECTED_RATING", payload: rating })}
+          hoveredRating={state.hoveredRating}
+          setHoveredRating={(rating) => dispatch({ type: "SET_HOVERED_RATING", payload: rating })}
+          startDateMin={state.startDateMin}
           onStartDateChange={handleStartDateChange}
-          saveError={saveError}
-          isSaving={isSaving}
-          isPhotoActionRunning={isPhotoActionRunning}
+          saveError={state.saveError}
+          isSaving={state.isSaving}
+          isPhotoActionRunning={state.isPhotoActionRunning}
           onCancel={cancelEditing}
           onSubmit={handleSubmit(saveChanges)}
         />
       )}
 
-      {isDeleteModalOpen && (
+      {state.isDeleteModalOpen && (
         <DeleteEventConfirmationModal
-          isDeletingEvent={isDeletingEvent}
+          isDeletingEvent={state.isDeletingEvent}
           onCancel={closeDeleteModal}
           onConfirm={confirmDeleteEvent}
         />

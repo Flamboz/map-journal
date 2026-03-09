@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import EventDetailsPage from "./page";
 import { getServerSession } from "next-auth";
 import { fetchEventById } from "../../map/api";
+import { createApiClientError } from "../../map/apiErrors";
 import { redirect } from "next/navigation";
 
 vi.mock("next/navigation", () => ({
@@ -98,7 +99,7 @@ describe("Event details page", () => {
       },
     } as Awaited<ReturnType<typeof getServerSession>>);
 
-    vi.mocked(fetchEventById).mockRejectedValue(new Error("EVENT_NOT_FOUND"));
+    vi.mocked(fetchEventById).mockRejectedValue(createApiClientError("EVENT_NOT_FOUND"));
 
     vi.mocked(redirect).mockImplementation(() => {
       throw new Error("REDIRECT_TRIGGERED");

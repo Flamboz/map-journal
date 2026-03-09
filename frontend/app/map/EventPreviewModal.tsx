@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import StarRating from "../components/StarRating";
+import { getSafeRating } from "./eventDisplay";
 import { formatEventDateRange } from "./mapViewHelpers";
 import type { MapEvent } from "./api";
 
@@ -30,8 +31,7 @@ export function EventPreviewModal({ events, currentIndex, onClose, onPrevious, o
   const previousPhotoUrl = previousEvent ? getPreviewPhotoUrl(previousEvent) : "";
   const currentPhotoUrl = getPreviewPhotoUrl(currentEvent);
   const nextPhotoUrl = nextEvent ? getPreviewPhotoUrl(nextEvent) : "";
-  const ratingValue = currentEvent.rating;
-  const safeRating = typeof ratingValue === "number" && ratingValue > 0 ? Math.max(0, Math.min(10, ratingValue)) : 0;
+  const safeRating = getSafeRating(currentEvent.rating);
   const hasRating = safeRating > 0;
 
   return (

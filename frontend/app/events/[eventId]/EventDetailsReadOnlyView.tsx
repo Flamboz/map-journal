@@ -1,5 +1,6 @@
 import type { MapEvent } from "../../map/api";
 import StarRating from "../../components/StarRating";
+import { formatRatingText, getSafeRating } from "../../map/eventDisplay";
 
 type EventDetailsReadOnlyViewProps = {
   event: MapEvent;
@@ -10,19 +11,6 @@ type EventDetailsReadOnlyViewProps = {
   onStartEditing: () => void;
   onOpenDeleteModal: () => void;
 };
-
-function buildRatingText(rating?: number | null): string {
-  const safeRating = typeof rating === "number" && rating > 0 ? Math.min(10, Math.max(0, rating)) : 0;
-  if (safeRating === 0) {
-    return "Not rated";
-  }
-
-  return `${safeRating}/10`;
-}
-
-function getSafeRating(rating?: number | null): number {
-  return typeof rating === "number" && rating > 0 ? Math.min(10, Math.max(0, rating)) : 0;
-}
 
 export default function EventDetailsReadOnlyView({
   event,
@@ -57,7 +45,7 @@ export default function EventDetailsReadOnlyView({
           <p className="text-sm font-medium text-gray-500">Rating</p>
           {safeRating === 0 ? (
             <p aria-label="Event rating" className="text-base text-gray-900">
-              {buildRatingText(event.rating)}
+              {formatRatingText(event.rating)}
             </p>
           ) : (
             <StarRating

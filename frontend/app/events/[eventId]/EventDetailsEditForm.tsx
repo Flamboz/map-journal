@@ -1,5 +1,12 @@
 import type { FieldErrors, UseFormRegister } from "react-hook-form";
 import StarRating from "../../components/StarRating";
+import {
+  EventDateRangeFields,
+  EventDescriptionField,
+  EventLabelsField,
+  EventNameField,
+  EventVisitCompanyField,
+} from "../../components/EventFormFields";
 import type { EventFormState } from "../../map/mapViewTypes";
 
 type EventDetailsEditFormProps = {
@@ -43,58 +50,16 @@ export default function EventDetailsEditForm({
 }: EventDetailsEditFormProps) {
   return (
     <form className="space-y-4 rounded-lg border border-gray-200 bg-white p-5" onSubmit={onSubmit}>
-      <div>
-        <label className="mb-1 block text-sm font-medium text-slate-800" htmlFor="event-name">
-          Name *
-        </label>
-        <input id="event-name" {...register("name")} className="w-full rounded border border-slate-300 px-3 py-2 text-sm text-slate-900" />
-        {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>}
-      </div>
+      <EventNameField register={register} errors={errors} />
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <div>
-          <label className="mb-1 block text-sm font-medium text-slate-800" htmlFor="event-start-date">
-            Date *
-          </label>
-          <input
-            id="event-start-date"
-            type="date"
-            lang="en-GB"
-            {...register("startDate", {
-              onChange: (event) => onStartDateChange(event.target.value),
-            })}
-            className="w-full rounded border border-slate-300 px-3 py-2 text-sm text-slate-900"
-          />
-          {errors.startDate && <p className="mt-1 text-sm text-red-600">{errors.startDate.message}</p>}
-        </div>
+      <EventDateRangeFields
+        register={register}
+        errors={errors}
+        startDateMin={startDateMin}
+        onStartDateChange={onStartDateChange}
+      />
 
-        <div>
-          <label className="mb-1 block text-sm font-medium text-slate-800" htmlFor="event-end-date">
-            End date (optional)
-          </label>
-          <input
-            id="event-end-date"
-            type="date"
-            lang="en-GB"
-            min={startDateMin || undefined}
-            {...register("endDate")}
-            className="w-full rounded border border-slate-300 px-3 py-2 text-sm text-slate-900"
-          />
-          {errors.endDate && <p className="mt-1 text-sm text-red-600">{errors.endDate.message}</p>}
-        </div>
-      </div>
-
-      <div>
-        <label className="mb-1 block text-sm font-medium text-slate-800" htmlFor="event-description">
-          Description
-        </label>
-        <textarea
-          id="event-description"
-          {...register("description")}
-          rows={3}
-          className="w-full rounded border border-slate-300 px-3 py-2 text-sm text-slate-900"
-        />
-      </div>
+      <EventDescriptionField register={register} />
 
       <div>
         <p className="mb-1 text-sm font-medium text-slate-800">Rating</p>
@@ -107,48 +72,13 @@ export default function EventDetailsEditForm({
         />
       </div>
 
-      <div>
-        <p className="mb-1 text-sm font-medium text-slate-800">Labels</p>
-        <div className="grid grid-cols-2 gap-2">
-          {labelOptions.map((label) => {
-            const isChecked = selectedLabels.includes(label);
+      <EventLabelsField
+        labelOptions={labelOptions}
+        selectedLabels={selectedLabels}
+        onLabelsChange={setSelectedLabels}
+      />
 
-            return (
-              <label key={label} className="flex items-center gap-2 text-sm text-slate-700">
-                <input
-                  type="checkbox"
-                  checked={isChecked}
-                  onChange={(nextEvent) => {
-                    const nextLabels = nextEvent.target.checked
-                      ? [...selectedLabels, label]
-                      : selectedLabels.filter((currentLabel) => currentLabel !== label);
-                    setSelectedLabels(nextLabels);
-                  }}
-                />
-                {label}
-              </label>
-            );
-          })}
-        </div>
-      </div>
-
-      <div>
-        <label className="mb-1 block text-sm font-medium text-slate-800" htmlFor="event-visit-company">
-          Visit company
-        </label>
-        <select
-          id="event-visit-company"
-          {...register("visitCompany")}
-          className="w-full rounded border border-slate-300 px-3 py-2 text-sm text-slate-900"
-        >
-          <option value="">Select</option>
-          {visitCompanyOptions.map((option) => (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ))}
-        </select>
-      </div>
+      <EventVisitCompanyField register={register} visitCompanyOptions={visitCompanyOptions} />
 
       {saveError && <p className="text-sm text-red-600">{saveError}</p>}
 

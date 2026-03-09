@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import EventDetailsClient from "./EventDetailsClient";
 import { useRouter } from "next/navigation";
+import { createApiClientError } from "../../map/apiErrors";
 import {
   deleteEvent,
   fetchAllowedLabels,
@@ -29,19 +30,34 @@ vi.mock("../../map/api", () => ({
 }));
 
 vi.mock("./EventPhotosCarousel", () => ({
-  default: () => <div data-testid="event-photos-carousel" />,
+  default: ({
+    onAddPhotos,
+  }: {
+    onAddPhotos?: (files: File[]) => void | Promise<void>;
+  }) => (
+    <div data-testid="event-photos-carousel">
+      <button
+        type="button"
+        onClick={() => onAddPhotos?.([new File(["demo"], "photo.png", { type: "image/png" })])}
+        disabled={!onAddPhotos}
+      >
+        Mock add photos
+      </button>
+    </div>
+  ),
 }));
 
 describe("EventDetailsClient delete flow", () => {
   const eventId = "550e8400-e29b-41d4-a716-446655440001";
   const pushMock = vi.fn();
+  const replaceMock = vi.fn();
   const refreshMock = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(useRouter).mockReturnValue({
       push: pushMock,
-      replace: vi.fn(),
+      replace: replaceMock,
       refresh: refreshMock,
     } as unknown as ReturnType<typeof useRouter>);
 
@@ -109,6 +125,43 @@ describe("EventDetailsClient delete flow", () => {
       expect(deleteEvent).toHaveBeenCalledWith("1", eventId);
       expect(pushMock).toHaveBeenCalledWith("/");
       expect(refreshMock).toHaveBeenCalled();
+    });
+  });
+
+  it("redirects to map when save hits EVENT_NOT_FOUND", async () => {
+    vi.mocked(updateEvent).mockRejectedValue(createApiClientError("EVENT_NOT_FOUND"));
+
+    render(<EventDetailsClient initialEvent={initialEvent} userId="1" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Edit event" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+
+    await waitFor(() => {
+      expect(replaceMock).toHaveBeenCalledWith("/?error=event-not-found");
+    });
+  });
+
+  it("shows save error when update fails for non-not-found reasons", async () => {
+    vi.mocked(updateEvent).mockRejectedValue(createApiClientError("EVENT_UPDATE_FAILED"));
+
+    render(<EventDetailsClient initialEvent={initialEvent} userId="1" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Edit event" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+
+    expect(await screen.findByText("Unable to save event. Please try again.")).toBeInTheDocument();
+  });
+
+  it("redirects when adding photos returns EVENT_NOT_FOUND", async () => {
+    vi.mocked(uploadEventPhotos).mockRejectedValue(createApiClientError("EVENT_NOT_FOUND"));
+
+    render(<EventDetailsClient initialEvent={initialEvent} userId="1" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Edit event" }));
+    fireEvent.click(screen.getByRole("button", { name: "Mock add photos" }));
+
+    await waitFor(() => {
+      expect(replaceMock).toHaveBeenCalledWith("/?error=event-not-found");
     });
   });
 });
