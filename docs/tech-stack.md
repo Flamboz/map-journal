@@ -1,10 +1,10 @@
 # Tech Stack
 
-- Frontend: Next.js (App Router) with React 19 and TypeScript
-- Backend: Fastify 5.x
-- State: Redux Toolkit
-- Styling: Tailwind CSS + Radix UI primitives
-- Forms/Validation: React Hook Form + Zod
-- Database: SQLite
-- Testing: React Testing Library
-- Tooling: pnpm, ESLint, TypeScript (strict)
+- Frontend: Next.js (App Router) with React 19 and TypeScript (strict)
+- Backend: Fastify 5.x with TypeScript
+- State: Redux Toolkit for shared state + React local state hooks
+- Styling: Tailwind CSS
+- Forms and validation: React Hook Form + Zod
+- Database: SQLite powered by `sql.js`
+- Testing: Vitest + React Testing Library (frontend), Vitest for backend tests
+- Tooling: pnpm, ESLint, TypeScript
