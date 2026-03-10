@@ -3,6 +3,14 @@ import { buildApiUrl, normalizeEvent } from "./apiClient";
 import { createApiClientError } from "./apiErrors";
 import type { CreateEventInput, LastMapPosition, MapEvent, UpdateEventInput } from "./apiTypes";
 
+export type EventSearchFilters = {
+  search?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  labels?: string[];
+  visitCompany?: string;
+};
+
 export async function fetchLastMapPosition(userId: string): Promise<LastMapPosition | null> {
   const response = await fetch(buildApiUrl("/map-position", { userId }));
   if (!response.ok) {
@@ -16,8 +24,17 @@ export async function fetchLastMapPosition(userId: string): Promise<LastMapPosit
   return data.lastMapPosition ?? null;
 }
 
-export async function fetchUserEvents(userId: string): Promise<MapEvent[]> {
-  const response = await fetch(buildApiUrl("/events", { userId }));
+export async function fetchUserEvents(userId: string, filters?: EventSearchFilters): Promise<MapEvent[]> {
+  const response = await fetch(
+    buildApiUrl("/events", {
+      userId,
+      search: filters?.search,
+      dateFrom: filters?.dateFrom,
+      dateTo: filters?.dateTo,
+      labels: filters?.labels,
+      visitCompany: filters?.visitCompany,
+    }),
+  );
   if (!response.ok) {
     throw createApiClientError("EVENTS_FETCH_FAILED");
   }

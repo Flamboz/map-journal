@@ -12,6 +12,7 @@ import {
 } from "./mapViewConstants";
 import { EventDraftForm } from "./EventDraftForm";
 import { EventPreviewModal } from "./EventPreviewModal";
+import { EventSearchFilterPanel } from "./EventSearchFilterPanel";
 import { PlaceSearchPanel } from "./PlaceSearchPanel";
 import { groupEventsByDistance } from "./mapViewHelpers";
 import { MapClickHandler, RecenterMap } from "./MapLeafletHelpers";
@@ -74,6 +75,26 @@ export default function MapView({ initialError = null }: MapViewProps) {
   return (
     <section className="relative h-[calc(100vh-57px)] w-full" aria-label="map-view">
       <PlaceSearchPanel centerState={centerState} onPlaceSelect={handlePlaceSelect} />
+      <EventSearchFilterPanel
+        userId={userId}
+        labelOptions={labelOptions}
+        visitCompanyOptions={visitCompanyOptions}
+        onResultsLoaded={(nextEvents) => {
+          clearSelection();
+          setEvents(nextEvents);
+        }}
+        onResultClick={(event) => {
+          setCenterState((previous) => ({
+            center: [event.lat, event.lng],
+            zoom: previous.zoom,
+          }));
+
+          const groupIndex = groupedEvents.findIndex((group) => group.events.some((groupEvent) => groupEvent.id === event.id));
+          if (groupIndex >= 0) {
+            openGroup(groupIndex);
+          }
+        }}
+      />
 
       <MapContainer center={centerState.center} zoom={centerState.zoom} className="h-full w-full" scrollWheelZoom zoomControl={false}>
         <TileLayer

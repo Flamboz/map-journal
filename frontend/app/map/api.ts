@@ -10,6 +10,7 @@ export type {
 export {
   createEvent,
   deleteEvent,
+  type EventSearchFilters,
   fetchEventById,
   fetchLastMapPosition,
   fetchUserEvents,

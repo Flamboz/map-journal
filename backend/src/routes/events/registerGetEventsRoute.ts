@@ -1,6 +1,28 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { all } from "../../db/sqlite";
-import { EventPhotoRow, EventRow, groupPhotosByEvent, normalizeEventRows, parseUserId, UserQuerystring } from "./shared";
+import {
+  ALLOWED_LABEL_VALUES,
+  ALLOWED_VISIT_COMPANIES,
+  EventPhotoRow,
+  EventRow,
+  groupPhotosByEvent,
+  normalizeEventRows,
+  parseUserId,
+  UserQuerystring,
+} from "./shared";
+
+function normalizeQueryLabels(rawLabels: string | string[] | undefined): string[] {
+  if (!rawLabels) {
+    return [];
+  }
+
+  const allowedLabels = new Set(ALLOWED_LABEL_VALUES);
+  const labels = (Array.isArray(rawLabels) ? rawLabels : rawLabels.split(","))
+    .map((label) => label.trim())
+    .filter((label) => allowedLabels.has(label));
+
+  return Array.from(new Set(labels));
+}
 
 export function registerGetEventsRoute(fastify: FastifyInstance) {
   fastify.get(
@@ -12,9 +34,53 @@ export function registerGetEventsRoute(fastify: FastifyInstance) {
       }
 
       try {
+        const whereClauses: string[] = ["user_id = ?"];
+        const params: Array<number | string> = [userId];
+        const trimmedSearch = request.query.search?.trim();
+
+        if (trimmedSearch) {
+          whereClauses.push("(instr(title, ?) > 0 OR instr(COALESCE(description, ''), ?) > 0)");
+          params.push(trimmedSearch, trimmedSearch);
+        }
+
+        const labels = normalizeQueryLabels(request.query.labels);
+        if (labels.length > 0) {
+          const labelWhere = labels.map(() => "labels LIKE ?").join(" OR ");
+          whereClauses.push(`(${labelWhere})`);
+
+          for (const label of labels) {
+            params.push(`%\"${label}\"%`);
+          }
+        }
+
+        const visitCompany = request.query.visitCompany?.trim();
+        if (visitCompany && ALLOWED_VISIT_COMPANIES.has(visitCompany)) {
+          whereClauses.push("visit_company = ?");
+          params.push(visitCompany);
+        }
+
+        const dateFrom = request.query.dateFrom?.trim();
+        const dateTo = request.query.dateTo?.trim();
+        if (dateFrom || dateTo) {
+          whereClauses.push("start_date IS NOT NULL");
+
+          if (dateTo) {
+            whereClauses.push("start_date <= ?");
+            params.push(dateTo);
+          }
+
+          if (dateFrom) {
+            whereClauses.push("COALESCE(end_date, start_date) >= ?");
+            params.push(dateFrom);
+          }
+        }
+
         const events = (await all(
-          "SELECT id, user_id, title, start_date, end_date, description, rating, labels, visit_company, lat, lng, created_at FROM events WHERE user_id = ? ORDER BY created_at DESC, id DESC",
-          [userId],
+          `SELECT id, user_id, title, start_date, end_date, description, rating, labels, visit_company, lat, lng, created_at
+           FROM events
+           WHERE ${whereClauses.join(" AND ")}
+           ORDER BY created_at DESC, id DESC`,
+          params,
         )) as EventRow[];
 
         const eventIds = events.map((event) => event.id);

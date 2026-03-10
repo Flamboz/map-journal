@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import MapView from "./MapView";
 import { useSession } from "next-auth/react";
@@ -436,7 +436,9 @@ describe("MapView", () => {
     fireEvent.change(nameInput, { target: { value: "Draft title" } });
 
     fireEvent.change(screen.getByLabelText("Search place"), { target: { value: "Eiffel Tower" } });
-    fireEvent.click(screen.getByRole("button", { name: "Search" }));
+    const placeSearchForm = screen.getByLabelText("Search place").closest("form");
+    expect(placeSearchForm).not.toBeNull();
+    fireEvent.click(within(placeSearchForm as HTMLFormElement).getByRole("button", { name: "Search" }));
 
     const placeButton = await screen.findByRole("button", { name: "Eiffel Tower, Paris, France" });
     fireEvent.click(placeButton);
@@ -448,5 +450,74 @@ describe("MapView", () => {
 
     expect((screen.getByLabelText("Name *") as HTMLInputElement).value).toBe("Draft title");
     expect(screen.getByText("48.8584,2.2945")).toBeInTheDocument();
+  });
+
+  it("runs combined event filters only after Search click", async () => {
+    vi.mocked(fetchAllowedLabels).mockResolvedValue(["Cafe", "Trip"]);
+    vi.mocked(fetchAllowedVisitCompanies).mockResolvedValue(["Solo", "Friends"]);
+    vi.mocked(fetchUserEvents)
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([
+        {
+          id: "00000000-0000-4000-8000-000000000060",
+          user_id: 1,
+          title: "Cafe Morning",
+          name: "Cafe Morning",
+          startDate: "2026-03-07",
+          endDate: "2026-03-08",
+          description: "With friends",
+          rating: 8,
+          labels: ["Cafe", "Trip"],
+          visitCompany: "Friends",
+          lat: 50.4,
+          lng: 30.5,
+          created_at: "2026-03-07T10:00:00.000Z",
+          photos: [],
+        },
+      ]);
+
+    render(<MapView />);
+
+    await waitFor(() => {
+      expect(fetchUserEvents).toHaveBeenCalledTimes(1);
+      expect(fetchUserEvents).toHaveBeenCalledWith("1");
+    });
+
+    fireEvent.change(screen.getByLabelText("Text"), { target: { value: "Cafe" } });
+    fireEvent.click(screen.getByRole("button", { name: "Show filters" }));
+    fireEvent.change(screen.getByLabelText("Date from"), { target: { value: "2026-03-01" } });
+    fireEvent.change(screen.getByLabelText("Date to"), { target: { value: "2026-03-10" } });
+    fireEvent.change(screen.getByLabelText("Visit company"), { target: { value: "Friends" } });
+
+    fireEvent.click(screen.getByLabelText("Cafe"));
+    fireEvent.click(screen.getByLabelText("Trip"));
+
+    expect(fetchUserEvents).toHaveBeenCalledTimes(1);
+
+    const eventSearchPanel = screen.getByText("Search events").closest("aside");
+    expect(eventSearchPanel).not.toBeNull();
+    fireEvent.click(within(eventSearchPanel as HTMLElement).getByRole("button", { name: "Search" }));
+
+    await waitFor(() => {
+      expect(fetchUserEvents).toHaveBeenCalledTimes(2);
+      expect(fetchUserEvents).toHaveBeenLastCalledWith("1", {
+        search: "Cafe",
+        dateFrom: "2026-03-01",
+        dateTo: "2026-03-10",
+        labels: ["Cafe", "Trip"],
+        visitCompany: "Friends",
+      });
+      expect(screen.getAllByTestId("marker")).toHaveLength(1);
+    });
+
+    const eventResultsList = screen.getByLabelText("Event search results");
+    expect(eventResultsList).toBeInTheDocument();
+    expect(within(eventResultsList).getByText("Cafe Morning")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Open event Cafe Morning" }));
+
+    const previewDialog = await screen.findByRole("dialog");
+    expect(previewDialog).toBeInTheDocument();
+    expect(within(previewDialog).getByText("Cafe Morning")).toBeInTheDocument();
   });
 });

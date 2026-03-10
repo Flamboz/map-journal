@@ -1,5 +1,10 @@
 export type UserQuerystring = {
   userId?: string;
+  search?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  labels?: string | string[];
+  visitCompany?: string;
 };
 
 export type CreateEventBody = {
