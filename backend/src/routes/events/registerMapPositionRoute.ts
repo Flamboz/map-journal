@@ -1,5 +1,6 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { get } from "../../db/sqlite";
+import { sendInvalidUser, sendServerError } from "../../utils/httpErrors";
 import { DEFAULT_PIN_ZOOM, parseUserId, UserQuerystring } from "./shared";
 
 export function registerMapPositionRoute(fastify: FastifyInstance) {
@@ -8,7 +9,7 @@ export function registerMapPositionRoute(fastify: FastifyInstance) {
     async (request: FastifyRequest<{ Querystring: UserQuerystring }>, reply: FastifyReply) => {
       const userId = parseUserId(request.query.userId);
       if (!userId) {
-        return reply.status(400).send({ error: "INVALID_USER", message: "A valid userId is required." });
+        return sendInvalidUser(reply);
       }
 
       try {
@@ -33,8 +34,7 @@ export function registerMapPositionRoute(fastify: FastifyInstance) {
 
         return reply.status(200).send({ lastMapPosition: storedPosition ?? null });
       } catch (error) {
-        request.log.error(error);
-        return reply.status(500).send({ error: "SERVER_ERROR", message: "Internal server error" });
+        return sendServerError(request, reply, error);
       }
     },
   );

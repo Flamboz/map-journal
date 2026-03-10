@@ -1,61 +1,61 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
-import { get, run } from "../db/sqlite";
-import { hashPassword, verifyPassword } from "../auth/hash";
+import { sendError, sendServerError } from "../utils/httpErrors";
+import { isStrongPassword, isValidEmail, normalizeEmail } from "../utils/validators";
+import { authenticateUser, registerUser } from "../services/authService";
+import { loginSchema, registerSchema } from "./schemas/authSchemas";
 
 export default async function authRoutes(fastify: FastifyInstance) {
   fastify.post(
     "/register",
+    { schema: registerSchema },
     async (request: FastifyRequest<{ Body: { email?: string; password?: string } }>, reply: FastifyReply) => {
       const body = request.body;
-      const email = (body?.email || "").toLowerCase().trim();
-      const password = body?.password || "";
+      const email = normalizeEmail(body?.email);
+      const password = body?.password;
 
-    if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
-      return reply.status(400).send({ error: "INVALID_EMAIL", message: "Please provide a valid email address." });
-    }
-    if (typeof password !== "string" || password.length < 8) {
-      return reply.status(400).send({ error: "WEAK_PASSWORD", message: "Password must be at least 8 characters." });
-    }
+      if (!email || !isValidEmail(email)) {
+        return sendError(reply, 400, "INVALID_EMAIL", "Please provide a valid email address.");
+      }
 
-    try {
-      const existing = await get("SELECT id FROM users WHERE email = ?", [email]);
-      if (existing) return reply.status(409).send({ error: "USER_EXISTS", message: "An account with this email already exists." });
+      if (!isStrongPassword(password)) {
+        return sendError(reply, 400, "WEAK_PASSWORD", "Password must be at least 8 characters.");
+      }
 
-      const password_hash = await hashPassword(password);
-      const res = (await run("INSERT INTO users (email, password_hash) VALUES (?, ?)", [
-        email,
-        password_hash,
-      ])) as { lastID?: number };
-      const userId = res.lastID ?? null;
-      await run("INSERT INTO profiles (user_id) VALUES (?)", [userId]);
+      try {
+        const user = await registerUser(email, password);
+        if (!user) {
+          return sendError(reply, 409, "USER_EXISTS", "An account with this email already exists.");
+        }
 
-      return reply.status(201).send({ user: { id: userId, email } });
-    } catch (error) {
-      request.log.error(error);
-      return reply.status(500).send({ error: "SERVER_ERROR", message: "Internal server error" });
-    }
-  });
+        return reply.status(201).send({ user });
+      } catch (error) {
+        return sendServerError(request, reply, error);
+      }
+    },
+  );
 
   fastify.post(
     "/login",
+    { schema: loginSchema },
     async (request: FastifyRequest<{ Body: { email?: string; password?: string } }>, reply: FastifyReply) => {
       const body = request.body;
-      const email = (body?.email || "").toLowerCase().trim();
+      const email = normalizeEmail(body?.email);
       const password = body?.password || "";
 
-    if (!email || !password) return reply.status(400).send({ error: "INVALID_INPUT", message: "Email and password are required." });
+      if (!email || !password) {
+        return sendError(reply, 400, "INVALID_INPUT", "Email and password are required.");
+      }
 
-    try {
-      const user = await get("SELECT id, email, password_hash FROM users WHERE email = ?", [email]);
-      if (!user) return reply.status(401).send({ error: "INVALID_CREDENTIALS", message: "Invalid email or password." });
+      try {
+        const user = await authenticateUser(email, password);
+        if (!user) {
+          return sendError(reply, 401, "INVALID_CREDENTIALS", "Invalid email or password.");
+        }
 
-      const ok = await verifyPassword(user.password_hash, password);
-      if (!ok) return reply.status(401).send({ error: "INVALID_CREDENTIALS", message: "Invalid email or password." });
-
-      return reply.status(200).send({ user: { id: user.id, email: user.email } });
-    } catch (error) {
-      request.log.error(error);
-      return reply.status(500).send({ error: "SERVER_ERROR", message: "Internal server error" });
-    }
-  });
+        return reply.status(200).send({ user });
+      } catch (error) {
+        return sendServerError(request, reply, error);
+      }
+    },
+  );
 }

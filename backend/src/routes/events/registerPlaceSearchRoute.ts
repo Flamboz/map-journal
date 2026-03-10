@@ -1,4 +1,5 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { sendError, sendServerError } from "../../utils/httpErrors";
 
 type PlaceSearchQuerystring = {
   q?: string;
@@ -18,7 +19,7 @@ export function registerPlaceSearchRoute(fastify: FastifyInstance) {
     async (request: FastifyRequest<{ Querystring: PlaceSearchQuerystring }>, reply: FastifyReply) => {
       const query = request.query.q?.trim();
       if (!query) {
-        return reply.status(400).send({ error: "INVALID_QUERY", message: "A non-empty query is required." });
+        return sendError(reply, 400, "INVALID_QUERY", "A non-empty query is required.");
       }
 
       const latitude = request.query.lat ? Number(request.query.lat) : null;
@@ -78,13 +79,10 @@ export function registerPlaceSearchRoute(fastify: FastifyInstance) {
         return reply.status(200).send({ places });
       } catch (error) {
         if (abortController.signal.aborted) {
-          return reply
-            .status(504)
-            .send({ error: "PLACE_SEARCH_TIMEOUT", message: "Place search timed out. Please try again." });
+          return sendError(reply, 504, "PLACE_SEARCH_TIMEOUT", "Place search timed out. Please try again.");
         }
 
-        request.log.error(error);
-        return reply.status(500).send({ error: "SERVER_ERROR", message: "Internal server error" });
+        return sendServerError(request, reply, error);
       } finally {
         clearTimeout(timeoutHandle);
       }

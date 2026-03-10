@@ -5,7 +5,10 @@
 	"scripts": {
 		"dev": "ts-node --transpile-only src/index.ts",
 		"start": "node ./dist/index.js",
-		"build": "tsc -p ."
+		"build": "tsc -p .",
+		"test": "vitest run",
+		"test:watch": "vitest",
+		"test:coverage": "vitest run --coverage"
 	},
 	"dependencies": {
 		"@fastify/multipart": "^9.2.1",
@@ -16,11 +19,13 @@
 		"sql.js": "^1.8.0"
 	},
 	"devDependencies": {
+		"@vitest/coverage-v8": "^3.2.4",
 		"@types/bcryptjs": "^2.4.2",
 		"@types/dotenv": "^8.2.0",
 		"@types/node": "^20.19.34",
 		"ts-node": "^10.9.2",
 		"ts-node-dev": "^2.0.0",
-		"typescript": "^5.2.2"
+		"typescript": "^5.2.2",
+		"vitest": "^3.2.4"
 	}
 }
