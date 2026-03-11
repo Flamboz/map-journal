@@ -114,6 +114,7 @@ export function useDraftPinState({
       try {
         const requestUrl = new URL("https://nominatim.openstreetmap.org/reverse");
         requestUrl.searchParams.set("format", "jsonv2");
+        requestUrl.searchParams.set("accept-language", "uk");
         requestUrl.searchParams.set("lat", String(position.lat));
         requestUrl.searchParams.set("lon", String(position.lng));
 
@@ -121,6 +122,7 @@ export function useDraftPinState({
           signal: abortController.signal,
           headers: {
             Accept: "application/json",
+            "Accept-Language": "uk",
           },
         });
 

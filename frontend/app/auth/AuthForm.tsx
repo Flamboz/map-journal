@@ -20,32 +20,63 @@ export function AuthForm({
   submitLabel,
   serverError,
 }: AuthFormProps) {
+  const emailError = typeof errors.email?.message === "string" ? errors.email.message : null;
+  const passwordError = typeof errors.password?.message === "string" ? errors.password.message : null;
+
   return (
-    <form onSubmit={onSubmit} className="space-y-4">
+    <form onSubmit={onSubmit} className="space-y-5" noValidate>
       <div>
-        <label className="block text-sm font-medium">Email</label>
+        <label className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-800" htmlFor="auth-email">
+          <span aria-hidden="true" className="h-2 w-2 rounded-full bg-[#d65745]" />
+          <span>Email</span>
+        </label>
         <input
-          className={`w-full border p-2 ${errors.email ? "border-red-600" : "border-gray-300"}`}
+          id="auth-email"
+          type="email"
+          autoComplete="email"
+          placeholder="you@example.com"
+          className={`w-full rounded-[var(--radius-md)] border bg-[color:var(--paper-surface)] px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#c78b74] focus:ring-2 focus:ring-[#e8c8ba]/70 ${
+            emailError ? "border-red-600" : "border-[color:var(--border-soft)]"
+          }`}
           {...register("email")}
         />
-        {typeof errors.email?.message === "string" && <p className="text-sm text-red-600">{errors.email.message}</p>}
+        {emailError && <p className="mt-1 text-sm text-red-600">{emailError}</p>}
       </div>
+
       <div>
-        <label className="block text-sm font-medium">Password</label>
+        <label className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-800" htmlFor="auth-password">
+          <span aria-hidden="true" className="h-2 w-2 rounded-full bg-[#d65745]" />
+          <span>Password</span>
+        </label>
         <input
+          id="auth-password"
           type="password"
-          className={`w-full border p-2 ${errors.password ? "border-red-600" : "border-gray-300"}`}
+          autoComplete={submitLabel === "Register" ? "new-password" : "current-password"}
+          placeholder="At least 8 characters"
+          className={`w-full rounded-[var(--radius-md)] border bg-[color:var(--paper-surface)] px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#c78b74] focus:ring-2 focus:ring-[#e8c8ba]/70 ${
+            passwordError ? "border-red-600" : "border-[color:var(--border-soft)]"
+          }`}
           {...register("password")}
         />
-        {typeof errors.password?.message === "string" && <p className="text-sm text-red-600">{errors.password.message}</p>}
+        {passwordError && <p className="mt-1 text-sm text-red-600">{passwordError}</p>}
       </div>
+
+      <div className="rounded-[var(--radius-md)] border border-[color:var(--border-soft)] bg-[color:var(--paper-muted)] px-4 py-3 text-sm text-slate-700">
+        Your journal stays private to your account and opens directly back into the map experience.
+      </div>
+
       <div>
-        <button className="px-4 py-2 bg-blue-600 text-white disabled:opacity-50" type="submit" disabled={isSubmitting}>
+        <button
+          className="w-full rounded-[var(--radius-md)] bg-[color:var(--accent-primary)] px-4 py-3 text-sm font-semibold text-white transition hover:translate-y-[-1px] hover:bg-[color:var(--accent-primary-strong)] hover:shadow-[0_10px_24px_rgba(180,72,42,0.3)] disabled:opacity-50"
+          type="submit"
+          disabled={isSubmitting}
+        >
           {submitLabel}
         </button>
       </div>
+
       {serverError && (
-        <div className="text-red-600">
+        <div className="rounded-[var(--radius-md)] border border-red-200 bg-red-50 px-4 py-3 text-red-600">
           <p>{serverError}</p>
         </div>
       )}

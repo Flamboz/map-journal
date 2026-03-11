@@ -6,31 +6,22 @@ export default function Header() {
   const { data: session } = useSession();
 
   return (
-    <header className="w-full border-b bg-white/60 px-6 py-3 flex items-center justify-between">
-      <div className="font-bold">Map Journal</div>
+    <header className="sticky top-0 z-[1200] flex h-[var(--topbar-height)] w-full items-center justify-between border-b border-[color:var(--border-soft)] bg-[#1d2140] px-4 text-[#f7f1e6] sm:px-6">
+      <div className="flex items-center gap-3">
+        <span className="h-2.5 w-2.5 rounded-full bg-[color:var(--accent-primary)]" aria-hidden="true" />
+        <p data-heading="journal" className="text-2xl leading-none">
+          Map Journal
+        </p>
+      </div>
       {session?.user && (
         <button
           type="button"
           aria-label="Sign out"
           title="Sign out"
-          className="p-2 rounded bg-indigo-600 text-white hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 transition"
+          className="rounded-full border border-[#f7f1e6]/25 bg-[#2a2f55] px-4 py-2 text-sm font-medium text-[#f7f1e6] transition hover:bg-[#353c6a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f7f1e6]/40"
           onClick={() => signOut({ callbackUrl: "/auth/signin" })}
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="h-5 w-5"
-            aria-hidden="true"
-          >
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-            <path d="M16 17l5-5-5-5" />
-            <path d="M21 12H9" />
-          </svg>
+          Sign out
         </button>
       )}
     </header>

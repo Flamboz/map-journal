@@ -25,10 +25,18 @@ export function EventSearchFilterPanel({
   const [selectedLabels, setSelectedLabels] = useState<string[]>([]);
   const [visitCompany, setVisitCompany] = useState("");
   const [isSearchingEvents, setIsSearchingEvents] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
+  const [showFilters, setShowFilters] = useState(true);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [searchedEvents, setSearchedEvents] = useState<MapEvent[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
+  const noMatchesMessage = "No events match your current search and filters.";
+  const showNoMatchesUnderEvents = searchError === noMatchesMessage;
+  const hasActiveFilters =
+    search.trim().length > 0 ||
+    dateFrom.length > 0 ||
+    dateTo.length > 0 ||
+    selectedLabels.length > 0 ||
+    visitCompany.length > 0;
 
   async function handleEventSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -68,9 +76,28 @@ export function EventSearchFilterPanel({
   }
 
   return (
-    <aside className="absolute left-4 top-40 z-[1100] max-h-[calc(100vh-7rem)] w-[min(28rem,calc(100%-2rem))] overflow-y-auto rounded-lg bg-white p-3 shadow-lg">
-      <h2 className="text-base font-semibold text-slate-900">Search events</h2>
-      <form className="mt-2 space-y-2" onSubmit={handleEventSearch}>
+    <section className="paper-card flex h-full min-h-0 flex-1 flex-col p-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl text-slate-900">Search Events</h2>
+        {hasActiveFilters && (
+          <button
+            type="button"
+            className="text-sm font-semibold text-[#325a8a] transition hover:text-[#24446b]"
+            onClick={() => {
+              setSearch("");
+              setDateFrom("");
+              setDateTo("");
+              setSelectedLabels([]);
+              setVisitCompany("");
+              setSearchError(null);
+            }}
+          >
+            Clear all
+          </button>
+        )}
+      </div>
+
+      <form className="mt-3 shrink-0 space-y-3" onSubmit={handleEventSearch}>
         <div>
           <input
             id="event-text-search"
@@ -84,25 +111,22 @@ export function EventSearchFilterPanel({
                 setSearchError(null);
               }
             }}
-            placeholder="Search by name or description"
-            className="w-full rounded border border-slate-300 px-3 py-2 text-sm text-slate-900"
+            placeholder="Search by name or description..."
+            className="w-full rounded-[var(--radius-md)] border border-[color:var(--border-soft)] bg-[color:var(--paper-surface)] px-3 py-2 text-sm text-slate-900"
           />
         </div>
 
         <div className="flex items-center gap-2">
           <button
             type="button"
-            className="rounded border border-slate-300 px-2 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+            className="rounded-full border border-[color:var(--border-soft)] bg-[color:var(--paper-surface)] px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-slate-700 transition hover:bg-[color:var(--paper-muted)]"
             onClick={() => setShowFilters((previous) => !previous)}
           >
             {showFilters ? "Hide filters" : "Show filters"}
           </button>
-          {selectedLabels.length > 0 && (
-            <span className="text-xs text-slate-600">{selectedLabels.length} labels</span>
-          )}
           <button
             type="submit"
-            className="rounded bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-60"
+            className="rounded-[var(--radius-md)] bg-[#1d2140] px-4 py-1.5 text-sm font-semibold text-[#f7f1e6] transition hover:translate-y-[-1px] hover:bg-[#2f365f] disabled:opacity-60"
             disabled={isSearchingEvents}
           >
             {isSearchingEvents ? "Searching..." : "Search"}
@@ -110,7 +134,7 @@ export function EventSearchFilterPanel({
         </div>
 
         {showFilters && (
-          <div className="max-h-44 space-y-2 overflow-y-auto border-t border-slate-200 pt-2 pr-1">
+          <div className="max-h-64 space-y-3 overflow-y-auto border-t border-[color:var(--border-soft)] pt-3 pr-1">
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-700" htmlFor="event-date-from">
@@ -126,7 +150,7 @@ export function EventSearchFilterPanel({
                       setSearchError(null);
                     }
                   }}
-                  className="w-full rounded border border-slate-300 px-2 py-1 text-sm text-slate-900"
+                  className="w-full rounded-[var(--radius-md)] border border-[color:var(--border-soft)] bg-[color:var(--paper-surface)] px-2 py-1 text-sm text-slate-900"
                 />
               </div>
 
@@ -144,7 +168,7 @@ export function EventSearchFilterPanel({
                       setSearchError(null);
                     }
                   }}
-                  className="w-full rounded border border-slate-300 px-2 py-1 text-sm text-slate-900"
+                  className="w-full rounded-[var(--radius-md)] border border-[color:var(--border-soft)] bg-[color:var(--paper-surface)] px-2 py-1 text-sm text-slate-900"
                 />
               </div>
             </div>
@@ -155,7 +179,7 @@ export function EventSearchFilterPanel({
                   setSearchError(null);
                 }
               }}
-              className="rounded border border-slate-200 p-2"
+              className="rounded-[var(--radius-md)] border border-[color:var(--border-soft)] bg-[color:var(--paper-surface)] p-3"
             >
               <EventLabelsField
                 labelOptions={labelOptions}
@@ -177,7 +201,7 @@ export function EventSearchFilterPanel({
                     setSearchError(null);
                   }
                 }}
-                className="w-full rounded border border-slate-300 px-2 py-1 text-sm text-slate-900"
+                className="w-full rounded-[var(--radius-md)] border border-[color:var(--border-soft)] bg-[color:var(--paper-surface)] px-2 py-1 text-sm text-slate-900"
               >
                 <option value="">Any</option>
                 {visitCompanyOptions.map((option) => (
@@ -191,32 +215,33 @@ export function EventSearchFilterPanel({
         )}
       </form>
 
-      {searchError && <p className="mt-2 text-sm text-red-600">{searchError}</p>}
+      {searchError && !showNoMatchesUnderEvents && <p className="mt-2 text-sm text-red-600">{searchError}</p>}
 
-      {hasSearched && (
-        <div className="mt-3 border-t border-slate-200 pt-3">
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-700">Events ({searchedEvents.length})</p>
-          {searchedEvents.length > 0 ? (
-            <ul className="mt-2 max-h-32 space-y-2 overflow-auto" aria-label="Event search results">
+      <div className="mt-4 flex min-h-0 flex-1 flex-col border-t border-[color:var(--border-soft)] pt-3">
+        <p className="text-xs font-medium uppercase tracking-wide text-slate-700">Events ({searchedEvents.length})</p>
+        {showNoMatchesUnderEvents && <p className="mt-2 text-sm text-red-600">{searchError}</p>}
+        {hasSearched ? (
+          searchedEvents.length > 0 ? (
+            <ul className="mt-2 min-h-0 flex-1 space-y-2 overflow-y-auto pr-1" aria-label="Event search results">
               {searchedEvents.map((event) => (
                 <li key={event.id}>
                   <button
                     type="button"
                     onClick={() => onResultClick(event)}
-                    className="w-full rounded border border-slate-200 px-3 py-2 text-left text-sm text-slate-800 hover:bg-slate-50"
+                    className="w-full rounded-[var(--radius-md)] border border-[color:var(--border-soft)] bg-[color:var(--paper-surface)] px-3 py-2 text-left text-sm text-slate-800 transition hover:bg-[color:var(--paper-muted)]"
                     aria-label={`Open event ${event.title}`}
                   >
-                    <p className="font-medium text-slate-900">{event.title}</p>
+                    <p className="break-words font-medium text-slate-900">{event.title}</p>
                     {event.startDate && <p className="text-xs text-slate-600">{event.startDate}</p>}
                   </button>
                 </li>
               ))}
             </ul>
-          ) : (
-            <p className="mt-2 text-sm text-slate-600">No events to display.</p>
-          )}
-        </div>
-      )}
-    </aside>
+          ) : null
+        ) : (
+          <p className="mt-2 text-sm text-slate-600">Run a search to load events.</p>
+        )}
+      </div>
+    </section>
   );
 }

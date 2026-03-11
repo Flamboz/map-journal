@@ -67,8 +67,8 @@ export function PlaceSearchPanel({ centerState, onPlaceSelect }: PlaceSearchPane
   }
 
   return (
-    <aside className="absolute left-4 top-4 z-[1100] w-[min(28rem,calc(100%-2rem))] rounded-lg bg-white p-4 shadow-lg">
-      <h2 className="text-lg font-semibold text-slate-900">Search place</h2>
+    <section className="paper-card p-4">
+      <h2 className="text-2xl text-slate-900">Search Place</h2>
       <form className="mt-3" onSubmit={handlePlaceSearch}>
         <div className="flex gap-2">
           <input
@@ -82,16 +82,16 @@ export function PlaceSearchPanel({ centerState, onPlaceSelect }: PlaceSearchPane
                 setSearchError(null);
               }
             }}
-            placeholder="Search for a city, address, or landmark"
-            className="w-full rounded border border-slate-300 px-3 py-2 text-sm text-slate-900"
+            placeholder="City, address, or landmark..."
+            className="w-full rounded-[var(--radius-md)] border border-[color:var(--border-soft)] bg-[color:var(--paper-surface)] px-3 py-2 text-sm text-slate-900"
             aria-label="Search place"
           />
           <button
             type="submit"
-            className="rounded bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-60"
+            className="rounded-[var(--radius-md)] bg-[#1d2140] px-4 py-2 text-sm font-semibold text-[#f7f1e6] transition hover:translate-y-[-1px] hover:bg-[#2f365f] disabled:opacity-60"
             disabled={isSearchingPlaces}
           >
-            {isSearchingPlaces ? "Searching..." : "Search"}
+            {isSearchingPlaces ? "..." : "Go"}
           </button>
         </div>
       </form>
@@ -109,7 +109,7 @@ export function PlaceSearchPanel({ centerState, onPlaceSelect }: PlaceSearchPane
                   setSearchResults([]);
                   setSearchError(null);
                 }}
-                className="w-full rounded border border-slate-200 px-3 py-2 text-left text-sm text-slate-900 hover:bg-slate-50"
+                className="w-full rounded-[var(--radius-md)] border border-[color:var(--border-soft)] bg-[color:var(--paper-surface)] px-3 py-2 text-left text-sm text-slate-900 transition hover:bg-[color:var(--paper-muted)]"
               >
                 {place.displayName}
               </button>
@@ -117,6 +117,6 @@ export function PlaceSearchPanel({ centerState, onPlaceSelect }: PlaceSearchPane
           ))}
         </ul>
       )}
-    </aside>
+    </section>
   );
 }

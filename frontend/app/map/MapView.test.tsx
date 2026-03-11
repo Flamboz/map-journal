@@ -349,9 +349,9 @@ describe("MapView", () => {
       clickHandlers.click?.({ latlng: { lat: 49.84, lng: 24.03 } });
     });
 
-    expect(await screen.findByText("Create event")).toBeInTheDocument();
+    expect(await screen.findByText("New Event")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save Event" }));
 
     expect(await screen.findByText("Name is required.")).toBeInTheDocument();
     expect(await screen.findByText("Date or date range is required.")).toBeInTheDocument();
@@ -390,15 +390,15 @@ describe("MapView", () => {
       clickHandlers.click?.({ latlng: { lat: 50.45, lng: 30.52 } });
     });
 
-    fireEvent.change(screen.getByLabelText("Name *"), { target: { value: "City Walk" } });
-    fireEvent.change(screen.getByLabelText("Date *"), { target: { value: "2026-03-04" } });
+    fireEvent.change(screen.getByLabelText("Name"), { target: { value: "City Walk" } });
+    fireEvent.change(screen.getByLabelText("Start date"), { target: { value: "2026-03-04" } });
     fireEvent.change(screen.getByLabelText("Photos"), {
       target: {
         files: [new File(["abc"], "test.jpg", { type: "image/jpeg" })],
       },
     });
 
-    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save Event" }));
 
     await waitFor(() => {
       expect(createEvent).toHaveBeenCalledWith(
@@ -432,23 +432,23 @@ describe("MapView", () => {
       clickHandlers.click?.({ latlng: { lat: 50.45, lng: 30.52 } });
     });
 
-    const nameInput = (await screen.findByLabelText("Name *")) as HTMLInputElement;
+    const nameInput = (await screen.findByLabelText("Name")) as HTMLInputElement;
     fireEvent.change(nameInput, { target: { value: "Draft title" } });
 
-    fireEvent.change(screen.getByLabelText("Search place"), { target: { value: "Eiffel Tower" } });
-    const placeSearchForm = screen.getByLabelText("Search place").closest("form");
+    fireEvent.change(screen.getByLabelText("Search place in event form"), { target: { value: "Eiffel Tower" } });
+    const placeSearchForm = screen.getByLabelText("Search place in event form").closest("form");
     expect(placeSearchForm).not.toBeNull();
-    fireEvent.click(within(placeSearchForm as HTMLFormElement).getByRole("button", { name: "Search" }));
+    fireEvent.click(within(placeSearchForm as HTMLFormElement).getByRole("button", { name: "Go" }));
 
     const placeButton = await screen.findByRole("button", { name: "Eiffel Tower, Paris, France" });
     fireEvent.click(placeButton);
 
     await waitFor(() => {
-      expect(searchPlaces).toHaveBeenCalledWith("Eiffel Tower", expect.anything());
+      expect(searchPlaces).toHaveBeenCalledWith("Eiffel Tower");
       expect(mockSetView).toHaveBeenCalledWith([48.8584, 2.2945], expect.any(Number));
     });
 
-    expect((screen.getByLabelText("Name *") as HTMLInputElement).value).toBe("Draft title");
+    expect((screen.getByLabelText("Name") as HTMLInputElement).value).toBe("Draft title");
     expect(screen.getByText("48.8584,2.2945")).toBeInTheDocument();
   });
 
@@ -484,17 +484,16 @@ describe("MapView", () => {
     });
 
     fireEvent.change(screen.getByLabelText("Text"), { target: { value: "Cafe" } });
-    fireEvent.click(screen.getByRole("button", { name: "Show filters" }));
     fireEvent.change(screen.getByLabelText("Date from"), { target: { value: "2026-03-01" } });
     fireEvent.change(screen.getByLabelText("Date to"), { target: { value: "2026-03-10" } });
     fireEvent.change(screen.getByLabelText("Visit company"), { target: { value: "Friends" } });
 
-    fireEvent.click(screen.getByLabelText("Cafe"));
-    fireEvent.click(screen.getByLabelText("Trip"));
+    fireEvent.click(screen.getByRole("button", { name: "Cafe" }));
+    fireEvent.click(screen.getByRole("button", { name: "Trip" }));
 
     expect(fetchUserEvents).toHaveBeenCalledTimes(1);
 
-    const eventSearchPanel = screen.getByText("Search events").closest("aside");
+    const eventSearchPanel = screen.getByText("Search Events").closest("section");
     expect(eventSearchPanel).not.toBeNull();
     fireEvent.click(within(eventSearchPanel as HTMLElement).getByRole("button", { name: "Search" }));
 
