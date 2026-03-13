@@ -164,6 +164,47 @@ export default function EventDetailsClient({ initialEvent, userId }: EventDetail
     dispatch({ type: "SET_SAVING", payload: true });
 
     try {
+      // First, apply any staged photo deletions made while editing
+      const stagedDeletes = state.photosToDelete ?? [];
+      if (stagedDeletes.length > 0) {
+        dispatch({ type: "SET_PHOTO_ACTION_RUNNING", payload: true });
+        try {
+          for (const photoId of stagedDeletes) {
+            await deleteEventPhoto(userId, state.event.id, photoId);
+          }
+        } catch (error) {
+          if (isApiErrorCode(error, "EVENT_NOT_FOUND")) {
+            redirectMissingEvent();
+            return;
+          }
+
+          dispatch({ type: "SET_SAVE_ERROR", payload: "Unable to update photos. Please try again." });
+          return;
+        } finally {
+          dispatch({ type: "SET_PHOTO_ACTION_RUNNING", payload: false });
+        }
+      }
+
+      // Next, apply any staged preview change (draftPhotos[0] moved)
+      const stagedPreviewId = state.draftPhotos && state.draftPhotos.length > 0 ? state.draftPhotos[0].id : null;
+      const currentPreviewId = (state.event.photos && state.event.photos.length > 0 ? state.event.photos[0].id : null) ?? null;
+      if (stagedPreviewId && stagedPreviewId !== currentPreviewId) {
+        dispatch({ type: "SET_PHOTO_ACTION_RUNNING", payload: true });
+        try {
+          await setEventPreviewPhoto(userId, state.event.id, stagedPreviewId);
+        } catch (error) {
+          if (isApiErrorCode(error, "EVENT_NOT_FOUND")) {
+            redirectMissingEvent();
+            return;
+          }
+
+          dispatch({ type: "SET_SAVE_ERROR", payload: "Unable to update photos. Please try again." });
+          return;
+        } finally {
+          dispatch({ type: "SET_PHOTO_ACTION_RUNNING", payload: false });
+        }
+      }
+
       const updatedEvent = await updateEvent({
         userId,
         eventId: state.event.id,
@@ -223,6 +264,13 @@ export default function EventDetailsClient({ initialEvent, userId }: EventDetail
     dispatch({ type: "SET_SAVE_ERROR", payload: null });
     dispatch({ type: "SET_PHOTO_ACTION_RUNNING", payload: true });
 
+    // When editing, stage the deletion locally and do not call the API until save
+    if (state.isEditing) {
+      dispatch({ type: "MARK_PHOTO_FOR_DELETION", payload: photoId });
+      dispatch({ type: "SET_PHOTO_ACTION_RUNNING", payload: false });
+      return;
+    }
+
     try {
       const photos = await deleteEventPhoto(userId, state.event.id, photoId);
       dispatch({ type: "SET_EVENT", payload: { ...state.event, photos } });
@@ -241,6 +289,13 @@ export default function EventDetailsClient({ initialEvent, userId }: EventDetail
   async function handleSetPreviewPhoto(photoId: string) {
     dispatch({ type: "SET_SAVE_ERROR", payload: null });
     dispatch({ type: "SET_PHOTO_ACTION_RUNNING", payload: true });
+
+    // When editing, stage the preview change locally and do not call the API until save
+    if (state.isEditing) {
+      dispatch({ type: "MARK_PHOTO_AS_PREVIEW", payload: photoId });
+      dispatch({ type: "SET_PHOTO_ACTION_RUNNING", payload: false });
+      return;
+    }
 
     try {
       const photos = await setEventPreviewPhoto(userId, state.event.id, photoId);
@@ -286,7 +341,7 @@ export default function EventDetailsClient({ initialEvent, userId }: EventDetail
       )}
 
       <EventPhotosCarousel
-        photos={state.event.photos ?? []}
+        photos={(state.isEditing ? state.draftPhotos ?? state.event.photos : state.event.photos) ?? []}
         eventName={state.event.name ?? state.event.title}
         isUpdatingPhotos={state.isEditing ? state.isPhotoActionRunning || state.isSaving : false}
         onAddPhotos={state.isEditing ? handleAddPhotos : undefined}

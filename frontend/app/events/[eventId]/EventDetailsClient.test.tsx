@@ -16,6 +16,7 @@ import {
 
 vi.mock("next/navigation", () => ({
   useRouter: vi.fn(),
+  useSearchParams: () => ({ get: vi.fn() }),
 }));
 
 vi.mock("../../map/api", () => ({
@@ -32,8 +33,10 @@ vi.mock("../../map/api", () => ({
 vi.mock("./EventPhotosCarousel", () => ({
   default: ({
     onAddPhotos,
+    onSetPreviewPhoto,
   }: {
     onAddPhotos?: (files: File[]) => void | Promise<void>;
+    onSetPreviewPhoto?: (photoId: string) => void | Promise<void>;
   }) => (
     <div data-testid="event-photos-carousel">
       <button
@@ -43,9 +46,87 @@ vi.mock("./EventPhotosCarousel", () => ({
       >
         Mock add photos
       </button>
+      <button
+        type="button"
+        onClick={() => onSetPreviewPhoto?.("550e8400-e29b-41d4-a716-446655440012")}
+        disabled={!onSetPreviewPhoto}
+      >
+        Mock set preview
+      </button>
     </div>
   ),
 }));
+
+it("stages preview during edit and applies on save", async () => {
+  const eventId = "550e8400-e29b-41d4-a716-446655440001";
+  const photo1 = {
+    id: "550e8400-e29b-41d4-a716-446655440011",
+    path: "a.jpg",
+    url: `/uploads/user-1/event-${eventId}/a.jpg`,
+    createdAt: "2026-03-01T10:00:00.000Z",
+  };
+  const photo2 = {
+    id: "550e8400-e29b-41d4-a716-446655440012",
+    path: "b.jpg",
+    url: `/uploads/user-1/event-${eventId}/b.jpg`,
+    createdAt: "2026-03-01T10:01:00.000Z",
+  };
+
+  vi.mocked(fetchEventById).mockResolvedValue({
+    id: eventId,
+    user_id: 1,
+    title: "River Walk",
+    name: "River Walk",
+    startDate: "2026-03-01",
+    endDate: null,
+    description: "",
+    rating: 7,
+    labels: [],
+    visitCompany: "",
+    lat: 50.45,
+    lng: 30.52,
+    created_at: "2026-03-01T10:00:00.000Z",
+    photos: [photo1, photo2],
+    samePinEventIds: [eventId],
+  });
+
+  vi.mocked(setEventPreviewPhoto).mockResolvedValue([]);
+
+  const initialEvent = {
+    id: eventId,
+    user_id: 1,
+    title: "River Walk",
+    name: "River Walk",
+    startDate: "2026-03-01",
+    endDate: null,
+    description: "",
+    rating: 7,
+    labels: [],
+    visitCompany: "",
+    lat: 50.45,
+    lng: 30.52,
+    created_at: "2026-03-01T10:00:00.000Z",
+    photos: [photo1, photo2],
+    samePinEventIds: [eventId],
+  };
+
+  render(<EventDetailsClient initialEvent={initialEvent} userId="1" />);
+
+  fireEvent.click(screen.getByRole("button", { name: "Edit event" }));
+
+  // Stage preview change
+  fireEvent.click(screen.getByRole("button", { name: "Mock set preview" }));
+
+  // should not call API yet
+  expect(setEventPreviewPhoto).not.toHaveBeenCalled();
+
+  // Save changes -> should apply staged preview
+  fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+
+  await waitFor(() => {
+    expect(setEventPreviewPhoto).toHaveBeenCalledWith("1", eventId, photo2.id);
+  });
+});
 
 describe("EventDetailsClient delete flow", () => {
   const eventId = "550e8400-e29b-41d4-a716-446655440001";

@@ -1,4 +1,4 @@
-import type { MapEvent } from "../../map/api";
+import type { MapEvent, MapEventPhoto } from "../../map/api";
 
 export type EventDetailsState = {
   event: MapEvent;
@@ -12,6 +12,8 @@ export type EventDetailsState = {
   hoveredRating: number | null;
   selectedLabels: string[];
   startDateMin: string;
+  draftPhotos?: MapEventPhoto[];
+  photosToDelete?: string[];
 };
 
 type EventDetailsAction =
@@ -28,7 +30,10 @@ type EventDetailsAction =
   | { type: "SET_SELECTED_LABELS"; payload: string[] }
   | { type: "SET_START_DATE_MIN"; payload: string }
   | { type: "SET_EVENT"; payload: MapEvent }
-  | { type: "SAVE_SUCCESS"; payload: MapEvent };
+  | { type: "SAVE_SUCCESS"; payload: MapEvent }
+  | { type: "MARK_PHOTO_FOR_DELETION"; payload: string }
+  | { type: "UNMARK_PHOTO_FOR_DELETION"; payload: string }
+  | { type: "MARK_PHOTO_AS_PREVIEW"; payload: string };
 
 function getEditFieldsFromEvent(event: MapEvent) {
   return {
@@ -49,6 +54,8 @@ export function createInitialEventDetailsState(initialEvent: MapEvent): EventDet
     isPhotoActionRunning: false,
     saveError: null,
     ...getEditFieldsFromEvent(initialEvent),
+    draftPhotos: undefined,
+    photosToDelete: [],
   };
 }
 
@@ -60,6 +67,8 @@ export function eventDetailsReducer(state: EventDetailsState, action: EventDetai
         saveError: null,
         isEditing: true,
         ...getEditFieldsFromEvent(state.event),
+        draftPhotos: state.event.photos ? [...state.event.photos] : [],
+        photosToDelete: [],
       };
     case "CANCEL_EDIT":
       return {
@@ -67,6 +76,8 @@ export function eventDetailsReducer(state: EventDetailsState, action: EventDetai
         saveError: null,
         isEditing: false,
         ...getEditFieldsFromEvent(state.event),
+        draftPhotos: undefined,
+        photosToDelete: [],
       };
     case "OPEN_DELETE_MODAL":
       return {
@@ -123,6 +134,9 @@ export function eventDetailsReducer(state: EventDetailsState, action: EventDetai
       return {
         ...state,
         event: action.payload,
+        // when event is set externally, clear any edit drafts
+        draftPhotos: undefined,
+        photosToDelete: [],
       };
     case "SAVE_SUCCESS":
       return {
@@ -130,7 +144,28 @@ export function eventDetailsReducer(state: EventDetailsState, action: EventDetai
         event: action.payload,
         isEditing: false,
         ...getEditFieldsFromEvent(action.payload),
+        draftPhotos: undefined,
+        photosToDelete: [],
       };
+    case "MARK_PHOTO_FOR_DELETION": {
+      const id = action.payload;
+      const nextDraft = state.draftPhotos ? state.draftPhotos.filter((p) => p.id !== id) : [];
+      const nextToDelete = Array.from(new Set([...(state.photosToDelete ?? []), id]));
+      return { ...state, draftPhotos: nextDraft, photosToDelete: nextToDelete };
+    }
+    case "MARK_PHOTO_AS_PREVIEW": {
+      const id = action.payload;
+      if (!state.draftPhotos || state.draftPhotos.length === 0) return state;
+      const found = state.draftPhotos.find((p) => p.id === id);
+      if (!found) return state;
+      const nextDraft = [found, ...state.draftPhotos.filter((p) => p.id !== id)];
+      return { ...state, draftPhotos: nextDraft };
+    }
+    case "UNMARK_PHOTO_FOR_DELETION": {
+      const id = action.payload;
+      const nextToDelete = (state.photosToDelete ?? []).filter((p) => p !== id);
+      return { ...state, photosToDelete: nextToDelete };
+    }
     default:
       return state;
   }
