@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { searchPlaces, type PlaceSearchResult } from "./api";
@@ -61,6 +61,30 @@ export function EventDraftForm({
     resolver: zodResolver(eventDraftValidationSchema),
     defaultValues: EMPTY_FORM_STATE,
   });
+
+  function getTodayLocalDateString() {
+    const d = new Date();
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  }
+
+  useEffect(() => {
+    if (!draftPosition) return;
+
+    const today = getTodayLocalDateString();
+
+    const currentStart = getValues("startDate");
+    if (!currentStart) {
+      setValue("startDate", today, { shouldValidate: true, shouldDirty: true });
+    }
+
+    if (!startDateMin) {
+      setStartDateMin(today);
+    }
+
+  }, [draftPosition, getValues, setValue, startDateMin]);
 
   function handleCancel() {
     reset(EMPTY_FORM_STATE);
