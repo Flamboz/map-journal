@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { searchPlaces, type PlaceSearchResult } from "./api";
@@ -69,6 +69,25 @@ export function EventDraftForm({
     const dd = String(d.getDate()).padStart(2, "0");
     return `${yyyy}-${mm}-${dd}`;
   }
+
+  const prevDraftPositionRef = useRef<typeof draftPosition>(null);
+  useEffect(() => {
+    const prev = prevDraftPositionRef.current;
+    
+    if (!prev && draftPosition) {
+      reset(EMPTY_FORM_STATE);
+      setHoveredRating(null);
+      setSelectedRating(EMPTY_FORM_STATE.rating);
+      setSelectedLabels(EMPTY_FORM_STATE.labels);
+      setSelectedPhotos(EMPTY_FORM_STATE.photos);
+      setStartDateMin(EMPTY_FORM_STATE.startDate);
+      setSearchQuery("");
+      setSearchResults([]);
+      setSearchError(null);
+    }
+
+    prevDraftPositionRef.current = draftPosition;
+  }, [draftPosition, reset]);
 
   useEffect(() => {
     if (!draftPosition) return;
