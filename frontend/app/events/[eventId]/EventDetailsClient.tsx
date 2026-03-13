@@ -110,6 +110,9 @@ export default function EventDetailsClient({ initialEvent, userId }: EventDetail
   function startEditing() {
     dispatch({ type: "START_EDIT" });
     reset(mapEventToFormState(state.event));
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
   }
 
   function cancelEditing() {
