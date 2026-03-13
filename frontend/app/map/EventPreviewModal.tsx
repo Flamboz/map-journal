@@ -1,9 +1,16 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import StarRating from "../components/StarRating";
 import { getSafeRating } from "./eventDisplay";
 import { formatEventDateRange } from "./mapViewHelpers";
 import type { MapEvent } from "./api";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { useState } from "react";
+import { deleteEvent } from "./api";
+import { isApiErrorCode } from "./apiErrors";
 
 type EventPreviewModalProps = {
   events: MapEvent[];
@@ -11,14 +18,22 @@ type EventPreviewModalProps = {
   onClose: () => void;
   onPrevious: () => void;
   onNext: () => void;
+  onDelete?: (eventId: string) => void;
 };
 
 function getPreviewPhotoUrl(event: MapEvent): string {
   return event.photos?.[0]?.url ?? "";
 }
 
-export function EventPreviewModal({ events, currentIndex, onClose, onPrevious, onNext }: EventPreviewModalProps) {
+export function EventPreviewModal({ events, currentIndex, onClose, onPrevious, onNext, onDelete }: EventPreviewModalProps) {
+  const router = useRouter();
   const currentEvent = events[currentIndex];
+
+  const { data: session } = useSession();
+  const userId = session?.user?.id ? String(session.user.id) : "";
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeletingEvent, setIsDeletingEvent] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   if (!currentEvent) {
     return null;
@@ -43,17 +58,70 @@ export function EventPreviewModal({ events, currentIndex, onClose, onPrevious, o
         onClick={onClose}
       />
 
-      <div className="relative z-[1201] w-full max-w-md rounded-xl bg-white p-4 shadow-lg">
+      <div className="relative z-[1201] w-full max-w-md">
         <button
           type="button"
           aria-label="Close"
-          className="absolute right-3 top-3 rounded bg-white/90 px-2 py-1 text-sm font-semibold text-gray-800"
+          className="absolute right-3 top-3 z-[1202] h-9 w-9 inline-flex items-center justify-center rounded-full bg-[#1f2435] border border-white/10 text-white/90 shadow-md"
           onClick={onClose}
+          title="Close"
         >
-          ×
+          <svg aria-hidden="true" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+            <path d="M6 6l12 12" />
+            <path d="M18 6L6 18" />
+          </svg>
         </button>
 
-        <div className="relative mb-4 h-56 overflow-hidden rounded-lg bg-gray-200">
+        <div className="paper-card bg-white rounded-lg shadow-lg overflow-hidden">
+
+        {/* Top header: dark hero with title/subtitle, then pills row */}
+        <div className="mb-0 overflow-hidden">
+          <div
+            className="px-4 py-4 flex items-start justify-between"
+            style={{ background: "linear-gradient(135deg,#1f2740 0%,#171d2e 100%)" }}
+          >
+            <div>
+              <h3 className="text-2xl font-semibold text-white" style={{ fontFamily: "var(--font-heading)" }}>
+                {currentEvent.name ?? currentEvent.title}
+              </h3>
+
+              <div className="mt-2 flex items-center gap-2 flex-wrap gap-y-2">
+                <span
+                  className="inline-flex flex-shrink-0 items-center gap-2 rounded-full px-3 py-1 text-xs font-medium"
+                  style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.12)" }}
+                >
+                  <svg aria-hidden="true" className="h-4 w-4 text-white/90" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="5" width="18" height="16" rx="2" />
+                    <path d="M16 3v4M8 3v4" />
+                    <path d="M3 11h18" />
+                  </svg>
+                  <span className="text-xs text-white/90">{formatEventDateRange(currentEvent.startDate, currentEvent.endDate)}</span>
+                </span>
+
+                {(currentEvent.labels ?? []).slice(0, 5).map((label) => (
+                  <span
+                    key={label}
+                    className="inline-flex flex-shrink-0 items-center rounded-full px-3 py-1 text-xs font-medium text-white"
+                    style={{ background: "var(--accent-primary)", border: "1px solid var(--accent-primary-strong)" }}
+                  >
+                    {label}
+                  </span>
+                ))}
+
+                {currentEvent.visitCompany && (
+                  <span
+                    className="inline-flex flex-shrink-0 items-center rounded-full px-3 py-1 text-xs font-medium text-white"
+                    style={{ background: "#4f46e5", border: "1px solid #3730a3" }}
+                  >
+                    {currentEvent.visitCompany}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="relative mb-0 h-56 overflow-hidden" style={{ background: "var(--paper-muted)" }}>
           {hasMultipleEvents && (
             <>
               <div className="absolute left-0 top-0 h-full w-[24%] overflow-hidden rounded-r-md opacity-80">
@@ -88,7 +156,7 @@ export function EventPreviewModal({ events, currentIndex, onClose, onPrevious, o
             </>
           )}
 
-          <div className="absolute left-1/2 top-0 h-full w-[72%] -translate-x-1/2 overflow-hidden rounded-md">
+          <div className="absolute left-1/2 top-0 h-full w-[72%] -translate-x-1/2 overflow-hidden">
             {currentPhotoUrl ? (
               <Image
                 src={currentPhotoUrl}
@@ -103,42 +171,170 @@ export function EventPreviewModal({ events, currentIndex, onClose, onPrevious, o
             )}
           </div>
 
+          {/* Attachment badge: top-right of image */}
+          <div className="absolute right-3 top-3 z-20 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium text-white" style={{ background: "rgba(17,24,39,0.85)" }}>
+            <svg aria-hidden="true" className="h-4 w-4 text-white/90" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21.44 11.05l-8.49 8.49a5 5 0 1 1-7.07-7.07l8.49-8.49a3 3 0 0 1 4.24 4.24L9.12 16.68" />
+            </svg>
+            <span>
+              {currentEvent.photos && currentEvent.photos.length > 0 ? `${currentEvent.photos.length} attachment${currentEvent.photos.length > 1 ? 's' : ''}` : '0 attachments'}
+            </span>
+          </div>
+
           {hasMultipleEvents && (
             <>
               <button
                 type="button"
                 aria-label="Previous event"
-                className="absolute left-2 top-1/2 z-20 -translate-y-1/2 rounded-full bg-white/80 px-2 py-1 text-xl font-light leading-none text-gray-800"
+                className="absolute left-2 top-1/2 z-20 -translate-y-1/2 rounded-full bg-white/80 p-2 text-gray-800"
                 onClick={onPrevious}
               >
-                ‹
+                <svg aria-hidden="true" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M15 18l-6-6 6-6" />
+                </svg>
               </button>
               <button
                 type="button"
                 aria-label="Next event"
-                className="absolute right-2 top-1/2 z-20 -translate-y-1/2 rounded-full bg-white/80 px-2 py-1 text-xl font-light leading-none text-gray-800"
+                className="absolute right-2 top-1/2 z-20 -translate-y-1/2 rounded-full bg-white/80 p-2 text-gray-800"
                 onClick={onNext}
               >
-                ›
+                <svg aria-hidden="true" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 6l6 6-6 6" />
+                </svg>
               </button>
             </>
           )}
         </div>
 
-        <div className="space-y-2">
-          <h3 className="text-lg font-semibold text-gray-900">{currentEvent.name ?? currentEvent.title}</h3>
-          {hasRating && (
-            <StarRating rating={safeRating} className="text-base" />
-          )}
-          <p className="text-sm text-gray-700">{formatEventDateRange(currentEvent.startDate, currentEvent.endDate)}</p>
-          <Link
-            href={`/events/${currentEvent.id}`}
-            className="inline-flex rounded-md bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-gray-800"
-          >
-            See More
-          </Link>
+        <div className="p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            {hasRating ? (
+              <div className="flex items-center gap-2">
+                <div className="text-sm font-medium text-gray-600">Rating</div>
+                <StarRating rating={safeRating} className="text-sm" />
+                <div className="text-sm font-medium text-gray-800">{safeRating}/10</div>
+              </div>
+            ) : (
+              <div className="text-sm text-gray-600">Not rated</div>
+            )}
+          </div>
+          </div>
+            {/* Action bar: edit/delete left, close center, view right */}
+            <div className="p-4 flex items-center justify-between bg-[#f6f1e6] rounded-b-md border-t border-[color:var(--border-soft)]">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  aria-label="Edit event"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-md border bg-white text-gray-700 hover:bg-gray-50"
+                  onClick={() => {
+                    // navigate to event page with edit mode enabled
+                    router.push(`/events/${currentEvent.id}?edit=true`);
+                    onClose();
+                  }}
+                >
+                  <svg aria-hidden="true" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" />
+                    <path d="M20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
+                  </svg>
+                </button>
+                <>
+                  <button
+                    type="button"
+                    aria-label="Delete event"
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-md border bg-white text-gray-700 hover:bg-gray-50"
+                    onClick={() => setIsDeleteModalOpen(true)}
+                  >
+                    <svg aria-hidden="true" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M3 6h18" />
+                      <path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" />
+                      <path d="M19 6l-1 13a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                      <line x1="10" y1="11" x2="10" y2="17" />
+                      <line x1="14" y1="11" x2="14" y2="17" />
+                    </svg>
+                  </button>
+
+                  {isDeleteModalOpen && (
+                    <div
+                      className="fixed inset-0 z-[1300] flex items-center justify-center p-4"
+                      role="dialog"
+                      aria-modal="true"
+                      aria-label="Delete event confirmation"
+                    >
+                      <button
+                        type="button"
+                        aria-label="Close delete confirmation backdrop"
+                        onClick={() => { if (!isDeletingEvent) setIsDeleteModalOpen(false); }}
+                        className="absolute inset-0 bg-black/70"
+                      />
+
+                      <div className="relative z-[1301] w-full max-w-md rounded-xl bg-white p-5 shadow-lg">
+                        <h2 className="text-lg font-semibold text-gray-900">Delete event?</h2>
+                        <p className="mt-2 text-sm text-gray-600">This will permanently delete the event and all associated photos.</p>
+
+                        <div className="mt-4 flex justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => { if (!isDeletingEvent) setIsDeleteModalOpen(false); }}
+                            disabled={isDeletingEvent}
+                            className="rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              setDeleteError(null);
+                              setIsDeletingEvent(true);
+                              try {
+                                await deleteEvent(userId, currentEvent.id);
+                                // inform parent (map) so it can remove the event locally
+                                if (typeof onDelete === "function") {
+                                  onDelete(currentEvent.id);
+                                }
+                                // close modal & preview
+                                setIsDeleteModalOpen(false);
+                                onClose();
+                                // refresh server cache if needed
+                                router.refresh();
+                              } catch (error) {
+                                if (isApiErrorCode(error, "EVENT_NOT_FOUND")) {
+                                  // If the event was already removed on the server, remove it locally as well
+                                  if (typeof onDelete === "function") {
+                                    onDelete(currentEvent.id);
+                                  }
+                                  setIsDeleteModalOpen(false);
+                                  onClose();
+                                  return;
+                                }
+
+                                setDeleteError("Unable to delete event. Please try again.");
+                              } finally {
+                                setIsDeletingEvent(false);
+                              }
+                            }}
+                            disabled={isDeletingEvent}
+                            className="rounded-md border border-red-300 px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            {isDeletingEvent ? "Deleting..." : "Delete"}
+                          </button>
+                        </div>
+
+                        {deleteError && <p className="mt-3 text-sm text-red-600">{deleteError}</p>}
+                      </div>
+                    </div>
+                  )}
+                </>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <Link href={`/events/${currentEvent.id}`} className="inline-flex rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800">
+                  View full →
+                </Link>
+              </div>
+            </div>
         </div>
-      </div>
+        </div>
     </div>
   );
 }

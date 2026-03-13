@@ -107,7 +107,7 @@ export function EventDescriptionField({ register }: Pick<SharedFieldProps, "regi
 export function EventLabelsField({ labelOptions, selectedLabels, onLabelsChange }: LabelsFieldProps) {
   return (
     <div>
-      <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-700">Labels</p>
+      <p className="mb-2 text-sm font-semibold tracking-wide text-slate-700">Labels</p>
       <div className="flex flex-wrap gap-2">
         {labelOptions.map((label) => {
           const isActive = selectedLabels.includes(label);

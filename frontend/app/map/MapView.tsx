@@ -40,6 +40,22 @@ export default function MapView({ initialError = null }: MapViewProps) {
     visitCompanyOptions,
     globalError,
   } = useMapBootstrapData({ status, userId, initialError });
+  
+  useEffect(() => {
+    // If an initial/global error was provided via the URL (eg. ?error=event-not-found),
+    // remove the search param so the message does not persist on subsequent navigation.
+    if (!globalError) return;
+    try {
+      const url = new URL(window.location.href);
+      if (url.searchParams.has("error")) {
+        url.searchParams.delete("error");
+        window.history.replaceState(null, "", url.toString());
+      }
+    } catch (e) {
+      // ignore - window or URL might not be available in some environments
+    }
+  }, [globalError]);
+  const [eventsVersion, setEventsVersion] = useState(0);
   const groupedEvents = groupEventsByDistance(events, PIN_GROUP_DISTANCE_METERS);
   const {
     selectedEventIndex,
@@ -190,7 +206,7 @@ export default function MapView({ initialError = null }: MapViewProps) {
               <ZoomControl position="bottomleft" />
               <RecenterMap center={centerState.center} zoom={centerState.zoom} />
               <MapClickHandler onClick={handleMapClickDraft} />
-              <MarkerClusterGroup>
+              <MarkerClusterGroup key={eventsVersion}>
                 {groupedEvents.map((group, groupIndex) => (
                   <Marker
                     key={group.id}
@@ -271,7 +287,7 @@ export default function MapView({ initialError = null }: MapViewProps) {
                 <ZoomControl position="bottomleft" />
                 <RecenterMap center={centerState.center} zoom={centerState.zoom} />
                 <MapClickHandler onClick={handleMapClickDraft} />
-                <MarkerClusterGroup>
+                <MarkerClusterGroup key={eventsVersion}>
                   {groupedEvents.map((group, groupIndex) => (
                     <Marker
                       key={group.id}
@@ -330,6 +346,14 @@ export default function MapView({ initialError = null }: MapViewProps) {
           onClose={clearSelection}
           onPrevious={showPreviousEvent}
           onNext={showNextEvent}
+          onDelete={(deletedId) => {
+            // remove the deleted event from local state so the pin vanishes immediately
+            setEvents((previous) => previous.filter((ev) => ev.id !== deletedId));
+            // bump version to force MarkerClusterGroup remount
+            setEventsVersion((v) => v + 1);
+            // clear selection to close the preview
+            clearSelection();
+          }}
         />
       )}
     </section>

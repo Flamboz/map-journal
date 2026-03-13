@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useReducer, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
@@ -46,6 +47,7 @@ function mapEventToFormState(event: MapEvent): EventFormState {
 
 export default function EventDetailsClient({ initialEvent, userId }: EventDetailsClientProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [state, dispatch] = useReducer(eventDetailsReducer, initialEvent, createInitialEventDetailsState);
   const [labelOptions, setLabelOptions] = useState<string[]>([]);
   const [visitCompanyOptions, setVisitCompanyOptions] = useState<string[]>([]);
@@ -71,6 +73,11 @@ export default function EventDetailsClient({ initialEvent, userId }: EventDetail
   const nextPinEventId = hasPinNavigation ? samePinEventIds[(currentPinEventIndex + 1) % samePinEventIds.length] : null;
 
   useEffect(() => {
+    // If URL contains ?edit=true, start in edit mode.
+    if (searchParams?.get("edit") === "true") {
+      startEditing();
+    }
+
     let active = true;
 
     Promise.all([fetchAllowedLabels(), fetchAllowedVisitCompanies()])
@@ -256,13 +263,6 @@ export default function EventDetailsClient({ initialEvent, userId }: EventDetail
 
   return (
     <section className="mx-auto w-full max-w-3xl space-y-6 p-6">
-      <Link
-        href="/"
-        className="inline-flex rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-      >
-        Go back to map
-      </Link>
-
       <h1 className="text-2xl font-semibold text-gray-900">Event details</h1>
 
       {hasPinNavigation && (
