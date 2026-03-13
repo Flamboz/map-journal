@@ -18,7 +18,6 @@ import {
   uploadEventPhotos,
 } from "../../map/api";
 import { isApiErrorCode } from "../../map/apiErrors";
-import { formatLabelsText, formatVisitCompanyText } from "../../map/eventDisplay";
 import { eventDraftValidationSchema, formatEventDateRange } from "../../map/mapViewHelpers";
 import type { EventFormState } from "../../map/mapViewTypes";
 import DeleteEventConfirmationModal from "./DeleteEventConfirmationModal";
@@ -315,9 +314,8 @@ export default function EventDetailsClient({ initialEvent, userId }: EventDetail
     }
   }
 
-  const dateText = formatEventDateRange(state.event.startDate, state.event.endDate) || "None";
-  const labelsText = formatLabelsText(state.event.labels);
-  const visitCompanyText = formatVisitCompanyText(state.event.visitCompany);
+  const dateText = formatEventDateRange(state.event.startDate, state.event.endDate);
+  const visitCompany = state.event.visitCompany;
 
   return (
     <section className="mx-auto w-full max-w-3xl space-y-6 p-6">
@@ -357,8 +355,7 @@ export default function EventDetailsClient({ initialEvent, userId }: EventDetail
           <EventDetailsReadOnlyView
             event={state.event}
             dateText={dateText}
-            labelsText={labelsText}
-            visitCompanyText={visitCompanyText}
+            visitCompany={visitCompany}
             isDeletingEvent={state.isDeletingEvent}
             onStartEditing={startEditing}
             onOpenDeleteModal={openDeleteModal}

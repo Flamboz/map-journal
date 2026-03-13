@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import StarRating from "../components/StarRating";
+import EmptyValue from "../components/EmptyValue";
 import { getSafeRating } from "./eventDisplay";
 import { formatEventDateRange } from "./mapViewHelpers";
 import type { MapEvent } from "./api";
@@ -216,7 +217,7 @@ export function EventPreviewModal({ events, currentIndex, onClose, onPrevious, o
                 <div className="text-sm font-medium text-gray-800">{safeRating}/10</div>
               </div>
             ) : (
-              <div className="text-sm text-gray-600">Not rated</div>
+              <EmptyValue value={undefined} placeholder="Not rated" className="text-sm text-gray-600" />
             )}
           </div>
           </div>

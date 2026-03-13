@@ -1,12 +1,12 @@
 import type { MapEvent } from "../../map/api";
 import StarRating from "../../components/StarRating";
-import { formatRatingText, getSafeRating } from "../../map/eventDisplay";
+import EmptyValue from "../../components/EmptyValue";
+import { getSafeRating } from "../../map/eventDisplay";
 
 type EventDetailsReadOnlyViewProps = {
   event: MapEvent;
   dateText: string;
-  labelsText: string;
-  visitCompanyText: string;
+  visitCompany?: string | null;
   isDeletingEvent: boolean;
   onStartEditing: () => void;
   onOpenDeleteModal: () => void;
@@ -15,8 +15,7 @@ type EventDetailsReadOnlyViewProps = {
 export default function EventDetailsReadOnlyView({
   event,
   dateText,
-  labelsText,
-  visitCompanyText,
+  visitCompany,
   isDeletingEvent,
   onStartEditing,
   onOpenDeleteModal,
@@ -34,19 +33,40 @@ export default function EventDetailsReadOnlyView({
       <div className="mx-auto grid w-full max-w-3xl grid-cols-1 gap-4 md:grid-cols-2">
         <div className="rounded-lg bg-white p-5 shadow-sm">
           <p className="text-xs font-medium text-gray-500">DATE</p>
-          <p className="mt-2 text-lg text-gray-900">{dateText}</p>
+          <p className="mt-2 text-lg text-gray-900">
+            <EmptyValue
+              value={dateText}
+              placeholder="None"
+              className="text-lg text-gray-900"
+              placeholderClassName="text-lg italic text-gray-500"
+            />
+          </p>
         </div>
 
         <div className="rounded-lg bg-white p-5 shadow-sm">
           <p className="text-xs font-medium text-gray-500">VISIT COMPANY</p>
-          <p className="mt-2 text-lg text-gray-900">{visitCompanyText}</p>
+          <p className="mt-2 text-lg text-gray-900">
+            <EmptyValue
+              value={visitCompany}
+              placeholder="None"
+              className="text-lg text-gray-900"
+              placeholderClassName="text-lg italic text-gray-500"
+            />
+          </p>
         </div>
       </div>
 
       <div className="mx-auto w-full max-w-3xl space-y-4">
         <div className="rounded-lg bg-white p-5 shadow-sm">
           <p className="text-xs font-medium text-gray-500">DESCRIPTION</p>
-          <p className="mt-2 text-base text-gray-700">{event.description?.trim() ? event.description : "No description provided."}</p>
+          <p className="mt-2 text-base text-gray-700">
+            <EmptyValue
+              value={event.description}
+              placeholder="None"
+              className="text-base text-gray-700"
+              placeholderClassName="text-base italic text-gray-500"
+            />
+          </p>
         </div>
 
         <div className="rounded-lg bg-white p-5 shadow-sm">
@@ -54,21 +74,37 @@ export default function EventDetailsReadOnlyView({
           <div className="mt-3 flex items-center justify-between">
             <div className="flex items-center gap-4">
               {safeRating === 0 ? (
-                <p aria-label="Event rating" className="text-base text-gray-900">{formatRatingText(event.rating)}</p>
+                <EmptyValue
+                  value={undefined}
+                  placeholder="Not rated"
+                  className="text-base text-gray-900"
+                  placeholderClassName="text-base italic text-gray-500"
+                />
               ) : (
                 <StarRating rating={safeRating} numericClassName="text-base text-gray-900" />
               )}
             </div>
-            <div className="text-sm text-gray-700">{formatRatingText(event.rating)}</div>
+            <div className="text-sm text-gray-700">
+              <EmptyValue
+                value={safeRating > 0 ? `${safeRating}/10` : undefined}
+                placeholder="Not rated"
+                className="text-sm text-gray-700"
+                placeholderClassName="text-sm italic text-gray-500"
+              />
+            </div>
           </div>
         </div>
 
         <div className="rounded-lg bg-white p-5 shadow-sm">
           <p className="text-xs font-medium text-gray-500">LABELS</p>
           <div className="mt-3 flex flex-wrap items-center gap-2">
-            {(event.labels ?? []).map((label) => (
-              <span key={label} className="rounded-full border border-gray-200 bg-[#f6efe8] px-3 py-1 text-sm text-gray-800">{label}</span>
-            ))}
+            {(event.labels ?? []).length ? (
+              (event.labels ?? []).map((label) => (
+                <span key={label} className="rounded-full border border-gray-200 bg-[#f6efe8] px-3 py-1 text-sm text-gray-800">{label}</span>
+              ))
+            ) : (
+              <EmptyValue placeholder="None" className="text-sm text-gray-700" placeholderClassName="text-sm italic text-gray-500" />
+            )}
           </div>
         </div>
       </div>
