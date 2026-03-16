@@ -17,7 +17,7 @@ export async function buildApp(): Promise<FastifyInstance> {
     }
   });
 
-  await app.register(multipart);
+  await app.register(multipart, { limits: { fileSize: Number.MAX_SAFE_INTEGER } });
   await app.register(fastifyStatic, {
     root: path.join(process.cwd(), "uploads"),
     prefix: "/uploads/",

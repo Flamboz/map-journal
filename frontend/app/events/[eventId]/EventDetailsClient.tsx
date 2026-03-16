@@ -180,7 +180,7 @@ export default function EventDetailsClient({ initialEvent, userId }: EventDetail
             return;
           }
 
-          dispatch({ type: "SET_SAVE_ERROR", payload: "Unable to update photos. Please try again." });
+          dispatch({ type: "SET_SAVE_ERROR", payload: "Unable to update attachments. Please try again." });
           return;
         } finally {
           dispatch({ type: "SET_PHOTO_ACTION_RUNNING", payload: false });
@@ -200,7 +200,7 @@ export default function EventDetailsClient({ initialEvent, userId }: EventDetail
             return;
           }
 
-          dispatch({ type: "SET_SAVE_ERROR", payload: "Unable to update photos. Please try again." });
+          dispatch({ type: "SET_SAVE_ERROR", payload: "Unable to update attachments. Please try again." });
           return;
         } finally {
           dispatch({ type: "SET_PHOTO_ACTION_RUNNING", payload: false });
@@ -256,7 +256,7 @@ export default function EventDetailsClient({ initialEvent, userId }: EventDetail
         return;
       }
 
-      dispatch({ type: "SET_SAVE_ERROR", payload: "Unable to update photos. Please try again." });
+      dispatch({ type: "SET_SAVE_ERROR", payload: "Unable to update attachments. Please try again." });
     } finally {
       dispatch({ type: "SET_PHOTO_ACTION_RUNNING", payload: false });
     }
@@ -282,7 +282,7 @@ export default function EventDetailsClient({ initialEvent, userId }: EventDetail
         return;
       }
 
-      dispatch({ type: "SET_SAVE_ERROR", payload: "Unable to update photos. Please try again." });
+      dispatch({ type: "SET_SAVE_ERROR", payload: "Unable to update attachments. Please try again." });
     } finally {
       dispatch({ type: "SET_PHOTO_ACTION_RUNNING", payload: false });
     }
@@ -308,7 +308,7 @@ export default function EventDetailsClient({ initialEvent, userId }: EventDetail
         return;
       }
 
-      dispatch({ type: "SET_SAVE_ERROR", payload: "Unable to update photos. Please try again." });
+      dispatch({ type: "SET_SAVE_ERROR", payload: "Unable to update attachments. Please try again." });
     } finally {
       dispatch({ type: "SET_PHOTO_ACTION_RUNNING", payload: false });
     }

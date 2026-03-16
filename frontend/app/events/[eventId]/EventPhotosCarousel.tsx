@@ -85,7 +85,7 @@ export default function EventPhotosCarousel({
               <path strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7" />
               <path strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" d="M8 3v4M16 3v4M3 11h18" />
             </svg>
-            <div>No photos available</div>
+            <div>No attachments available</div>
           </div>
         </div>
         {onAddPhotos && (
@@ -93,11 +93,11 @@ export default function EventPhotosCarousel({
             <svg aria-hidden="true" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 5v14M5 12h14" />
             </svg>
-            <span>Add photo</span>
+            <span>Add attachment</span>
             <input
               type="file"
               multiple
-              accept="image/*"
+              accept="image/*,video/*"
               onChange={handleAddPhotos}
               className="sr-only"
               disabled={isUpdatingPhotos}
@@ -105,7 +105,6 @@ export default function EventPhotosCarousel({
           </label>
         )}
 
-        { /* delete button intentionally omitted from empty state; will show only when photos exist */ }
       </div>
     );
   }
@@ -134,14 +133,18 @@ export default function EventPhotosCarousel({
   return (
     <div className="relative">
       <div className="relative h-80 overflow-hidden rounded-2xl bg-gray-200 shadow-sm">
-        <Image
-          src={currentPhoto.url}
-          alt={`${eventName} photo ${safePhotoIndex + 1}`}
-          fill
-          unoptimized
-          loader={({ src }) => src}
-          className="h-full w-full object-cover"
-        />
+        {(currentPhoto.media_type === "video" || (currentPhoto.mime_type && currentPhoto.mime_type.startsWith("video/"))) ? (
+          <video src={currentPhoto.url} className="h-full w-full object-cover" controls preload="metadata" />
+        ) : (
+          <Image
+            src={currentPhoto.url}
+            alt={`${eventName} attachment ${safePhotoIndex + 1}`}
+            fill
+            unoptimized
+            loader={({ src }) => src}
+            className="h-full w-full object-cover"
+          />
+        )}
  
         {/* subtle gradient at bottom for better contrast with controls/text */}
         <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/30 to-transparent pointer-events-none rounded-b-2xl" />
@@ -150,11 +153,11 @@ export default function EventPhotosCarousel({
             <svg aria-hidden="true" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 5v14M5 12h14" />
             </svg>
-            <span>Add photo</span>
+            <span>Add attachment</span>
             <input
               type="file"
               multiple
-              accept="image/*"
+              accept="image/*,video/*"
               onChange={handleAddPhotos}
               className="sr-only"
               disabled={isUpdatingPhotos}
@@ -165,7 +168,7 @@ export default function EventPhotosCarousel({
         {onDeletePhoto && (
           <button
             type="button"
-            aria-label="Delete photo"
+            aria-label="Delete attachment"
             onClick={handleDeleteCurrentPhoto}
             disabled={isUpdatingPhotos}
             className="absolute left-3 top-3 z-50 inline-flex h-10 w-10 items-center justify-center rounded-full bg-red-600 text-white hover:bg-red-700 disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-red-200 shadow"
@@ -183,7 +186,7 @@ export default function EventPhotosCarousel({
         {onSetPreviewPhoto && (
           <button
             type="button"
-            aria-label="Set photo as preview"
+            aria-label="Set as preview"
             onClick={() => { if (isCurrentPreview || isUpdatingPhotos) return; void handleSetCurrentPhotoAsPreview(); }}
             disabled={isUpdatingPhotos}
             className={`absolute right-3 top-3 z-50 inline-flex h-10 items-center gap-2 rounded-full px-3 py-1 text-sm font-medium shadow focus:outline-none focus:ring-2 ${isCurrentPreview ? 'bg-amber-200 text-amber-900 hover:bg-amber-200 focus:ring-amber-300' : 'bg-amber-100 text-amber-800 hover:bg-amber-200 focus:ring-amber-200'} ${isUpdatingPhotos ? 'opacity-60 pointer-events-none' : ''}`}
@@ -201,9 +204,9 @@ export default function EventPhotosCarousel({
           </button>
         )}
 
-        <button
+          <button
           type="button"
-          aria-label="Open photo viewer"
+          aria-label="Open attachment viewer"
           onClick={openModal}
             className="absolute inset-0 z-10 cursor-zoom-in"
         />
@@ -212,7 +215,7 @@ export default function EventPhotosCarousel({
           <>
             <button
               type="button"
-              aria-label="Previous photo"
+              aria-label="Previous attachment"
               onClick={showPreviousPhoto}
               className="absolute left-3 top-1/2 z-20 -translate-y-1/2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/90 border border-gray-100 text-amber-700 shadow-sm hover:bg-amber-50 focus:outline-none focus:ring-2 focus:ring-amber-200"
               >
@@ -222,7 +225,7 @@ export default function EventPhotosCarousel({
               </button>
             <button
               type="button"
-              aria-label="Next photo"
+              aria-label="Next attachment"
               onClick={showNextPhoto}
               className="absolute right-3 top-1/2 z-20 -translate-y-1/2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/90 border border-gray-100 text-amber-700 shadow-sm hover:bg-amber-50 focus:outline-none focus:ring-2 focus:ring-amber-200"
             >
@@ -235,7 +238,7 @@ export default function EventPhotosCarousel({
       </div>
 
         <div className="mt-4 flex items-center justify-between">
-        <p className="text-sm text-gray-600">Photo {safePhotoIndex + 1} of {photos.length}</p>
+        <p className="text-sm text-gray-600">Attachment {safePhotoIndex + 1} of {photos.length}</p>
 
         <div className="flex items-center gap-2">
         { /* floating add button moved into image area above */ }
@@ -244,17 +247,17 @@ export default function EventPhotosCarousel({
 
         {/* Delete button moved into the image area (top-left) */}
 
-        {isUpdatingPhotos && <span className="text-sm text-gray-600">Updating photos...</span>}
+        {isUpdatingPhotos && <span className="text-sm text-gray-600">Updating attachments...</span>}
         </div>
       </div>
 
       {/* Floating add-photo button moved into the image area; duplicate removed. */}
 
       {isModalOpen && (
-        <div className="fixed inset-0 z-[1300] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Photo viewer">
+        <div className="fixed inset-0 z-[1300] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Attachment viewer">
           <button
             type="button"
-            aria-label="Close photo viewer backdrop"
+            aria-label="Close attachment viewer backdrop"
             onClick={closeModal}
             className="absolute inset-0 bg-black/70"
           />
@@ -262,7 +265,7 @@ export default function EventPhotosCarousel({
           <div className="relative z-[1301] w-full max-w-5xl rounded-xl bg-white p-4 shadow-lg">
             <button
               type="button"
-              aria-label="Close photo viewer"
+              aria-label="Close attachment viewer"
               onClick={closeModal}
               className="absolute right-3 top-3 rounded bg-white/90 px-2 py-1 text-sm font-semibold text-gray-800"
             >
@@ -270,20 +273,24 @@ export default function EventPhotosCarousel({
             </button>
 
             <div className="relative h-[70vh] overflow-hidden rounded-lg bg-black">
-              <Image
-                src={currentPhoto.url}
-                alt={`${eventName} photo ${safePhotoIndex + 1}`}
-                fill
-                unoptimized
-                loader={({ src }) => src}
-                className="h-full w-full object-contain"
-              />
+              {(currentPhoto.media_type === "video" || (currentPhoto.mime_type && currentPhoto.mime_type.startsWith("video/"))) ? (
+                <video src={currentPhoto.url} className="h-full w-full object-contain" controls preload="metadata" />
+              ) : (
+                <Image
+                  src={currentPhoto.url}
+                  alt={`${eventName} attachment ${safePhotoIndex + 1}`}
+                  fill
+                  unoptimized
+                  loader={({ src }) => src}
+                  className="h-full w-full object-contain"
+                />
+              )}
 
               {hasMultiplePhotos && (
                 <>
                   <button
                     type="button"
-                    aria-label="Previous photo in modal"
+                    aria-label="Previous attachment in modal"
                     onClick={showPreviousPhoto}
                     className="absolute left-3 top-1/2 -translate-y-1/2 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/90 border border-gray-100 text-amber-800 shadow-sm hover:bg-amber-50 focus:outline-none focus:ring-2 focus:ring-amber-200"
                   >
@@ -293,7 +300,7 @@ export default function EventPhotosCarousel({
                   </button>
                   <button
                     type="button"
-                    aria-label="Next photo in modal"
+                    aria-label="Next attachment in modal"
                     onClick={showNextPhoto}
                     className="absolute right-3 top-1/2 -translate-y-1/2 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/90 border border-gray-100 text-amber-800 shadow-sm hover:bg-amber-50 focus:outline-none focus:ring-2 focus:ring-amber-200"
                   >
@@ -306,7 +313,7 @@ export default function EventPhotosCarousel({
             </div>
 
             <p className="mt-3 text-sm text-gray-600">
-              Photo {safePhotoIndex + 1} of {photos.length}
+              Attachment {safePhotoIndex + 1} of {photos.length}
             </p>
           </div>
         </div>

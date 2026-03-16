@@ -44,7 +44,7 @@ vi.mock("./EventPhotosCarousel", () => ({
         onClick={() => onAddPhotos?.([new File(["demo"], "photo.png", { type: "image/png" })])}
         disabled={!onAddPhotos}
       >
-        Mock add photos
+        Mock add attachments
       </button>
       <button
         type="button"
@@ -193,7 +193,7 @@ describe("EventDetailsClient delete flow", () => {
 
     expect(await screen.findByRole("dialog", { name: "Delete event confirmation" })).toBeInTheDocument();
     expect(screen.getByText("Delete event?")).toBeInTheDocument();
-    expect(screen.getByText("This will permanently delete the event and all associated photos.")).toBeInTheDocument();
+    expect(screen.getByText("This will permanently delete the event and all associated attachments.")).toBeInTheDocument();
   });
 
   it("deletes event after confirmation and navigates to map", async () => {
@@ -239,7 +239,7 @@ describe("EventDetailsClient delete flow", () => {
     render(<EventDetailsClient initialEvent={initialEvent} userId="1" />);
 
     fireEvent.click(screen.getByRole("button", { name: "Edit event" }));
-    fireEvent.click(screen.getByRole("button", { name: "Mock add photos" }));
+    fireEvent.click(screen.getByRole("button", { name: "Mock add attachments" }));
 
     await waitFor(() => {
       expect(replaceMock).toHaveBeenCalledWith("/?error=event-not-found");

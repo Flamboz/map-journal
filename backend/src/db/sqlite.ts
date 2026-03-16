@@ -116,6 +116,9 @@ async function ensureEventsAndPhotosSchema() {
       await createEventPhotosTable();
     } else {
       await ensureColumn("event_photos", "sort_order INTEGER DEFAULT 0");
+      await ensureColumn("event_photos", "mime_type TEXT");
+      await ensureColumn("event_photos", "original_name TEXT");
+      await ensureColumn("event_photos", "size_bytes INTEGER");
     }
   }
 

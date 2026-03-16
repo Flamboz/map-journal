@@ -257,13 +257,13 @@ export function EventDraftForm({
 
           <div>
             <label className="mb-1 block text-sm font-semibold text-slate-800" htmlFor="event-photos">
-              Photos
+              Attachments (photos and videos)
             </label>
             <input
               id="event-photos"
               type="file"
               multiple
-              accept="image/*"
+              accept="image/*,video/*"
               onChange={(event) => setSelectedPhotos(event.target.files ? Array.from(event.target.files) : [])}
               className="w-full rounded-[var(--radius-md)] border border-[color:var(--border-soft)] bg-[color:var(--paper-surface)] px-3 py-2 text-sm text-slate-900"
             />

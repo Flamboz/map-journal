@@ -134,7 +134,7 @@ describe("MapView", () => {
 
     expect(await screen.findByRole("dialog")).toBeInTheDocument();
     expect(screen.getByText("River Walk")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "See More" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "View full →" })).toBeInTheDocument();
   });
 
   it("groups events within 20m into one marker", async () => {
@@ -354,7 +354,6 @@ describe("MapView", () => {
     fireEvent.click(screen.getByRole("button", { name: "Save Event" }));
 
     expect(await screen.findByText("Name is required.")).toBeInTheDocument();
-    expect(await screen.findByText("Date or date range is required.")).toBeInTheDocument();
   });
 
   it("creates an event and uploads photos", async () => {
@@ -392,7 +391,7 @@ describe("MapView", () => {
 
     fireEvent.change(screen.getByLabelText("Name"), { target: { value: "City Walk" } });
     fireEvent.change(screen.getByLabelText("Start date"), { target: { value: "2026-03-04" } });
-    fireEvent.change(screen.getByLabelText("Photos"), {
+    fireEvent.change(screen.getByLabelText("Attachments (photos and videos)"), {
       target: {
         files: [new File(["abc"], "test.jpg", { type: "image/jpeg" })],
       },

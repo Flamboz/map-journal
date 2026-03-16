@@ -1,17 +1,19 @@
 import { randomUUID } from "crypto";
 import fs from "fs";
 import path from "path";
+import { pipeline } from "stream/promises";
 import { all, get, run } from "../db/sqlite";
 import { getOrderedPhotoIds, resequencePhotoSortOrder } from "../db/queries/photoQueries";
 import { deleteUploadedFile, removeEventUploadDirectory, removeUserDirectoryIfEmpty } from "../utils/fileCleanup";
-import { EventPhotosTableColumn, MAX_UPLOAD_BYTES, sanitizeFilename } from "../routes/events/shared";
+import { EventPhotosTableColumn, sanitizeFilename } from "../routes/events/shared";
 import { failure, ServiceResult, success } from "./serviceResult";
 
 type UploadPart = {
   type: string;
-  mimetype: string;
+  mimetype?: string;
   filename?: string;
-  toBuffer: () => Promise<Buffer>;
+  file?: NodeJS.ReadableStream;
+  toBuffer?: () => Promise<Buffer>;
 };
 
 export async function uploadEventPhotosForUser(
@@ -32,7 +34,7 @@ export async function uploadEventPhotosForUser(
   }
 
   const uploadDir = path.join(process.cwd(), "uploads", `user-${userId}`, `event-${eventId}`);
-  fs.mkdirSync(uploadDir, { recursive: true });
+  await fs.promises.mkdir(uploadDir, { recursive: true });
 
   const eventPhotosColumns = (await all("PRAGMA table_info(event_photos)")) as EventPhotosTableColumn[];
   const eventPhotosColumnSet = new Set(eventPhotosColumns.map((column) => column.name));
@@ -50,23 +52,46 @@ export async function uploadEventPhotosForUser(
       continue;
     }
 
-    if (!part.mimetype.startsWith("image/")) {
-      return failure(400, "INVALID_FILE_TYPE", "Only images are allowed.");
-    }
-
-    const fileBuffer = await part.toBuffer();
-    if (fileBuffer.length > MAX_UPLOAD_BYTES) {
-      return failure(400, "FILE_TOO_LARGE", "Each photo must be 10MB or smaller.");
+    const mimetype = (part.mimetype || "").toString();
+    if (mimetype && !(mimetype.startsWith("image/") || mimetype.startsWith("video/"))) {
+      return failure(400, "INVALID_FILE_TYPE", "Only image and video media types are allowed.");
     }
 
     fileIndex += 1;
-    const originalName = sanitizeFilename(part.filename || `photo-${fileIndex}.jpg`);
-    const ext = path.extname(originalName) || ".jpg";
-    const baseName = path.basename(originalName, ext) || `photo-${fileIndex}`;
+    const originalName = sanitizeFilename(part.filename || `media-${fileIndex}`);
+    const ext = path.extname(originalName) || "";
+    const baseName = path.basename(originalName, ext) || `media-${fileIndex}`;
     const storedFileName = `${Date.now()}-${fileIndex}-${baseName}${ext}`;
     const absoluteFilePath = path.join(uploadDir, storedFileName);
 
-    fs.writeFileSync(absoluteFilePath, fileBuffer);
+    const tempFilePath = absoluteFilePath + ".part";
+    let sizeBytes = 0;
+
+    if ((part as any).file && typeof (part as any).file.pipe === "function") {
+      const readStream: NodeJS.ReadableStream = (part as any).file;
+      readStream.on("data", (chunk: Buffer) => {
+        sizeBytes += chunk.length;
+      });
+
+      const writeStream = fs.createWriteStream(tempFilePath, { flags: "w" });
+      try {
+        await pipeline(readStream as any, writeStream);
+        await fs.promises.rename(tempFilePath, absoluteFilePath);
+      } catch (err) {
+        // cleanup temp file on failure
+        try {
+          await fs.promises.unlink(tempFilePath);
+        } catch {}
+        throw err;
+      }
+    } else if (typeof part.toBuffer === "function") {
+      // Fallback for parts that only expose toBuffer(). Still write using async fs.
+      const fileBuffer = await part.toBuffer();
+      sizeBytes = fileBuffer.length;
+      await fs.promises.writeFile(absoluteFilePath, fileBuffer);
+    } else {
+      return failure(400, "INVALID_PART", "Uploaded part is not a file stream.");
+    }
 
     const relativePath = path.posix.join(`user-${userId}`, `event-${eventId}`, storedFileName);
 
@@ -94,7 +119,7 @@ export async function uploadEventPhotosForUser(
     }
 
     if (eventPhotosColumnSet.has("mime_type")) {
-      insertPayload.mime_type = part.mimetype;
+      insertPayload.mime_type = mimetype || null;
     }
 
     if (eventPhotosColumnSet.has("original_name")) {
@@ -102,7 +127,7 @@ export async function uploadEventPhotosForUser(
     }
 
     if (eventPhotosColumnSet.has("size_bytes")) {
-      insertPayload.size_bytes = fileBuffer.length;
+      insertPayload.size_bytes = sizeBytes;
     }
 
     for (const column of eventPhotosColumns) {

@@ -36,6 +36,22 @@ export function normalizePhotos(photos: MapEventPhoto[] = []): MapEventPhoto[] {
   return photos.map((photo) => ({
     ...photo,
     url: resolveApiUrl(photo.url),
+    thumbnail_url: photo.thumbnail_url ? resolveApiUrl(photo.thumbnail_url) : photo.thumbnail_url,
+
+    media_type: (function () {
+      if (photo.media_type) return photo.media_type;
+      if (photo.mime_type) return photo.mime_type.startsWith("video/") ? "video" : "photo";
+      try {
+        const parsed = new URL(photo.url, API_URL);
+        const pathname = parsed.pathname || "";
+        const ext = pathname.split(".").pop()?.toLowerCase() ?? "";
+        const videoExts = new Set(["mp4", "webm", "ogg", "mov", "mkv", "m4v"]);
+        if (videoExts.has(ext)) return "video";
+      } catch (e) {
+        console.log(e)
+      }
+      return "photo";
+    })(),
   }));
 }
 

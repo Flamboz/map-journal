@@ -2,34 +2,54 @@ import { buildApiUrl, normalizePhotos } from "./apiClient";
 import { createApiClientError } from "./apiErrors";
 import type { MapEventPhoto } from "./apiTypes";
 
-export async function uploadEventPhotos(userId: string, eventId: string, files: File[]): Promise<MapEventPhoto[]> {
-  if (files.length === 0) {
-    return [];
-  }
+export async function uploadEventPhotos(
+  userId: string,
+  eventId: string,
+  files: File[],
+  onProgress?: (progress: { loaded: number; total: number }) => void,
+): Promise<MapEventPhoto[]> {
+  if (files.length === 0) return [];
 
   const formData = new FormData();
   for (const file of files) {
     formData.append("photos", file);
   }
 
-  const response = await fetch(buildApiUrl(`/events/${eventId}/photos`, { userId }), {
-    method: "POST",
-    body: formData,
-  });
+  return await new Promise<MapEventPhoto[]>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", buildApiUrl(`/events/${eventId}/photos`, { userId }));
 
-  if (!response.ok) {
-    if (response.status === 404) {
-      throw createApiClientError("EVENT_NOT_FOUND");
+    xhr.onload = () => {
+      if (xhr.status === 201) {
+        try {
+          const json = JSON.parse(xhr.responseText) as { photos?: MapEventPhoto[] };
+          resolve(normalizePhotos(json.photos ?? []));
+        } catch (err) {
+          reject(createApiClientError("EVENT_PHOTOS_UPLOAD_FAILED"));
+        }
+        return;
+      }
+
+      if (xhr.status === 404) {
+        reject(createApiClientError("EVENT_NOT_FOUND"));
+        return;
+      }
+
+      reject(createApiClientError("EVENT_PHOTOS_UPLOAD_FAILED"));
+    };
+
+    xhr.onerror = () => reject(createApiClientError("EVENT_PHOTOS_UPLOAD_FAILED"));
+
+    if (xhr.upload && typeof xhr.upload.addEventListener === "function") {
+      xhr.upload.addEventListener("progress", (ev: ProgressEvent) => {
+        if (ev.lengthComputable && onProgress) {
+          onProgress({ loaded: ev.loaded, total: ev.total });
+        }
+      });
     }
 
-    throw createApiClientError("EVENT_PHOTOS_UPLOAD_FAILED");
-  }
-
-  const data = (await response.json()) as {
-    photos?: MapEventPhoto[];
-  };
-
-  return normalizePhotos(data.photos ?? []);
+    xhr.send(formData);
+  });
 }
 
 export async function deleteEventPhoto(userId: string, eventId: string, photoId: string): Promise<MapEventPhoto[]> {

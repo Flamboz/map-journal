@@ -15,6 +15,12 @@ export type MapEventPhoto = {
   path: string;
   url: string;
   createdAt: string;
+  mime_type?: string; // e.g. "image/jpeg" or "video/mp4"
+  original_name?: string;
+  size_bytes?: number;
+  // Convenience flag for rendering
+  media_type?: "photo" | "video";
+  thumbnail_url?: string;
 };
 
 export type MapEvent = {

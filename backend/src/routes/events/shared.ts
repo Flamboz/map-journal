@@ -105,7 +105,7 @@ export const ALLOWED_VISIT_COMPANY_VALUES: string[] = ["Partner", "Solo", "Frien
 
 export const ALLOWED_VISIT_COMPANIES = new Set(ALLOWED_VISIT_COMPANY_VALUES);
 
-export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+export const MAX_UPLOAD_BYTES = Number.MAX_SAFE_INTEGER;
 export const DEFAULT_PIN_ZOOM = 13;
 
 export function groupPhotosByEvent(

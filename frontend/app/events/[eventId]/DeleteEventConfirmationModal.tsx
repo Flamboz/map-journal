@@ -25,7 +25,7 @@ export default function DeleteEventConfirmationModal({
 
       <div className="relative z-[1301] w-full max-w-md rounded-xl bg-white p-5 shadow-lg">
         <h2 className="text-lg font-semibold text-gray-900">Delete event?</h2>
-        <p className="mt-2 text-sm text-gray-600">This will permanently delete the event and all associated photos.</p>
+        <p className="mt-2 text-sm text-gray-600">This will permanently delete the event and all associated attachments.</p>
 
         <div className="mt-4 flex justify-end gap-2">
           <button
