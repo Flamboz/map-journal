@@ -14,9 +14,9 @@ export default function Header() {
     <header className="sticky top-0 z-[1200] flex h-[var(--topbar-height)] w-full items-center justify-between border-b border-[color:var(--border-soft)] bg-[#1d2140] px-4 text-[#f7f1e6] sm:px-6">
       <div className="flex items-center gap-3">
         <span className="h-2.5 w-2.5 rounded-full bg-[color:var(--accent-primary)]" aria-hidden="true" />
-        <p data-heading="journal" className="text-2xl leading-none">
+        <Link href="/" data-heading="journal" className="text-2xl leading-none">
           Map Journal
-        </p>
+        </Link>
       </div>
       {session?.user && (
         <div className="flex items-center gap-3">
