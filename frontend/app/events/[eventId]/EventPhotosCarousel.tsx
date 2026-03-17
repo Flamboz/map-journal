@@ -79,7 +79,7 @@ export default function EventPhotosCarousel({
   if (photos.length === 0) {
     return (
       <div className="relative">
-        <div className="h-72 rounded-2xl bg-[#efe7df] shadow-inner flex items-center justify-center text-sm text-gray-600">
+        <div className="h-72 md:h-96 lg:h-[360px] rounded-2xl bg-[#efe7df] shadow-inner flex items-center justify-center text-sm text-gray-600">
           <div className="text-center">
             <svg className="mx-auto mb-2 h-8 w-8 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <path strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7" />
@@ -132,7 +132,7 @@ export default function EventPhotosCarousel({
 
   return (
     <div className="relative">
-      <div className="relative h-80 overflow-hidden rounded-2xl bg-gray-200 shadow-sm">
+      <div className="relative h-72 md:h-96 lg:h-[360px] overflow-hidden rounded-2xl bg-gray-200 shadow-sm">
         {(currentPhoto.media_type === "video" || (currentPhoto.mime_type && currentPhoto.mime_type.startsWith("video/"))) ? (
           <video src={currentPhoto.url} className="h-full w-full object-cover" controls preload="metadata" />
         ) : (
