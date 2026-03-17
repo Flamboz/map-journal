@@ -20,6 +20,7 @@ import {
 import { isApiErrorCode } from "../../map/apiErrors";
 import { eventDraftValidationSchema, formatEventDateRange } from "../../map/mapViewHelpers";
 import type { EventFormState } from "../../map/mapViewTypes";
+import { scrollToTop } from "../../../lib/scrollToTop";
 import DeleteEventConfirmationModal from "./DeleteEventConfirmationModal";
 import EventDetailsEditForm from "./EventDetailsEditForm";
 import EventDetailsReadOnlyView from "./EventDetailsReadOnlyView";
@@ -109,9 +110,7 @@ export default function EventDetailsClient({ initialEvent, userId }: EventDetail
   function startEditing() {
     dispatch({ type: "START_EDIT" });
     reset(mapEventToFormState(state.event));
-    if (typeof window !== "undefined") {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
+    scrollToTop();
   }
 
   function cancelEditing() {
@@ -222,6 +221,9 @@ export default function EventDetailsClient({ initialEvent, userId }: EventDetail
       const refreshedEvent = await fetchEventById(state.event.id, userId);
       dispatch({ type: "SAVE_SUCCESS", payload: refreshedEvent });
       reset(mapEventToFormState(refreshedEvent));
+
+      // After a successful save, scroll the page to top so the user sees the read-only view
+      scrollToTop();
 
       if (!updatedEvent) {
         dispatch({ type: "SET_SAVE_ERROR", payload: "Unable to save event. Please try again." });

@@ -48,8 +48,12 @@ export default function EventDetailsEditForm({
   onCancel,
   onSubmit,
 }: EventDetailsEditFormProps) {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    onSubmit(e);
+  };
+
   return (
-    <form className="space-y-4 rounded-lg border border-gray-200 bg-white p-5" onSubmit={onSubmit}>
+    <form className="space-y-4 rounded-lg border border-gray-200 bg-white p-5" onSubmit={handleSubmit}>
       <EventNameField register={register} errors={errors} />
 
       <EventDateRangeFields
