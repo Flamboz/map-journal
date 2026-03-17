@@ -61,6 +61,7 @@ export type EventRow = {
   rating?: number | null;
   labels?: string | null;
   visit_company?: string | null;
+  city?: string | null;
   lat: number;
   lng: number;
   created_at: string;
@@ -139,6 +140,7 @@ export function normalizeEventRows(events: EventRow[], photosByEvent: Map<string
     rating: event.rating ?? null,
     labels: parseEventLabels(event.labels),
     visitCompany: event.visit_company || "",
+    city: event.city || "",
     lat: event.lat,
     lng: event.lng,
     created_at: event.created_at,

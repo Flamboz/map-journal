@@ -1,5 +1,6 @@
 import { randomUUID } from "crypto";
 import { all, get, run } from "../db/sqlite";
+import { reverseGeocodeCity } from "../utils/geocode";
 import { deleteUploadedFile, removeEventUploadDirectory, removeUserDirectoryIfEmpty } from "../utils/fileCleanup";
 import { failure, ServiceResult, success } from "./serviceResult";
 import {
@@ -139,7 +140,7 @@ export async function listEventsForUser(input: ListEventsInput) {
   }
 
   const events = (await all(
-    `SELECT id, user_id, title, start_date, end_date, description, rating, labels, visit_company, lat, lng, created_at
+    `SELECT id, user_id, title, start_date, end_date, description, rating, labels, visit_company, city, lat, lng, created_at
      FROM events
      WHERE ${whereClauses.join(" AND ")}
      ORDER BY created_at DESC, id DESC`,
@@ -163,7 +164,7 @@ export async function listEventsForUser(input: ListEventsInput) {
 
 export async function getEventByIdForUser(eventId: string, userId: number): Promise<ServiceResult<Record<string, unknown>>> {
   const event = (await get(
-    `SELECT id, user_id, title, start_date, end_date, description, rating, labels, visit_company, lat, lng, created_at
+    `SELECT id, user_id, title, start_date, end_date, description, rating, labels, visit_company, city, lat, lng, created_at
      FROM events
      WHERE id = ? AND user_id = ?`,
     [eventId, userId],
@@ -243,9 +244,14 @@ export async function createEventForUser(input: CreateEventInput): Promise<Servi
 
   const eventId = randomUUID();
 
+  let city = await reverseGeocodeCity(lat, lng);
+  if (!city) {
+    city = "";
+  }
+
   await run(
-    `INSERT INTO events (id, user_id, title, start_date, end_date, description, rating, labels, visit_company, lat, lng)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO events (id, user_id, title, start_date, end_date, description, rating, labels, visit_company, city, lat, lng)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       eventId,
       input.userId,
@@ -256,13 +262,14 @@ export async function createEventForUser(input: CreateEventInput): Promise<Servi
       normalizedRating,
       JSON.stringify(labels),
       visitCompany,
+      city,
       lat,
       lng,
     ],
   );
 
   const event = (await get(
-    `SELECT id, user_id, title, start_date, end_date, description, rating, labels, visit_company, lat, lng, created_at
+    `SELECT id, user_id, title, start_date, end_date, description, rating, labels, visit_company, city, lat, lng, created_at
      FROM events
      WHERE id = ?`,
     [eventId],
@@ -278,7 +285,7 @@ export async function createEventForUser(input: CreateEventInput): Promise<Servi
 
 export async function updateEventForUser(input: UpdateEventInput): Promise<ServiceResult<Record<string, unknown>>> {
   const existingEvent = (await get(
-    `SELECT id, user_id, title, start_date, end_date, description, rating, labels, visit_company, lat, lng, created_at
+    `SELECT id, user_id, title, start_date, end_date, description, rating, labels, visit_company, city, lat, lng, created_at
      FROM events
      WHERE id = ?`,
     [input.eventId],
@@ -337,7 +344,7 @@ export async function updateEventForUser(input: UpdateEventInput): Promise<Servi
   );
 
   const updatedEvent = (await get(
-    `SELECT id, user_id, title, start_date, end_date, description, rating, labels, visit_company, lat, lng, created_at
+    `SELECT id, user_id, title, start_date, end_date, description, rating, labels, visit_company, city, lat, lng, created_at
      FROM events
      WHERE id = ?`,
     [input.eventId],

@@ -78,6 +78,7 @@ async function createEventsTable() {
       rating INTEGER,
       labels TEXT DEFAULT '[]',
       visit_company TEXT DEFAULT '',
+      city TEXT DEFAULT '',
       lat REAL NOT NULL,
       lng REAL NOT NULL,
       created_at TEXT DEFAULT (datetime('now'))
@@ -110,6 +111,7 @@ async function ensureEventsAndPhotosSchema() {
     await ensureColumn("events", "rating INTEGER");
     await ensureColumn("events", "labels TEXT DEFAULT '[]'");
     await ensureColumn("events", "visit_company TEXT DEFAULT ''");
+    await ensureColumn("events", "city TEXT DEFAULT ''");
 
     const hasEventPhotosTable = await tableExists("event_photos");
     if (!hasEventPhotosTable) {
@@ -124,6 +126,16 @@ async function ensureEventsAndPhotosSchema() {
 
   await run(`
     CREATE INDEX IF NOT EXISTS idx_event_photos_event_id ON event_photos(event_id);
+  `);
+
+  await run(`
+    CREATE TABLE IF NOT EXISTS geocode_cache (
+      key TEXT PRIMARY KEY,
+      lat REAL NOT NULL,
+      lon REAL NOT NULL,
+      city TEXT DEFAULT '',
+      updated_at TEXT DEFAULT (datetime('now'))
+    );
   `);
 }
 

@@ -7,7 +7,8 @@ import { usePathname } from "next/navigation";
 export default function Header() {
   const { data: session } = useSession();
   const pathname = usePathname();
-  const showBack = typeof pathname === "string" && pathname.startsWith("/events/");
+  const showBack =
+    typeof pathname === "string" && (pathname.startsWith("/events/") || pathname.startsWith("/timeline"));
 
   return (
     <header className="sticky top-0 z-[1200] flex h-[var(--topbar-height)] w-full items-center justify-between border-b border-[color:var(--border-soft)] bg-[#1d2140] px-4 text-[#f7f1e6] sm:px-6">
@@ -27,6 +28,13 @@ export default function Header() {
               ← Back to map
             </Link>
           )}
+
+          <Link
+            href="/timeline"
+            className="hidden sm:inline-flex rounded-md border border-[#f7f1e6]/25 bg-[#2a2f55]/0 px-3 py-2 text-sm font-medium text-[#f7f1e6] hover:bg-[#2a2f55]/10"
+          >
+            Timeline
+          </Link>
 
           <button
             type="button"

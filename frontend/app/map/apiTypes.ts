@@ -33,6 +33,7 @@ export type MapEvent = {
   description?: string;
   rating?: number | null;
   labels?: string[];
+  city?: string;
   visitCompany?: string;
   lat: number;
   lng: number;
