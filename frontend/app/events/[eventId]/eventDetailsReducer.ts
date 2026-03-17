@@ -131,10 +131,20 @@ export function eventDetailsReducer(state: EventDetailsState, action: EventDetai
         startDateMin: action.payload,
       };
     case "SET_EVENT":
+      if (state.isEditing) {
+        const serverPhotos = action.payload.photos ?? [];
+        const existingDraft = state.draftPhotos ?? [];
+        const toDelete = new Set(state.photosToDelete ?? []);
+        const existingIds = new Set(existingDraft.map((p) => p.id));
+        const appended = serverPhotos.filter((p) => !existingIds.has(p.id) && !toDelete.has(p.id));
+        const merged = [...existingDraft, ...appended];
+        return { ...state, event: action.payload, draftPhotos: merged, photosToDelete: state.photosToDelete ?? [] };
+      }
+
       return {
         ...state,
         event: action.payload,
-        // when event is set externally, clear any edit drafts
+        // when event is set externally and not editing, clear any edit drafts
         draftPhotos: undefined,
         photosToDelete: [],
       };
