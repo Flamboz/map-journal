@@ -11,6 +11,7 @@ import {
   groupPhotosByEvent,
   normalizeEventRows,
   normalizeLabels,
+  DEFAULT_PIN_ZOOM,
 } from "../routes/events/shared";
 
 const SAME_PIN_DISTANCE_METERS = 20;
@@ -280,6 +281,15 @@ export async function createEventForUser(input: CreateEventInput): Promise<Servi
   }
 
   const normalizedEvent = normalizeEventRows([event])[0];
+  try {
+    await run(
+      `INSERT OR REPLACE INTO map_positions (user_id, lat, lng, zoom, updated_at)
+       VALUES (?, ?, ?, ?, datetime('now'))`,
+      [input.userId, lat, lng, DEFAULT_PIN_ZOOM],
+    );
+  } catch {
+  }
+
   return success(normalizedEvent);
 }
 
@@ -363,6 +373,14 @@ export async function updateEventForUser(input: UpdateEventInput): Promise<Servi
   )) as EventPhotoRow[];
 
   const normalizedEvent = normalizeEventRows([updatedEvent], groupPhotosByEvent(photos))[0];
+  try {
+    await run(
+      `INSERT OR REPLACE INTO map_positions (user_id, lat, lng, zoom, updated_at)
+       VALUES (?, ?, ?, ?, datetime('now'))`,
+      [input.userId, updatedEvent.lat, updatedEvent.lng, DEFAULT_PIN_ZOOM],
+    );
+  } catch {
+  }
   return success(normalizedEvent);
 }
 

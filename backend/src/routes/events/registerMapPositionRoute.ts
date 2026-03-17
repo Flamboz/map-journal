@@ -13,6 +13,14 @@ export function registerMapPositionRoute(fastify: FastifyInstance) {
       }
 
       try {
+        const storedPosition = (await get("SELECT lat, lng, zoom FROM map_positions WHERE user_id = ?", [userId])) as
+          | { lat: number; lng: number; zoom: number }
+          | null;
+
+        if (storedPosition) {
+          return reply.status(200).send({ lastMapPosition: storedPosition });
+        }
+
         const latestEvent = (await get(
           `SELECT lat, lng
            FROM events
@@ -28,11 +36,7 @@ export function registerMapPositionRoute(fastify: FastifyInstance) {
             .send({ lastMapPosition: { lat: latestEvent.lat, lng: latestEvent.lng, zoom: DEFAULT_PIN_ZOOM } });
         }
 
-        const storedPosition = (await get("SELECT lat, lng, zoom FROM map_positions WHERE user_id = ?", [userId])) as
-          | { lat: number; lng: number; zoom: number }
-          | null;
-
-        return reply.status(200).send({ lastMapPosition: storedPosition ?? null });
+        return reply.status(200).send({ lastMapPosition: null });
       } catch (error) {
         return sendServerError(request, reply, error);
       }
