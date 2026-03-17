@@ -82,7 +82,7 @@ export default function TimelineClient({ initialEvents = [] }: Props) {
         <p>No events to show yet.</p>
       ) : (
         <section className="relative">
-          <div className="absolute left-8 top-0 bottom-0 w-px bg-gray-200/40" />
+          <div className="absolute left-8 top-0 bottom-0 w-px bg-gray-300/60" />
 
           <div className="space-y-8 pl-20">
             {Object.keys(grouped)
