@@ -152,7 +152,7 @@ export default function MapView({ initialError = null }: MapViewProps) {
           )}
 
           {isLeftSidebarOpen && (
-            <div className="absolute inset-0 z-[1190] bg-[#1d2140]/35" onClick={() => setIsLeftSidebarOpen(false)} aria-hidden="true" />
+            <div className="absolute inset-0 z-[1190] bg-[color:var(--topbar-bg)]/35" onClick={() => setIsLeftSidebarOpen(false)} aria-hidden="true" />
           )}
 
           <div

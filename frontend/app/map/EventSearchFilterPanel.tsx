@@ -82,7 +82,7 @@ export function EventSearchFilterPanel({
         {hasActiveFilters && (
           <button
             type="button"
-            className="text-sm font-semibold text-[#325a8a] transition hover:text-[#24446b]"
+            className="text-sm font-semibold text-[color:var(--link)] transition hover:text-[color:var(--link-hover)]"
             onClick={() => {
               setSearch("");
               setDateFrom("");
@@ -126,7 +126,7 @@ export function EventSearchFilterPanel({
           </button>
           <button
             type="submit"
-            className="rounded-[var(--radius-md)] bg-[#1d2140] px-4 py-1.5 text-sm font-semibold text-[#f7f1e6] transition hover:translate-y-[-1px] hover:bg-[#2f365f] disabled:opacity-60"
+            className="rounded-[var(--radius-md)] bg-[color:var(--topbar-bg)] px-4 py-1.5 text-sm font-semibold text-[color:var(--topbar-text)] transition hover:translate-y-[-1px] hover:bg-[color:var(--topbar-ctrl-hover)] disabled:opacity-60"
             disabled={isSearchingEvents}
           >
             {isSearchingEvents ? "Searching..." : "Search"}

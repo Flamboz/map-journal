@@ -32,7 +32,7 @@ type FieldLabelProps = {
 function FieldLabel({ htmlFor, text, required = false }: FieldLabelProps) {
   return (
     <label className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-800" htmlFor={htmlFor}>
-      {required && <span aria-hidden="true" className="h-2 w-2 rounded-full bg-[#d65745]" />}
+      {required && <span aria-hidden="true" className="h-2 w-2 rounded-full bg-[color:var(--accent-indicator)]" />}
       <span>{text}</span>
     </label>
   );
@@ -125,7 +125,7 @@ export function EventLabelsField({ labelOptions, selectedLabels, onLabelsChange 
               }}
               className={`rounded-full border px-3 py-1 text-sm font-medium transition ${
                 isActive
-                  ? "border-[#d98770] bg-[#f8ddcf] text-[#8f3f22]"
+                  ? "border-[color:var(--accent-weak)] bg-[color:var(--accent-weak-bg)] text-[color:var(--accent-weak-text)]"
                   : "border-[color:var(--border-soft)] bg-[color:var(--paper-surface)] text-slate-700 hover:bg-[color:var(--paper-muted)]"
               }`}
             >

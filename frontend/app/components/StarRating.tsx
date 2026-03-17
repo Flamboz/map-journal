@@ -47,7 +47,7 @@ export default function StarRating({
           const value = index + 1;
           const isActive = value <= activeRating;
           const starClassName = `text-2xl leading-none transition ${
-            isActive ? "scale-105 text-[#e9a52f]" : "text-slate-300"
+            isActive ? "scale-105 text-[color:var(--star)]" : "text-slate-300"
           }`;
 
           if (!isInteractive) {
@@ -65,7 +65,7 @@ export default function StarRating({
               aria-label={`Set rating to ${value}`}
               onMouseEnter={() => onHoveredRatingChange?.(value)}
               onClick={() => onRatingChange(value)}
-              className={`${starClassName} rounded-sm px-0.5 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d28d28]/50`}
+              className={`${starClassName} rounded-sm px-0.5 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--star-ring)]/50`}
             >
               ★
             </button>

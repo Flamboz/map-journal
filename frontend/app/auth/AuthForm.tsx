@@ -27,7 +27,7 @@ export function AuthForm({
     <form onSubmit={onSubmit} className="space-y-5" noValidate>
       <div>
         <label className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-800" htmlFor="auth-email">
-          <span aria-hidden="true" className="h-2 w-2 rounded-full bg-[#d65745]" />
+          <span aria-hidden="true" className="h-2 w-2 rounded-full bg-[color:var(--accent-indicator)]" />
           <span>Email</span>
         </label>
         <input
@@ -35,7 +35,7 @@ export function AuthForm({
           type="email"
           autoComplete="email"
           placeholder="you@example.com"
-          className={`w-full rounded-[var(--radius-md)] border bg-[color:var(--paper-surface)] px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#c78b74] focus:ring-2 focus:ring-[#e8c8ba]/70 ${
+          className={`w-full rounded-[var(--radius-md)] border bg-[color:var(--paper-surface)] px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[color:var(--focus-border)] focus:ring-2 focus:ring-[color:var(--focus-ring)]/70 ${
             emailError ? "border-red-600" : "border-[color:var(--border-soft)]"
           }`}
           {...register("email")}
@@ -45,7 +45,7 @@ export function AuthForm({
 
       <div>
         <label className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-800" htmlFor="auth-password">
-          <span aria-hidden="true" className="h-2 w-2 rounded-full bg-[#d65745]" />
+          <span aria-hidden="true" className="h-2 w-2 rounded-full bg-[color:var(--accent-indicator)]" />
           <span>Password</span>
         </label>
         <input
@@ -53,7 +53,7 @@ export function AuthForm({
           type="password"
           autoComplete={submitLabel === "Register" ? "new-password" : "current-password"}
           placeholder="At least 8 characters"
-          className={`w-full rounded-[var(--radius-md)] border bg-[color:var(--paper-surface)] px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#c78b74] focus:ring-2 focus:ring-[#e8c8ba]/70 ${
+          className={`w-full rounded-[var(--radius-md)] border bg-[color:var(--paper-surface)] px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[color:var(--focus-border)] focus:ring-2 focus:ring-[color:var(--focus-ring)]/70 ${
             passwordError ? "border-red-600" : "border-[color:var(--border-soft)]"
           }`}
           {...register("password")}

@@ -79,7 +79,7 @@ export default function EventPhotosCarousel({
   if (photos.length === 0) {
     return (
       <div className="relative">
-        <div className="h-72 md:h-96 lg:h-[360px] rounded-2xl bg-[#efe7df] shadow-inner flex items-center justify-center text-sm text-gray-600">
+        <div className="h-72 md:h-96 lg:h-[360px] rounded-2xl bg-[color:var(--empty-bg)] shadow-inner flex items-center justify-center text-sm text-gray-600">
           <div className="text-center">
             <svg className="mx-auto mb-2 h-8 w-8 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <path strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7" />
@@ -171,7 +171,7 @@ export default function EventPhotosCarousel({
             aria-label="Delete attachment"
             onClick={handleDeleteCurrentPhoto}
             disabled={isUpdatingPhotos}
-            className="absolute left-3 top-3 z-50 inline-flex h-10 w-10 items-center justify-center rounded-full bg-red-600 text-white hover:bg-red-700 disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-red-200 shadow"
+            className="absolute left-3 top-3 z-50 inline-flex h-10 w-10 items-center justify-center rounded-full bg-[color:var(--danger)] text-white hover:bg-[color:var(--danger-strong)] disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-red-200 shadow"
           >
             <svg aria-hidden="true" className="h-5 w-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
               <path d="M3 6h18" />
@@ -189,14 +189,14 @@ export default function EventPhotosCarousel({
             aria-label="Set as preview"
             onClick={() => { if (isCurrentPreview || isUpdatingPhotos) return; void handleSetCurrentPhotoAsPreview(); }}
             disabled={isUpdatingPhotos}
-            className={`absolute right-3 top-3 z-50 inline-flex h-10 items-center gap-2 rounded-full px-3 py-1 text-sm font-medium shadow focus:outline-none focus:ring-2 ${isCurrentPreview ? 'bg-amber-200 text-amber-900 hover:bg-amber-200 focus:ring-amber-300' : 'bg-amber-100 text-amber-800 hover:bg-amber-200 focus:ring-amber-200'} ${isUpdatingPhotos ? 'opacity-60 pointer-events-none' : ''}`}
+            className={`absolute right-3 top-3 z-50 inline-flex h-10 items-center gap-2 rounded-full px-3 py-1 text-sm font-medium shadow focus:outline-none focus:ring-2 ${isCurrentPreview ? 'bg-[color:var(--preview-bg)] text-[color:var(--preview-text)] hover:bg-[color:var(--preview-bg)] focus:ring-[color:var(--preview-hover)]' : 'bg-[color:var(--preview-bg)] text-[color:var(--preview-text)] hover:bg-[color:var(--preview-hover)] focus:ring-[color:var(--preview-hover)]'} ${isUpdatingPhotos ? 'opacity-60 pointer-events-none' : ''}`}
           >
             {isCurrentPreview ? (
-              <svg aria-hidden="true" className="h-4 w-4 text-amber-900" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+              <svg aria-hidden="true" className="h-4 w-4 text-[color:var(--preview-text)]" viewBox="0 0 24 24" fill="currentColor" stroke="none">
                 <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
               </svg>
             ) : (
-              <svg aria-hidden="true" className="h-4 w-4 text-amber-800" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+              <svg aria-hidden="true" className="h-4 w-4 text-[color:var(--preview-text)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
               </svg>
             )}

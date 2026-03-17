@@ -100,7 +100,7 @@ export default function EventDetailsReadOnlyView({
           <div className="mt-3 flex flex-wrap items-center gap-2">
             {(event.labels ?? []).length ? (
               (event.labels ?? []).map((label) => (
-                <span key={label} className="rounded-full border border-gray-200 bg-[#f6efe8] px-3 py-1 text-sm text-gray-800">{label}</span>
+                <span key={label} className="rounded-full border border-gray-200 bg-[color:var(--background-2)] px-3 py-1 text-sm text-[color:var(--foreground)]">{label}</span>
               ))
             ) : (
               <EmptyValue placeholder="None" className="text-sm text-gray-700" placeholderClassName="text-sm italic text-gray-500" />

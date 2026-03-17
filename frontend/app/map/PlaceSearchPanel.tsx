@@ -88,7 +88,7 @@ export function PlaceSearchPanel({ centerState, onPlaceSelect }: PlaceSearchPane
           />
           <button
             type="submit"
-            className="rounded-[var(--radius-md)] bg-[#1d2140] px-4 py-2 text-sm font-semibold text-[#f7f1e6] transition hover:translate-y-[-1px] hover:bg-[#2f365f] disabled:opacity-60"
+            className="rounded-[var(--radius-md)] bg-[color:var(--topbar-bg)] px-4 py-2 text-sm font-semibold text-[color:var(--topbar-text)] transition hover:translate-y-[-1px] hover:bg-[color:var(--topbar-ctrl-hover)] disabled:opacity-60"
             disabled={isSearchingPlaces}
           >
             {isSearchingPlaces ? "..." : "Go"}

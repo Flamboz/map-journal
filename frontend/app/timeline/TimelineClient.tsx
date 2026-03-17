@@ -68,7 +68,7 @@ export default function TimelineClient({ initialEvents = [] }: Props) {
               onClick={() => setFilter(l)}
               className={`rounded-full px-3 py-1 text-sm font-medium transition ${
                 filter === l
-                  ? "border-[#d98770] bg-[#f8ddcf] text-[#8f3f22]"
+                  ? "border-[color:var(--accent-weak)] bg-[color:var(--accent-weak-bg)] text-[color:var(--accent-weak-text)]"
                   : "border-[color:var(--border-soft)] bg-[color:var(--paper-surface)] text-slate-700 hover:bg-[color:var(--paper-muted)]"
               }`}
             >

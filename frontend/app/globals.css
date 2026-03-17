@@ -10,7 +10,58 @@
   --paper-muted: #f3efe7;
   --border-soft: #d8d0c3;
   --accent-primary: #d45a36;
+  --accent-primary-rgb: 212,90,54;
   --accent-primary-strong: #b94728;
+  --accent-weak: #d98770;
+  --accent-weak-bg: #f8ddcf;
+  --accent-weak-text: #8f3f22;
+  --topbar-bg: #1d2140;
+  --topbar-text: #f7f1e6;
+  --topbar-ctrl-bg: #2a2f55;
+  --topbar-ctrl-hover: #353c6a;
+
+  --map-pin: #2563EB;
+  --cluster-1: rgba(181,226,140,0.6);
+  --cluster-2: rgba(241,211,87,0.6);
+  --cluster-3: rgba(253,156,115,0.6);
+
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+
+  --accent-indicator: #d65745;
+  --focus-border: #c78b74;
+  --focus-ring: #e8c8ba;
+
+  --cluster-badge-bg: #1f2937;
+  --cluster-badge-text: #ffffff;
+  --white-rgb: 255,255,255;
+  --overlay-rgb: 17,24,39;
+
+  --danger-strong: #bf000f;
+
+  --empty-bg: #efe7df;
+  --preview-bg: #fffbeb; 
+  --preview-text: #7c2d00; 
+  --preview-hover: #ffd236; 
+
+  --background-2: #f4ede1;
+
+  --link: #325a8a;
+  --link-hover: #24446b;
+  --heading-accent: #9b6b57;
+
+  --star: #e9a52f;
+  --star-ring: #d28d28;
+
+  --badge-visit-bg: #4f46e5;
+  --badge-visit-border: #3730a3;
+
+  --modal-hero-1: #1f2740;
+  --modal-hero-2: #171d2e;
+  --modal-close-bg: #1f2435;
+  --modal-close-text: #f7f1e6;
+  --actionbar-bg: #f6f1e6;
   --shadow-soft: 0 6px 24px rgba(23, 29, 46, 0.08);
   --radius-md: 0.75rem;
   --radius-lg: 1rem;
@@ -62,7 +113,6 @@ h3,
   font-weight: 700;
 }
 
-/* Ensure pointer cursor for interactive controls */
 button,
 input[type="button"],
 input[type="submit"],
@@ -75,7 +125,6 @@ input[type="date"],
   cursor: pointer !important;
 }
 
-/* Disabled controls should show not-allowed where applicable */
 button:disabled,
 input:disabled,
 [aria-disabled="true"] {

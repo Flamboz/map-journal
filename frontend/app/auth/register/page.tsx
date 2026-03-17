@@ -37,11 +37,11 @@ function RegisterPageContent() {
   }
 
   return (
-    <section className="min-h-[calc(100vh-var(--topbar-height))] bg-[radial-gradient(circle_at_top_left,_rgba(212,90,54,0.14),_transparent_32%),linear-gradient(180deg,_#faf8f4_0%,_#f4ede1_100%)] px-4 py-8 sm:px-6 lg:px-10 lg:py-12">
+    <section className="min-h-[calc(100vh-var(--topbar-height))] bg-[radial-gradient(circle_at_top_left,_rgba(var(--accent-primary-rgb),0.14),_transparent_32%),linear-gradient(180deg,_var(--background)_0%,_var(--background-2)_100%)] px-4 py-8 sm:px-6 lg:px-10 lg:py-12">
       <div className="mx-auto max-w-xl">
         <div className="paper-card flex flex-col justify-between p-6 sm:p-8 lg:p-10">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[#9b6b57]">Create Account</p>
+            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[color:var(--heading-accent)]">Create Account</p>
             <h1 className="mt-4 text-4xl leading-tight text-slate-900 sm:text-5xl">Register</h1>
             <p className="mt-3 max-w-lg text-base leading-7 text-slate-700">
               Create your account to start saving events, labels, and photos in your map journal.
@@ -62,7 +62,7 @@ function RegisterPageContent() {
             Already have an account?{" "}
             <Link
               href={`/auth/signin?callbackUrl=${encodeURIComponent(callbackUrl)}`}
-              className="font-semibold text-[#a7492a] transition hover:text-[#8a3d23]"
+              className="font-semibold text-[color:var(--link)] transition hover:text-[color:var(--link-hover)]"
             >
               Sign in
             </Link>

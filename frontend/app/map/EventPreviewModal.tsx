@@ -63,7 +63,7 @@ export function EventPreviewModal({ events, currentIndex, onClose, onPrevious, o
         <button
           type="button"
           aria-label="Close"
-          className="absolute right-3 top-3 z-[1202] h-9 w-9 inline-flex items-center justify-center rounded-full bg-[#1f2435] border border-white/10 text-white/90 shadow-md"
+          className="absolute right-3 top-3 z-[1202] h-9 w-9 inline-flex items-center justify-center rounded-full bg-[color:var(--modal-close-bg)] border border-white/10 text-[color:var(--modal-close-text)] shadow-md"
           onClick={onClose}
           title="Close"
         >
@@ -79,7 +79,7 @@ export function EventPreviewModal({ events, currentIndex, onClose, onPrevious, o
         <div className="mb-0 overflow-hidden">
           <div
             className="px-4 py-4 flex items-start justify-between"
-            style={{ background: "linear-gradient(135deg,#1f2740 0%,#171d2e 100%)" }}
+            style={{ background: `linear-gradient(135deg, ${'var(--modal-hero-1)'} 0%, ${'var(--modal-hero-2)'} 100%)` }}
           >
             <div>
               <h3 className="text-2xl font-semibold text-white" style={{ fontFamily: "var(--font-heading)" }}>
@@ -89,7 +89,7 @@ export function EventPreviewModal({ events, currentIndex, onClose, onPrevious, o
               <div className="mt-2 flex items-center gap-2 flex-wrap gap-y-2">
                 <span
                   className="inline-flex flex-shrink-0 items-center gap-2 rounded-full px-3 py-1 text-xs font-medium"
-                  style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.12)" }}
+                  style={{ background: "transparent", border: "1px solid rgba(var(--white-rgb),0.12)" }}
                 >
                   <svg aria-hidden="true" className="h-4 w-4 text-white/90" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
                     <rect x="3" y="5" width="18" height="16" rx="2" />
@@ -112,7 +112,7 @@ export function EventPreviewModal({ events, currentIndex, onClose, onPrevious, o
                 {currentEvent.visitCompany && (
                   <span
                     className="inline-flex flex-shrink-0 items-center rounded-full px-3 py-1 text-xs font-medium text-white"
-                    style={{ background: "#4f46e5", border: "1px solid #3730a3" }}
+                    style={{ background: "var(--badge-visit-bg)", border: "1px solid var(--badge-visit-border)" }}
                   >
                     {currentEvent.visitCompany}
                   </span>
@@ -173,7 +173,7 @@ export function EventPreviewModal({ events, currentIndex, onClose, onPrevious, o
           </div>
 
           {/* Attachment badge: top-right of image */}
-          <div className="absolute right-3 top-3 z-20 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium text-white" style={{ background: "rgba(17,24,39,0.85)" }}>
+          <div className="absolute right-3 top-3 z-20 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium text-white" style={{ background: "rgba(var(--overlay-rgb),0.85)" }}>
             <svg aria-hidden="true" className="h-4 w-4 text-white/90" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
               <path d="M21.44 11.05l-8.49 8.49a5 5 0 1 1-7.07-7.07l8.49-8.49a3 3 0 0 1 4.24 4.24L9.12 16.68" />
             </svg>
@@ -222,7 +222,7 @@ export function EventPreviewModal({ events, currentIndex, onClose, onPrevious, o
           </div>
           </div>
             {/* Action bar: edit/delete left, close center, view right */}
-            <div className="p-4 flex items-center justify-between bg-[#f6f1e6] rounded-b-md border-t border-[color:var(--border-soft)]">
+            <div className="p-4 flex items-center justify-between bg-[color:var(--actionbar-bg)] rounded-b-md border-t border-[color:var(--border-soft)]">
               <div className="flex items-center gap-2">
                 <button
                   type="button"
