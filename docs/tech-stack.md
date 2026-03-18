@@ -2,7 +2,7 @@
 
 - Frontend: Next.js (App Router) with React 19 and TypeScript (strict)
 - Backend: Fastify 5.x with TypeScript
-- State: Redux Toolkit for shared state + React local state hooks
+- State: React local state hooks
 - Styling: Tailwind CSS
 - Forms and validation: React Hook Form + Zod
 - Database: SQLite powered by `sql.js`

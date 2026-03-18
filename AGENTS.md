@@ -5,7 +5,7 @@ location‑based events (pins, photos, filters, user auth).
 
 - **Package manager**: pnpm (pnpm-lock.yaml present)
 - **Top-level scripts**: frontend uses `dev`, `build`, `start`, `lint`, `test`, `test:watch` (see frontend/package.json)
-- **Tech summary**: Next.js (App Router), React 19, TypeScript strict, Redux Toolkit, Tailwind, Fastify, SQLite
+- **Tech summary**: Next.js (App Router), React 19, TypeScript strict, Tailwind, Fastify, SQLite
 
 This AGENTS.md is a minimal root index. Detailed guidelines and the
 full style & workflow docs live in the `docs/` folder linked below.

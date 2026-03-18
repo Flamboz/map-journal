@@ -13,8 +13,7 @@ Covers Next.js-specific and React conventions.
 State management:
 - Use `useState` for local UI state
 - Use `useReducer` for complex local state transitions
-- Use Redux Toolkit when state is shared across screens or map flows
-- Prefer selectors for Redux reads and keep state shape normalized
+
 
 When splitting frontend files:
 - Move UI blocks into colocated components
