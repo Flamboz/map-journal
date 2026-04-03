@@ -120,7 +120,7 @@ function buildCreateEventFormData(payload: Omit<CreateEventInput, "photos">, pho
 }
 
 export async function updateEvent(authToken: string, input: UpdateEventInput): Promise<MapEvent> {
-  const response = await fetch(`${API_URL}/events/${encodeURIComponent(input.eventId)}`, {
+  const response = await fetch(buildApiUrl(`/events/${encodeURIComponent(input.eventId)}`), {
     method: "PATCH",
     headers: buildAuthHeaders(authToken, { "Content-Type": "application/json" }),
     body: JSON.stringify({
@@ -133,6 +133,8 @@ export async function updateEvent(authToken: string, input: UpdateEventInput): P
       visitCompany: input.visitCompany,
       visibility: input.visibility,
       sharedWithEmails: input.sharedWithEmails,
+      photoIdsToDelete: input.photoIdsToDelete,
+      previewPhotoId: input.previewPhotoId,
     }),
   });
 

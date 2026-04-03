@@ -22,6 +22,11 @@ export const createEventSchema = {
         type: "array",
         items: { type: "string" },
       },
+      photoIdsToDelete: {
+        type: "array",
+        items: { type: "string" },
+      },
+      previewPhotoId: { anyOf: [{ type: "string" }, { type: "null" }] },
     },
   },
 } as const;

@@ -57,6 +57,8 @@ type UpdateEventInput = {
   visitCompany?: string;
   visibility?: string;
   sharedWithEmails?: string[];
+  photoIdsToDelete?: string[];
+  previewPhotoId?: string | null;
 };
 
 function toRadians(value: number): number {
@@ -480,6 +482,35 @@ export async function updateEventForUser(input: UpdateEventInput): Promise<Servi
     return shareRecipientsResult;
   }
 
+  const existingPhotos = (await all(
+    `SELECT id, event_id, file_path, sort_order, created_at
+     FROM event_photos
+     WHERE event_id = ?
+     ORDER BY sort_order ASC, created_at ASC, id ASC`,
+    [input.eventId],
+  )) as EventPhotoRow[];
+
+  const existingPhotoIds = new Set(existingPhotos.map((photo) => photo.id));
+  const photoIdsToDelete = Array.from(new Set((input.photoIdsToDelete ?? []).filter((photoId) => typeof photoId === "string")));
+  for (const photoId of photoIdsToDelete) {
+    if (!existingPhotoIds.has(photoId)) {
+      return failure(400, "PHOTO_NOT_FOUND", "Photo not found.");
+    }
+  }
+
+  const remainingPhotoIds = existingPhotos.filter((photo) => !photoIdsToDelete.includes(photo.id)).map((photo) => photo.id);
+  const previewPhotoId = input.previewPhotoId ?? undefined;
+  if (previewPhotoId !== undefined) {
+    if (!remainingPhotoIds.includes(previewPhotoId)) {
+      return failure(400, "PHOTO_NOT_FOUND", "Photo not found.");
+    }
+  }
+
+  const orderedPhotoIds =
+    previewPhotoId === undefined
+      ? remainingPhotoIds
+      : [previewPhotoId, ...remainingPhotoIds.filter((photoId) => photoId !== previewPhotoId)];
+
   await withTransaction(async () => {
     await run(
       `UPDATE events
@@ -488,7 +519,32 @@ export async function updateEventForUser(input: UpdateEventInput): Promise<Servi
       [nextName, nextStartDate, nextEndDate, nextDescription, normalizedRating, JSON.stringify(nextLabels), nextVisitCompany, input.eventId],
     );
     await syncEventShares(input.eventId, shareRecipientsResult.value.recipientUserIds);
+
+    if (photoIdsToDelete.length > 0) {
+      await run(`DELETE FROM event_photos WHERE event_id = ? AND id IN (${photoIdsToDelete.map(() => "?").join(", ")})`, [
+        input.eventId,
+        ...photoIdsToDelete,
+      ]);
+    }
+
+    let sortOrder = 1;
+    for (const photoId of orderedPhotoIds) {
+      await run("UPDATE event_photos SET sort_order = ? WHERE id = ?", [sortOrder, photoId]);
+      sortOrder += 1;
+    }
   });
+
+  for (const photo of existingPhotos) {
+    if (photoIdsToDelete.includes(photo.id)) {
+      deleteUploadedFile(photo.file_path);
+    }
+  }
+
+  const remainingPhotos = existingPhotos.filter((photo) => !photoIdsToDelete.includes(photo.id));
+  if (remainingPhotos.length === 0 && photoIdsToDelete.length > 0) {
+    removeEventUploadDirectory(input.userId, input.eventId);
+    removeUserDirectoryIfEmpty(input.userId);
+  }
 
   const updatedEvent = await getNormalizedAccessibleEventById(input.eventId, input.userId);
 

@@ -32,6 +32,8 @@ export type UpdateEventBody = {
   visitCompany?: string;
   visibility?: string;
   sharedWithEmails?: string[];
+  photoIdsToDelete?: string[];
+  previewPhotoId?: string | null;
 };
 
 export type EventParams = {

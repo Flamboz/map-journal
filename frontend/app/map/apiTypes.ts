@@ -75,4 +75,6 @@ export type UpdateEventInput = {
   visitCompany?: string;
   visibility: EventVisibility;
   sharedWithEmails: string[];
+  photoIdsToDelete?: string[];
+  previewPhotoId?: string | null;
 };

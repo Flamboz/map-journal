@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { randomUUID } from "crypto";
 import { createTestAppContext, TestAppContext } from "../../utils/testApp";
 import { createEvent } from "../../utils/factories";
 
@@ -97,5 +98,48 @@ describe("update event route", () => {
     expect(privateResponse.statusCode).toBe(200);
     expect(privateResponse.json().event.visibility).toBe("private");
     expect(privateResponse.json().event.sharedWithEmails).toEqual([]);
+  });
+
+  it("applies staged photo deletes and preview changes in the same update request", async () => {
+    const { userId, authHeaders } = await registerUser(context, "event-update-photos@example.com");
+    const eventId = await createEvent(context.run, { userId, title: "Before" });
+    const firstPhotoId = randomUUID();
+    const secondPhotoId = randomUUID();
+
+    await context.run(
+      `INSERT INTO event_photos (id, event_id, file_path, sort_order)
+       VALUES (?, ?, ?, ?), (?, ?, ?, ?)`,
+      [
+        firstPhotoId,
+        eventId,
+        `user-${userId}/event-${eventId}/a.jpg`,
+        1,
+        secondPhotoId,
+        eventId,
+        `user-${userId}/event-${eventId}/b.jpg`,
+        2,
+      ],
+    );
+
+    const response = await context.app.inject({
+      method: "PATCH",
+      url: `/events/${eventId}`,
+      headers: authHeaders,
+      payload: {
+        name: "After",
+        photoIdsToDelete: [firstPhotoId],
+        previewPhotoId: secondPhotoId,
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json().event.photos).toHaveLength(1);
+    expect(response.json().event.photos[0].id).toBe(secondPhotoId);
+
+    const storedPhotos = (await context.all(
+      "SELECT id, sort_order FROM event_photos WHERE event_id = ? ORDER BY sort_order ASC, id ASC",
+      [eventId],
+    )) as Array<{ id: string; sort_order: number }>;
+    expect(storedPhotos).toEqual([{ id: secondPhotoId, sort_order: 1 }]);
   });
 });

@@ -1,8 +1,6 @@
 import { useCallback } from "react";
 import type { UseFormReset } from "react-hook-form";
 import {
-  deleteEventPhoto,
-  setEventPreviewPhoto,
   type MapEvent,
   updateEvent,
   uploadEventPhotos,
@@ -51,44 +49,8 @@ export function useEventDetailsMutations({
       dispatch({ type: "SET_SAVING", payload: true });
 
       try {
-        const stagedDeletes = state.photosToDelete ?? [];
-        if (stagedDeletes.length > 0) {
-          dispatch({ type: "SET_PHOTO_ACTION_RUNNING", payload: true });
-          try {
-            for (const photoId of stagedDeletes) {
-              await deleteEventPhoto(authToken, state.event.id, photoId);
-            }
-          } catch (error) {
-            if (isMissingEventError(error)) {
-              onMissingEvent();
-              return;
-            }
-
-            dispatch({ type: "SET_SAVE_ERROR", payload: ATTACHMENT_ERROR_MESSAGE });
-            return;
-          } finally {
-            dispatch({ type: "SET_PHOTO_ACTION_RUNNING", payload: false });
-          }
-        }
-
         const stagedPreviewId = state.draftPhotos?.[0]?.id ?? null;
         const currentPreviewId = state.event.photos?.[0]?.id ?? null;
-        if (stagedPreviewId && stagedPreviewId !== currentPreviewId) {
-          dispatch({ type: "SET_PHOTO_ACTION_RUNNING", payload: true });
-          try {
-            await setEventPreviewPhoto(authToken, state.event.id, stagedPreviewId);
-          } catch (error) {
-            if (isMissingEventError(error)) {
-              onMissingEvent();
-              return;
-            }
-
-            dispatch({ type: "SET_SAVE_ERROR", payload: ATTACHMENT_ERROR_MESSAGE });
-            return;
-          } finally {
-            dispatch({ type: "SET_PHOTO_ACTION_RUNNING", payload: false });
-          }
-        }
 
         const updatedEvent = await updateEvent(authToken, {
           eventId: state.event.id,
@@ -101,6 +63,8 @@ export function useEventDetailsMutations({
           visitCompany: values.visitCompany,
           visibility: values.visibility,
           sharedWithEmails: values.sharedWithEmails,
+          photoIdsToDelete: state.photosToDelete ?? [],
+          previewPhotoId: stagedPreviewId && stagedPreviewId !== currentPreviewId ? stagedPreviewId : undefined,
         });
 
         dispatch({ type: "SAVE_SUCCESS", payload: updatedEvent });

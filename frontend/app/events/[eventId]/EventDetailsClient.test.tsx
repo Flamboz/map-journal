@@ -8,8 +8,6 @@ import {
   fetchAllowedLabels,
   fetchAllowedVisitCompanies,
   fetchEventById,
-  deleteEventPhoto,
-  setEventPreviewPhoto,
   updateEvent,
   uploadEventPhotos,
 } from "../../map/api";
@@ -25,8 +23,6 @@ vi.mock("../../map/api", () => ({
   fetchEventById: vi.fn(),
   updateEvent: vi.fn(),
   uploadEventPhotos: vi.fn(),
-  deleteEventPhoto: vi.fn(),
-  setEventPreviewPhoto: vi.fn(),
   deleteEvent: vi.fn(),
 }));
 
@@ -94,7 +90,6 @@ it("stages preview during edit and applies on save", async () => {
     sharedWithEmails: [],
   });
 
-  vi.mocked(setEventPreviewPhoto).mockResolvedValue([]);
   vi.mocked(updateEvent).mockResolvedValue({
     id: eventId,
     user_id: 1,
@@ -146,14 +141,18 @@ it("stages preview during edit and applies on save", async () => {
   // Stage preview change
   fireEvent.click(screen.getByRole("button", { name: "Mock set preview" }));
 
-  // should not call API yet
-  expect(setEventPreviewPhoto).not.toHaveBeenCalled();
+  expect(updateEvent).not.toHaveBeenCalled();
 
-  // Save changes -> should apply staged preview
   fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
 
   await waitFor(() => {
-    expect(setEventPreviewPhoto).toHaveBeenCalledWith("token-1", eventId, photo2.id);
+    expect(updateEvent).toHaveBeenCalledWith(
+      "token-1",
+      expect.objectContaining({
+        eventId,
+        previewPhotoId: photo2.id,
+      }),
+    );
   });
 });
 
@@ -197,8 +196,6 @@ describe("EventDetailsClient delete flow", () => {
     vi.mocked(fetchEventById).mockResolvedValue(resolvedEvent);
     vi.mocked(updateEvent).mockResolvedValue(resolvedEvent);
     vi.mocked(uploadEventPhotos).mockResolvedValue([]);
-    vi.mocked(deleteEventPhoto).mockResolvedValue([]);
-    vi.mocked(setEventPreviewPhoto).mockResolvedValue([]);
     vi.mocked(deleteEvent).mockResolvedValue(undefined);
   });
 
