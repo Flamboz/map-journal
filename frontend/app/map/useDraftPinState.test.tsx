@@ -1,5 +1,5 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createEvent, fetchReverseGeocodeAddress } from "./api";
 import { useDraftPinState } from "./useDraftPinState";
 import type { EventFormState } from "./mapViewTypes";
