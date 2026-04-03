@@ -26,10 +26,10 @@ type MapViewProps = {
 
 export default function MapView({ initialError = null }: MapViewProps) {
   const { data: session, status } = useSession();
+  const authToken = session?.accessToken ?? null;
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(false);
   const [isMobileViewport, setIsMobileViewport] = useState(false);
   const [isMobileDraftOpen, setIsMobileDraftOpen] = useState(false);
-  const userId = session?.user?.id ? String(session.user.id) : null;
   const currentUserEmail = session?.user?.email ?? null;
   const {
     centerState,
@@ -40,7 +40,7 @@ export default function MapView({ initialError = null }: MapViewProps) {
     labelOptions,
     visitCompanyOptions,
     globalError,
-  } = useMapBootstrapData({ status, userId, initialError });
+  } = useMapBootstrapData({ status, authToken, initialError });
   
   useEffect(() => {
     // If an initial/global error was provided via the URL (eg. ?error=event-not-found),
@@ -77,7 +77,7 @@ export default function MapView({ initialError = null }: MapViewProps) {
     resetDraftState,
     saveDraftEvent,
   } = useDraftPinState({
-    userId,
+    authToken,
     onDraftOpened: clearSelection,
     onEventSaved: (newEvent) => {
       setEvents((previousEvents) => [newEvent, ...previousEvents]);
@@ -174,7 +174,7 @@ export default function MapView({ initialError = null }: MapViewProps) {
               </svg>
             </button>
             <LeftSidebar
-              userId={userId}
+              authToken={authToken}
               labelOptions={labelOptions}
               visitCompanyOptions={visitCompanyOptions}
               onResultsLoaded={(nextEvents) => {
@@ -240,7 +240,7 @@ export default function MapView({ initialError = null }: MapViewProps) {
                   </svg>
                 </button>
                 <EventDraftForm
-                  userId={userId}
+                  authToken={authToken}
                   draftPosition={draftPosition}
                   isResolvingAddress={isResolvingAddress}
                   draftAddress={draftAddress}
@@ -260,7 +260,7 @@ export default function MapView({ initialError = null }: MapViewProps) {
       ) : (
         <div className="flex h-full">
           <LeftSidebar
-            userId={userId}
+            authToken={authToken}
             labelOptions={labelOptions}
             visitCompanyOptions={visitCompanyOptions}
             onResultsLoaded={(nextEvents) => {
@@ -327,7 +327,7 @@ export default function MapView({ initialError = null }: MapViewProps) {
 
           <div className="h-full w-[23rem] min-w-[23rem] border-l border-[color:var(--border-soft)] bg-[color:var(--paper-muted)] p-4 lg:w-[26rem] lg:min-w-[26rem]">
             <EventDraftForm
-              userId={userId}
+              authToken={authToken}
               draftPosition={draftPosition}
               isResolvingAddress={isResolvingAddress}
               draftAddress={draftAddress}

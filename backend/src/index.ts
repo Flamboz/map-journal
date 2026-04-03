@@ -1,8 +1,20 @@
 import dotenv from "dotenv";
+import fs from "fs";
+import path from "path";
 import { init } from "./db/sqlite";
 import { buildApp } from "./app";
 
-dotenv.config();
+function loadEnvFile(relativePath: string) {
+  const envPath = path.resolve(process.cwd(), relativePath);
+  if (fs.existsSync(envPath)) {
+    dotenv.config({ path: envPath });
+  }
+}
+
+loadEnvFile(".env.local");
+loadEnvFile(".env");
+loadEnvFile("../frontend/.env.local");
+loadEnvFile("../frontend/.env");
 
 const PORT = Number(process.env.PORT || 4000);
 

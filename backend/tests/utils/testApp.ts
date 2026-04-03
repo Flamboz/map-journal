@@ -15,6 +15,7 @@ export type TestAppContext = {
 export async function createTestAppContext(): Promise<TestAppContext> {
   const sqlitePath = path.join(os.tmpdir(), `map-journal-test-${Date.now()}-${Math.random()}.sqlite`);
   process.env.SQLITE_PATH = sqlitePath;
+  process.env.AUTH_TOKEN_SECRET = process.env.AUTH_TOKEN_SECRET ?? "test-auth-token-secret";
   vi.resetModules();
 
   const dbModule = await import("../../src/db/sqlite");

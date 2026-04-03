@@ -14,10 +14,6 @@ export function sendServerError(request: FastifyRequest, reply: FastifyReply, er
   return sendError(reply, 500, "SERVER_ERROR", "Internal server error");
 }
 
-export function sendInvalidUser(reply: FastifyReply) {
-  return sendError(reply, 400, "INVALID_USER", "A valid userId is required.");
-}
-
 export function sendInvalidEvent(reply: FastifyReply) {
   return sendError(reply, 400, "INVALID_EVENT", "A valid eventId is required.");
 }
@@ -32,4 +28,8 @@ export function sendEventNotFound(reply: FastifyReply) {
 
 export function sendForbidden(reply: FastifyReply, message = "Cannot access this resource.") {
   return sendError(reply, 403, "FORBIDDEN", message);
+}
+
+export function sendUnauthorized(reply: FastifyReply) {
+  return sendError(reply, 401, "UNAUTHORIZED", "Authentication is required.");
 }

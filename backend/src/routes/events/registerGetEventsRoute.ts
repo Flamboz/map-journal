@@ -1,15 +1,16 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { sendInvalidUser, sendServerError } from "../../utils/httpErrors";
-import { parseUserId, UserQuerystring } from "./shared";
+import { sendServerError } from "../../utils/httpErrors";
+import { UserQuerystring } from "./shared";
 import { listEventsForUser } from "../../services/eventService";
+import { requireAuthenticatedUserId } from "../../auth/requestAuth";
 
 export function registerGetEventsRoute(fastify: FastifyInstance) {
   fastify.get(
     "/events",
     async (request: FastifyRequest<{ Querystring: UserQuerystring }>, reply: FastifyReply) => {
-      const userId = parseUserId(request.query.userId);
+      const userId = requireAuthenticatedUserId(request, reply);
       if (!userId) {
-        return sendInvalidUser(reply);
+        return;
       }
 
       try {

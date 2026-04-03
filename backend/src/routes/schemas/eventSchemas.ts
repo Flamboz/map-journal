@@ -2,9 +2,8 @@ export const createEventSchema = {
   body: {
     type: "object",
     additionalProperties: false,
-    required: ["userId", "name", "lat", "lng"],
+    required: ["name", "lat", "lng"],
     properties: {
-      userId: { anyOf: [{ type: "string" }, { type: "number" }] },
       name: { type: "string" },
       date: { type: "string" },
       startDate: { type: "string" },
@@ -32,7 +31,6 @@ export const updateEventSchema = {
     type: "object",
     additionalProperties: false,
     properties: {
-      userId: { anyOf: [{ type: "string" }, { type: "number" }] },
       name: { type: "string" },
       date: { type: "string" },
       startDate: { type: "string" },

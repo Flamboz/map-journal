@@ -37,7 +37,7 @@ export function EventPreviewModal({
   const router = useRouter();
   const currentEvent = events[currentIndex];
   const { data: session } = useSession();
-  const userId = session?.user?.id ? String(session.user.id) : "";
+  const authToken = session?.accessToken ?? "";
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeletingEvent, setIsDeletingEvent] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -61,7 +61,7 @@ export function EventPreviewModal({
     setIsDeletingEvent(true);
 
     try {
-      await deleteEvent(userId, currentEvent.id);
+      await deleteEvent(authToken, currentEvent.id);
 
       if (typeof onDelete === "function") {
         onDelete(currentEvent.id);

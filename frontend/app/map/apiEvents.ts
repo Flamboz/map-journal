@@ -1,5 +1,5 @@
 import { API_URL } from "../../lib/apiUrl";
-import { buildApiUrl, normalizeEvent } from "./apiClient";
+import { buildApiUrl, buildAuthHeaders, normalizeEvent } from "./apiClient";
 import { createApiClientError } from "./apiErrors";
 import type { CreateEventInput, LastMapPosition, MapEvent, UpdateEventInput } from "./apiTypes";
 
@@ -11,8 +11,10 @@ export type EventSearchFilters = {
   visitCompany?: string;
 };
 
-export async function fetchLastMapPosition(userId: string): Promise<LastMapPosition | null> {
-  const response = await fetch(buildApiUrl("/map-position", { userId }));
+export async function fetchLastMapPosition(authToken: string): Promise<LastMapPosition | null> {
+  const response = await fetch(buildApiUrl("/map-position"), {
+    headers: buildAuthHeaders(authToken),
+  });
   if (!response.ok) {
     throw createApiClientError("MAP_POSITION_FETCH_FAILED");
   }
@@ -24,16 +26,18 @@ export async function fetchLastMapPosition(userId: string): Promise<LastMapPosit
   return data.lastMapPosition ?? null;
 }
 
-export async function fetchUserEvents(userId: string, filters?: EventSearchFilters): Promise<MapEvent[]> {
+export async function fetchUserEvents(authToken: string, filters?: EventSearchFilters): Promise<MapEvent[]> {
   const response = await fetch(
     buildApiUrl("/events", {
-      userId,
       search: filters?.search,
       dateFrom: filters?.dateFrom,
       dateTo: filters?.dateTo,
       labels: filters?.labels,
       visitCompany: filters?.visitCompany,
     }),
+    {
+      headers: buildAuthHeaders(authToken),
+    },
   );
   if (!response.ok) {
     throw createApiClientError("EVENTS_FETCH_FAILED");
@@ -46,9 +50,10 @@ export async function fetchUserEvents(userId: string, filters?: EventSearchFilte
   return (data.events ?? []).map(normalizeEvent);
 }
 
-export async function fetchEventById(eventId: string, userId: string): Promise<MapEvent> {
-  const response = await fetch(buildApiUrl(`/events/${encodeURIComponent(eventId)}`, { userId }), {
+export async function fetchEventById(eventId: string, authToken: string): Promise<MapEvent> {
+  const response = await fetch(buildApiUrl(`/events/${encodeURIComponent(eventId)}`), {
     cache: "no-store",
+    headers: buildAuthHeaders(authToken),
   });
 
   if (response.status === 404) {
@@ -79,12 +84,10 @@ export async function fetchEventById(eventId: string, userId: string): Promise<M
   return normalizeEvent(data.event);
 }
 
-export async function createEvent(input: CreateEventInput): Promise<MapEvent> {
+export async function createEvent(authToken: string, input: CreateEventInput): Promise<MapEvent> {
   const response = await fetch(`${API_URL}/events`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: buildAuthHeaders(authToken, { "Content-Type": "application/json" }),
     body: JSON.stringify(input),
   });
 
@@ -103,14 +106,11 @@ export async function createEvent(input: CreateEventInput): Promise<MapEvent> {
   return normalizeEvent(data.event);
 }
 
-export async function updateEvent(input: UpdateEventInput): Promise<MapEvent> {
+export async function updateEvent(authToken: string, input: UpdateEventInput): Promise<MapEvent> {
   const response = await fetch(`${API_URL}/events/${encodeURIComponent(input.eventId)}`, {
     method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: buildAuthHeaders(authToken, { "Content-Type": "application/json" }),
     body: JSON.stringify({
-      userId: input.userId,
       name: input.name,
       startDate: input.startDate,
       endDate: input.endDate,
@@ -142,9 +142,10 @@ export async function updateEvent(input: UpdateEventInput): Promise<MapEvent> {
   return normalizeEvent(data.event);
 }
 
-export async function deleteEvent(userId: string, eventId: string): Promise<void> {
-  const response = await fetch(buildApiUrl(`/events/${encodeURIComponent(eventId)}`, { userId }), {
+export async function deleteEvent(authToken: string, eventId: string): Promise<void> {
+  const response = await fetch(buildApiUrl(`/events/${encodeURIComponent(eventId)}`), {
     method: "DELETE",
+    headers: buildAuthHeaders(authToken),
   });
 
   if (response.status === 404) {
@@ -156,9 +157,10 @@ export async function deleteEvent(userId: string, eventId: string): Promise<void
   }
 }
 
-export async function lookupShareableUserEmail(userId: string, email: string): Promise<string | null> {
-  const response = await fetch(buildApiUrl("/events/shareable-users/lookup", { userId, email }), {
+export async function lookupShareableUserEmail(authToken: string, email: string): Promise<string | null> {
+  const response = await fetch(buildApiUrl("/events/shareable-users/lookup", { email }), {
     cache: "no-store",
+    headers: buildAuthHeaders(authToken),
   });
 
   if (!response.ok) {

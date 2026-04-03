@@ -40,8 +40,20 @@ export const authOptions: NextAuthOptions = {
             throw new Error("AUTH_UNAVAILABLE");
           }
 
-          const data = await response.json();
-          return data.user;
+          const data = (await response.json()) as {
+            user?: { id?: number | string; email?: string | null };
+            accessToken?: string;
+          };
+
+          if (!data.user?.id || !data.user.email || !data.accessToken) {
+            throw new Error("AUTH_UNAVAILABLE");
+          }
+
+          return {
+            id: String(data.user.id),
+            email: data.user.email,
+            accessToken: data.accessToken,
+          };
         } catch (error) {
           console.error(error);
           throw error instanceof Error ? error : new Error("AUTH_UNAVAILABLE");
@@ -58,6 +70,7 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
         token.email = user.email;
+        token.accessToken = user.accessToken;
       }
       return token;
     },
@@ -66,6 +79,7 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.id;
         session.user.email = token.email;
       }
+      session.accessToken = token.accessToken;
       return session;
     },
   },

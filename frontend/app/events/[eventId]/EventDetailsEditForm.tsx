@@ -27,7 +27,7 @@ type EventDetailsEditFormProps = {
   saveError: string | null;
   isSaving: boolean;
   isPhotoActionRunning: boolean;
-  userId: string;
+  authToken: string;
   currentUserEmail: string | null;
   visibility: EventVisibility;
   sharedWithEmails: string[];
@@ -53,7 +53,7 @@ export default function EventDetailsEditForm({
   saveError,
   isSaving,
   isPhotoActionRunning,
-  userId,
+  authToken,
   currentUserEmail,
   visibility,
   sharedWithEmails,
@@ -99,7 +99,7 @@ export default function EventDetailsEditForm({
       <EventVisitCompanyField register={register} visitCompanyOptions={visitCompanyOptions} />
 
       <EventVisibilityFields
-        userId={userId}
+        authToken={authToken}
         currentUserEmail={currentUserEmail}
         visibility={visibility}
         sharedWithEmails={sharedWithEmails}

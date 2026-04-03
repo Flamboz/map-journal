@@ -14,16 +14,16 @@ type EventDetailsPageProps = {
 export default async function EventDetailsPage({ params }: EventDetailsPageProps) {
   const { eventId } = await params;
   const session = await getServerSession(authOptions);
-  const userId = session?.user?.id ? String(session.user.id) : "";
+  const authToken = session?.accessToken ?? "";
   const currentUserEmail = session?.user?.email ?? null;
 
-  if (!userId) {
+  if (!authToken) {
     redirect("/auth/signin");
   }
 
   let event;
   try {
-    event = await fetchEventById(eventId, userId);
+    event = await fetchEventById(eventId, authToken);
   } catch (error) {
     if (isApiErrorCode(error, "EVENT_NOT_FOUND")) {
       redirect("/?error=event-not-found");
@@ -32,5 +32,5 @@ export default async function EventDetailsPage({ params }: EventDetailsPageProps
     throw error;
   }
 
-  return <EventDetailsClient initialEvent={event} userId={userId} currentUserEmail={currentUserEmail} />;
+  return <EventDetailsClient initialEvent={event} authToken={authToken} currentUserEmail={currentUserEmail} />;
 }

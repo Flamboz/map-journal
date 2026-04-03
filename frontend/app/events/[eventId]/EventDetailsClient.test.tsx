@@ -110,7 +110,7 @@ it("stages preview during edit and applies on save", async () => {
     samePinEventIds: [eventId],
   };
 
-  render(<EventDetailsClient initialEvent={initialEvent} userId="1" />);
+  render(<EventDetailsClient initialEvent={initialEvent} authToken="token-1" currentUserEmail={null} />);
 
   fireEvent.click(screen.getByRole("button", { name: "Edit event" }));
 
@@ -124,7 +124,7 @@ it("stages preview during edit and applies on save", async () => {
   fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
 
   await waitFor(() => {
-    expect(setEventPreviewPhoto).toHaveBeenCalledWith("1", eventId, photo2.id);
+    expect(setEventPreviewPhoto).toHaveBeenCalledWith("token-1", eventId, photo2.id);
   });
 });
 
@@ -187,7 +187,7 @@ describe("EventDetailsClient delete flow", () => {
   };
 
   it("opens delete confirmation modal when user clicks delete", async () => {
-    render(<EventDetailsClient initialEvent={initialEvent} userId="1" />);
+    render(<EventDetailsClient initialEvent={initialEvent} authToken="token-1" currentUserEmail={null} />);
 
     fireEvent.click(screen.getByRole("button", { name: "Delete event" }));
 
@@ -197,13 +197,13 @@ describe("EventDetailsClient delete flow", () => {
   });
 
   it("deletes event after confirmation and navigates to map", async () => {
-    render(<EventDetailsClient initialEvent={initialEvent} userId="1" />);
+    render(<EventDetailsClient initialEvent={initialEvent} authToken="token-1" currentUserEmail={null} />);
 
     fireEvent.click(screen.getByRole("button", { name: "Delete event" }));
     fireEvent.click(await screen.findByRole("button", { name: "Delete" }));
 
     await waitFor(() => {
-      expect(deleteEvent).toHaveBeenCalledWith("1", eventId);
+      expect(deleteEvent).toHaveBeenCalledWith("token-1", eventId);
       expect(pushMock).toHaveBeenCalledWith("/");
       expect(refreshMock).toHaveBeenCalled();
     });
@@ -212,7 +212,7 @@ describe("EventDetailsClient delete flow", () => {
   it("redirects to map when save hits EVENT_NOT_FOUND", async () => {
     vi.mocked(updateEvent).mockRejectedValue(createApiClientError("EVENT_NOT_FOUND"));
 
-    render(<EventDetailsClient initialEvent={initialEvent} userId="1" />);
+    render(<EventDetailsClient initialEvent={initialEvent} authToken="token-1" currentUserEmail={null} />);
 
     fireEvent.click(screen.getByRole("button", { name: "Edit event" }));
     fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
@@ -225,7 +225,7 @@ describe("EventDetailsClient delete flow", () => {
   it("shows save error when update fails for non-not-found reasons", async () => {
     vi.mocked(updateEvent).mockRejectedValue(createApiClientError("EVENT_UPDATE_FAILED"));
 
-    render(<EventDetailsClient initialEvent={initialEvent} userId="1" />);
+    render(<EventDetailsClient initialEvent={initialEvent} authToken="token-1" currentUserEmail={null} />);
 
     fireEvent.click(screen.getByRole("button", { name: "Edit event" }));
     fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
@@ -236,7 +236,7 @@ describe("EventDetailsClient delete flow", () => {
   it("redirects when adding photos returns EVENT_NOT_FOUND", async () => {
     vi.mocked(uploadEventPhotos).mockRejectedValue(createApiClientError("EVENT_NOT_FOUND"));
 
-    render(<EventDetailsClient initialEvent={initialEvent} userId="1" />);
+    render(<EventDetailsClient initialEvent={initialEvent} authToken="token-1" currentUserEmail={null} />);
 
     fireEvent.click(screen.getByRole("button", { name: "Edit event" }));
     fireEvent.click(screen.getByRole("button", { name: "Mock add attachments" }));

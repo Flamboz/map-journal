@@ -27,12 +27,12 @@ describe("useMapBootstrapData", () => {
 
   it("loads position, events, and metadata for authenticated user", async () => {
     const { result } = renderHook(() =>
-      useMapBootstrapData({ status: "authenticated", userId: "1", initialError: null }),
+      useMapBootstrapData({ status: "authenticated", authToken: "token-1", initialError: null }),
     );
 
     await waitFor(() => {
-      expect(fetchLastMapPosition).toHaveBeenCalledWith("1");
-      expect(fetchUserEvents).toHaveBeenCalledWith("1");
+      expect(fetchLastMapPosition).toHaveBeenCalledWith("token-1");
+      expect(fetchUserEvents).toHaveBeenCalledWith("token-1");
       expect(result.current.centerState).toEqual({ center: [51.5, -0.09], zoom: 12 });
       expect(result.current.events).toEqual([]);
       expect(result.current.eventsError).toBe(false);
@@ -46,7 +46,7 @@ describe("useMapBootstrapData", () => {
     vi.mocked(fetchUserEvents).mockRejectedValue(new Error("network"));
 
     const { result } = renderHook(() =>
-      useMapBootstrapData({ status: "authenticated", userId: "1", initialError: null }),
+      useMapBootstrapData({ status: "authenticated", authToken: "token-1", initialError: null }),
     );
 
     await waitFor(() => {
@@ -57,7 +57,7 @@ describe("useMapBootstrapData", () => {
   });
 
   it("does not call user-scoped loaders when unauthenticated", async () => {
-    renderHook(() => useMapBootstrapData({ status: "unauthenticated", userId: null, initialError: "x" }));
+    renderHook(() => useMapBootstrapData({ status: "unauthenticated", authToken: null, initialError: "x" }));
 
     await waitFor(() => {
       expect(fetchAllowedLabels).toHaveBeenCalledTimes(1);

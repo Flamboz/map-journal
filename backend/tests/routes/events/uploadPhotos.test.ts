@@ -9,7 +9,11 @@ async function registerUser(context: TestAppContext, email: string) {
     payload: { email, password: "supersecure" },
   });
 
-  return response.json().user.id as number;
+  const body = response.json() as { user: { id: number }; accessToken: string };
+  return {
+    userId: body.user.id,
+    authHeaders: { authorization: `Bearer ${body.accessToken}` },
+  };
 }
 
 describe("upload photos route", () => {
@@ -24,12 +28,13 @@ describe("upload photos route", () => {
   });
 
   it("rejects non-multipart payload", async () => {
-    const userId = await registerUser(context, "photo-upload@example.com");
+    const { userId, authHeaders } = await registerUser(context, "photo-upload@example.com");
     const eventId = await createEvent(context.run, { userId, title: "With photos" });
 
     const response = await context.app.inject({
       method: "POST",
-      url: `/events/${eventId}/photos?userId=${userId}`,
+      url: `/events/${eventId}/photos`,
+      headers: authHeaders,
       payload: { anything: true },
     });
 
@@ -38,9 +43,11 @@ describe("upload photos route", () => {
   });
 
   it("rejects invalid event id", async () => {
+    const { authHeaders } = await registerUser(context, "photo-upload-invalid@example.com");
     const response = await context.app.inject({
       method: "POST",
-      url: "/events/not-a-uuid/photos?userId=1",
+      url: "/events/not-a-uuid/photos",
+      headers: authHeaders,
     });
 
     expect(response.statusCode).toBe(400);

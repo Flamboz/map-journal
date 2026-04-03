@@ -9,7 +9,11 @@ async function registerUser(context: TestAppContext, email: string) {
     payload: { email, password: "supersecure" },
   });
 
-  return response.json().user.id as number;
+  const body = response.json() as { user: { id: number }; accessToken: string };
+  return {
+    userId: body.user.id,
+    authHeaders: { authorization: `Bearer ${body.accessToken}` },
+  };
 }
 
 describe("list events route", () => {
@@ -24,12 +28,13 @@ describe("list events route", () => {
   });
 
   it("lists events for a user", async () => {
-    const userId = await registerUser(context, "event-list@example.com");
+    const { userId, authHeaders } = await registerUser(context, "event-list@example.com");
     await createEvent(context.run, { userId, title: "Cafe Break" });
 
     const response = await context.app.inject({
       method: "GET",
-      url: `/events?userId=${userId}`,
+      url: "/events",
+      headers: authHeaders,
     });
 
     expect(response.statusCode).toBe(200);
@@ -37,24 +42,24 @@ describe("list events route", () => {
     expect(response.json().events[0].name).toBe("Cafe Break");
   });
 
-  it("requires userId", async () => {
+  it("requires authentication", async () => {
     const response = await context.app.inject({
       method: "GET",
       url: "/events",
     });
 
-    expect(response.statusCode).toBe(400);
-    expect(response.json().error).toBe("INVALID_USER");
+    expect(response.statusCode).toBe(401);
+    expect(response.json().error).toBe("UNAUTHORIZED");
   });
 
   it("includes events shared with the requesting user", async () => {
-    const ownerId = await registerUser(context, "owner-list-share@example.com");
-    const recipientId = await registerUser(context, "recipient-list-share@example.com");
+    const owner = await registerUser(context, "owner-list-share@example.com");
+    const recipient = await registerUser(context, "recipient-list-share@example.com");
     const createResponse = await context.app.inject({
       method: "POST",
       url: "/events",
+      headers: owner.authHeaders,
       payload: {
-        userId: ownerId,
         name: "Shared Cafe",
         startDate: "2026-03-10",
         visibility: "share_with",
@@ -68,7 +73,8 @@ describe("list events route", () => {
 
     const response = await context.app.inject({
       method: "GET",
-      url: `/events?userId=${recipientId}`,
+      url: "/events",
+      headers: recipient.authHeaders,
     });
 
     expect(response.statusCode).toBe(200);

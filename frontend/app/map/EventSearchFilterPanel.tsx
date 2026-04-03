@@ -6,7 +6,7 @@ import { EventLabelsField } from "../components/EventFormFields";
 import { fetchUserEvents, type EventSearchFilters, type MapEvent } from "./api";
 
 type EventSearchFilterPanelProps = {
-  userId: string | null;
+  authToken: string | null;
   labelOptions: string[];
   visitCompanyOptions: string[];
   onResultsLoaded: (events: MapEvent[]) => void;
@@ -14,7 +14,7 @@ type EventSearchFilterPanelProps = {
 };
 
 export function EventSearchFilterPanel({
-  userId,
+  authToken,
   labelOptions,
   visitCompanyOptions,
   onResultsLoaded,
@@ -42,7 +42,7 @@ export function EventSearchFilterPanel({
   async function handleEventSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!userId) {
+    if (!authToken) {
       setSearchError("You need to sign in before searching events.");
       return;
     }
@@ -59,7 +59,7 @@ export function EventSearchFilterPanel({
     };
 
     try {
-      const events = await fetchUserEvents(userId, filters);
+      const events = await fetchUserEvents(authToken, filters);
       onResultsLoaded(events);
       setSearchedEvents(events);
       setHasSearched(true);

@@ -8,7 +8,11 @@ async function registerUser(context: TestAppContext, email: string) {
     payload: { email, password: "supersecure" },
   });
 
-  return response.json().user.id as number;
+  const body = response.json() as { user: { id: number }; accessToken: string };
+  return {
+    userId: body.user.id,
+    authHeaders: { authorization: `Bearer ${body.accessToken}` },
+  };
 }
 
 describe("create event route", () => {
@@ -23,13 +27,13 @@ describe("create event route", () => {
   });
 
   it("creates an event for a valid user", async () => {
-    const userId = await registerUser(context, "event-create@example.com");
+    const { authHeaders } = await registerUser(context, "event-create@example.com");
 
     const response = await context.app.inject({
       method: "POST",
       url: "/events",
+      headers: authHeaders,
       payload: {
-        userId,
         name: "Museum Trip",
         startDate: "2026-03-10",
         description: "A nice visit",
@@ -48,13 +52,13 @@ describe("create event route", () => {
   });
 
   it("rejects invalid rating", async () => {
-    const userId = await registerUser(context, "event-rating@example.com");
+    const { authHeaders } = await registerUser(context, "event-rating@example.com");
 
     const response = await context.app.inject({
       method: "POST",
       url: "/events",
+      headers: authHeaders,
       payload: {
-        userId,
         name: "Bad Rating",
         startDate: "2026-03-10",
         rating: 11,
@@ -68,14 +72,14 @@ describe("create event route", () => {
   });
 
   it("creates a shared event for existing recipient emails", async () => {
-    const ownerId = await registerUser(context, "owner-create-share@example.com");
+    const { authHeaders } = await registerUser(context, "owner-create-share@example.com");
     await registerUser(context, "friend-create-share@example.com");
 
     const response = await context.app.inject({
       method: "POST",
       url: "/events",
+      headers: authHeaders,
       payload: {
-        userId: ownerId,
         name: "Shared Museum Trip",
         startDate: "2026-03-10",
         visibility: "share_with",
@@ -92,13 +96,13 @@ describe("create event route", () => {
   });
 
   it("rejects shared events when the email does not belong to an existing account", async () => {
-    const ownerId = await registerUser(context, "owner-create-invalid@example.com");
+    const { authHeaders } = await registerUser(context, "owner-create-invalid@example.com");
 
     const response = await context.app.inject({
       method: "POST",
       url: "/events",
+      headers: authHeaders,
       payload: {
-        userId: ownerId,
         name: "Invalid Share",
         startDate: "2026-03-10",
         visibility: "share_with",

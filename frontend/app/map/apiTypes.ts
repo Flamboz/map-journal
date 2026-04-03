@@ -50,7 +50,6 @@ export type MapEvent = {
 };
 
 export type CreateEventInput = {
-  userId: string;
   name: string;
   startDate: string;
   endDate?: string;
@@ -65,7 +64,6 @@ export type CreateEventInput = {
 };
 
 export type UpdateEventInput = {
-  userId: string;
   eventId: string;
   name: string;
   startDate: string;

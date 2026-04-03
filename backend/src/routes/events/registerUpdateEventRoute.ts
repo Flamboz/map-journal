@@ -3,12 +3,12 @@ import {
   sendError,
   sendEventNotFound,
   sendInvalidEvent,
-  sendInvalidUser,
   sendServerError,
 } from "../../utils/httpErrors";
-import { EventParams, parseEventId, parseUserId, UpdateEventBody } from "./shared";
+import { EventParams, parseEventId, UpdateEventBody } from "./shared";
 import { updateEventForUser } from "../../services/eventService";
 import { updateEventSchema } from "../schemas/eventSchemas";
+import { requireAuthenticatedUserId } from "../../auth/requestAuth";
 
 export function registerUpdateEventRoute(fastify: FastifyInstance) {
   fastify.patch(
@@ -18,11 +18,12 @@ export function registerUpdateEventRoute(fastify: FastifyInstance) {
       request: FastifyRequest<{ Params: EventParams; Body: UpdateEventBody }>,
       reply: FastifyReply,
     ) => {
-      const body = request.body ?? {};
-      const userId = parseUserId(typeof body.userId === "number" ? String(body.userId) : body.userId);
+      const userId = requireAuthenticatedUserId(request, reply);
       if (!userId) {
-        return sendInvalidUser(reply);
+        return;
       }
+
+      const body = request.body ?? {};
 
       const eventId = parseEventId(request.params.eventId);
       if (!eventId) {

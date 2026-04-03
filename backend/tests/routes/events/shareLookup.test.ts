@@ -8,7 +8,11 @@ async function registerUser(context: TestAppContext, email: string) {
     payload: { email, password: "supersecure" },
   });
 
-  return response.json().user.id as number;
+  const body = response.json() as { user: { id: number }; accessToken: string };
+  return {
+    userId: body.user.id,
+    authHeaders: { authorization: `Bearer ${body.accessToken}` },
+  };
 }
 
 describe("share lookup route", () => {
@@ -23,12 +27,13 @@ describe("share lookup route", () => {
   });
 
   it("returns whether an email belongs to an existing account", async () => {
-    const userId = await registerUser(context, "share-lookup-owner@example.com");
+    const { authHeaders } = await registerUser(context, "share-lookup-owner@example.com");
     await registerUser(context, "share-lookup-friend@example.com");
 
     const response = await context.app.inject({
       method: "GET",
-      url: `/events/shareable-users/lookup?userId=${userId}&email=share-lookup-friend@example.com`,
+      url: "/events/shareable-users/lookup?email=share-lookup-friend@example.com",
+      headers: authHeaders,
     });
 
     expect(response.statusCode).toBe(200);

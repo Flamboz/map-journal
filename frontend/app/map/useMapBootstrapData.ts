@@ -11,7 +11,7 @@ import type { CenterState } from "./mapViewTypes";
 
 type UseMapBootstrapDataArgs = {
   status: "loading" | "authenticated" | "unauthenticated";
-  userId: string | null;
+  authToken: string | null;
   initialError: string | null;
 };
 
@@ -28,7 +28,7 @@ type UseMapBootstrapDataResult = {
 
 export function useMapBootstrapData({
   status,
-  userId,
+  authToken,
   initialError,
 }: UseMapBootstrapDataArgs): UseMapBootstrapDataResult {
   const [centerState, setCenterState] = useState<CenterState>({ center: WORLD_CENTER, zoom: WORLD_ZOOM });
@@ -43,18 +43,17 @@ export function useMapBootstrapData({
   }, [initialError]);
 
   useEffect(() => {
-    if (status !== "authenticated" || !userId) {
+    if (status !== "authenticated" || !authToken) {
       return;
     }
 
-    const authenticatedUserId = userId;
-
+    const currentAuthToken = authToken;
     let isActive = true;
 
     async function loadMapData() {
       const [positionResult, eventsResult] = await Promise.allSettled([
-        fetchLastMapPosition(authenticatedUserId),
-        fetchUserEvents(authenticatedUserId),
+        fetchLastMapPosition(currentAuthToken),
+        fetchUserEvents(currentAuthToken),
       ]);
 
       if (!isActive) {
@@ -84,7 +83,7 @@ export function useMapBootstrapData({
     return () => {
       isActive = false;
     };
-  }, [status, userId]);
+  }, [authToken, status]);
 
   useEffect(() => {
     let isActive = true;

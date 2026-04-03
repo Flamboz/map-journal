@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { lookupShareableUserEmail, type EventVisibility } from "../map/api";
 
 type EventVisibilityFieldsProps = {
-  userId: string | null;
+  authToken: string | null;
   currentUserEmail: string | null;
   visibility: EventVisibility;
   sharedWithEmails: string[];
@@ -21,7 +21,7 @@ function normalizeEmail(value: string): string {
 }
 
 export function EventVisibilityFields({
-  userId,
+  authToken,
   currentUserEmail,
   visibility,
   sharedWithEmails,
@@ -51,7 +51,7 @@ export function EventVisibilityFields({
       return;
     }
 
-    if (!userId) {
+    if (!authToken) {
       setAddError("You need to sign in before sharing events.");
       return;
     }
@@ -70,7 +70,7 @@ export function EventVisibilityFields({
     setAddError(null);
 
     try {
-      const existingEmail = await lookupShareableUserEmail(userId, normalizedEmail);
+      const existingEmail = await lookupShareableUserEmail(authToken, normalizedEmail);
       if (!existingEmail) {
         setAddError("Only registered users can be added.");
         return;

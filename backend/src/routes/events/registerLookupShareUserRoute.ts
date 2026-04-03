@@ -1,10 +1,9 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { sendInvalidUser, sendServerError } from "../../utils/httpErrors";
+import { sendServerError } from "../../utils/httpErrors";
+import { requireAuthenticatedUser } from "../../auth/requestAuth";
 import { findShareableUserByEmail } from "../../services/eventSharing";
-import { parseUserId } from "./shared";
 
 type LookupShareUserQuerystring = {
-  userId?: string;
   email?: string;
 };
 
@@ -15,9 +14,8 @@ export function registerLookupShareUserRoute(fastify: FastifyInstance) {
       request: FastifyRequest<{ Querystring: LookupShareUserQuerystring }>,
       reply: FastifyReply,
     ) => {
-      const userId = parseUserId(request.query.userId);
-      if (!userId) {
-        return sendInvalidUser(reply);
+      if (!requireAuthenticatedUser(request, reply)) {
+        return;
       }
 
       try {

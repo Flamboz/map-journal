@@ -29,11 +29,11 @@ import { useEventDetailsOptions } from "./useEventDetailsOptions";
 
 type EventDetailsClientProps = {
   initialEvent: MapEvent;
-  userId: string;
+  authToken: string;
   currentUserEmail: string | null;
 };
 
-export default function EventDetailsClient({ initialEvent, userId, currentUserEmail }: EventDetailsClientProps) {
+export default function EventDetailsClient({ initialEvent, authToken, currentUserEmail }: EventDetailsClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [state, dispatch] = useReducer(eventDetailsReducer, initialEvent, createInitialEventDetailsState);
@@ -118,7 +118,7 @@ export default function EventDetailsClient({ initialEvent, userId, currentUserEm
     dispatch({ type: "SET_DELETING_EVENT", payload: true });
 
     try {
-      await deleteEvent(userId, state.event.id);
+      await deleteEvent(authToken, state.event.id);
       router.push("/");
       router.refresh();
     } catch (error) {
@@ -145,7 +145,7 @@ export default function EventDetailsClient({ initialEvent, userId, currentUserEm
         dispatch({ type: "SET_PHOTO_ACTION_RUNNING", payload: true });
         try {
           for (const photoId of stagedDeletes) {
-            await deleteEventPhoto(userId, state.event.id, photoId);
+            await deleteEventPhoto(authToken, state.event.id, photoId);
           }
         } catch (error) {
           if (isApiErrorCode(error, "EVENT_NOT_FOUND")) {
@@ -166,7 +166,7 @@ export default function EventDetailsClient({ initialEvent, userId, currentUserEm
       if (stagedPreviewId && stagedPreviewId !== currentPreviewId) {
         dispatch({ type: "SET_PHOTO_ACTION_RUNNING", payload: true });
         try {
-          await setEventPreviewPhoto(userId, state.event.id, stagedPreviewId);
+          await setEventPreviewPhoto(authToken, state.event.id, stagedPreviewId);
         } catch (error) {
           if (isApiErrorCode(error, "EVENT_NOT_FOUND")) {
             redirectMissingEvent();
@@ -180,8 +180,7 @@ export default function EventDetailsClient({ initialEvent, userId, currentUserEm
         }
       }
 
-      const updatedEvent = await updateEvent({
-        userId,
+      const updatedEvent = await updateEvent(authToken, {
         eventId: state.event.id,
         name: values.name.trim(),
         startDate: values.startDate,
@@ -194,7 +193,7 @@ export default function EventDetailsClient({ initialEvent, userId, currentUserEm
         sharedWithEmails: values.sharedWithEmails,
       });
 
-      const refreshedEvent = await fetchEventById(state.event.id, userId);
+      const refreshedEvent = await fetchEventById(state.event.id, authToken);
       dispatch({ type: "SAVE_SUCCESS", payload: refreshedEvent });
       reset(mapEventToFormState(refreshedEvent));
 
@@ -225,8 +224,8 @@ export default function EventDetailsClient({ initialEvent, userId, currentUserEm
     dispatch({ type: "SET_PHOTO_ACTION_RUNNING", payload: true });
 
     try {
-      await uploadEventPhotos(userId, state.event.id, files);
-      const refreshedEvent = await fetchEventById(state.event.id, userId);
+      await uploadEventPhotos(authToken, state.event.id, files);
+      const refreshedEvent = await fetchEventById(state.event.id, authToken);
       dispatch({ type: "SET_EVENT", payload: refreshedEvent });
     } catch (error) {
       if (isApiErrorCode(error, "EVENT_NOT_FOUND")) {
@@ -252,7 +251,7 @@ export default function EventDetailsClient({ initialEvent, userId, currentUserEm
     }
 
     try {
-      const photos = await deleteEventPhoto(userId, state.event.id, photoId);
+      const photos = await deleteEventPhoto(authToken, state.event.id, photoId);
       dispatch({ type: "SET_EVENT", payload: { ...state.event, photos } });
     } catch (error) {
       if (isApiErrorCode(error, "EVENT_NOT_FOUND")) {
@@ -278,7 +277,7 @@ export default function EventDetailsClient({ initialEvent, userId, currentUserEm
     }
 
     try {
-      const photos = await setEventPreviewPhoto(userId, state.event.id, photoId);
+      const photos = await setEventPreviewPhoto(authToken, state.event.id, photoId);
       dispatch({ type: "SET_EVENT", payload: { ...state.event, photos } });
     } catch (error) {
       if (isApiErrorCode(error, "EVENT_NOT_FOUND")) {
@@ -359,7 +358,7 @@ export default function EventDetailsClient({ initialEvent, userId, currentUserEm
           saveError={state.saveError}
           isSaving={state.isSaving}
           isPhotoActionRunning={state.isPhotoActionRunning}
-          userId={userId}
+          authToken={authToken}
           currentUserEmail={currentUserEmail}
           visibility={visibility}
           sharedWithEmails={sharedWithEmails}

@@ -9,7 +9,11 @@ async function registerUser(context: TestAppContext, email: string) {
     payload: { email, password: "supersecure" },
   });
 
-  return response.json().user.id as number;
+  const body = response.json() as { user: { id: number }; accessToken: string };
+  return {
+    userId: body.user.id,
+    authHeaders: { authorization: `Bearer ${body.accessToken}` },
+  };
 }
 
 describe("delete photo route", () => {
@@ -24,12 +28,13 @@ describe("delete photo route", () => {
   });
 
   it("rejects invalid photo id", async () => {
-    const userId = await registerUser(context, "photo-delete@example.com");
+    const { userId, authHeaders } = await registerUser(context, "photo-delete@example.com");
     const eventId = await createEvent(context.run, { userId, title: "Photo Event" });
 
     const response = await context.app.inject({
       method: "DELETE",
-      url: `/events/${eventId}/photos/not-a-uuid?userId=${userId}`,
+      url: `/events/${eventId}/photos/not-a-uuid`,
+      headers: authHeaders,
     });
 
     expect(response.statusCode).toBe(400);
@@ -37,12 +42,13 @@ describe("delete photo route", () => {
   });
 
   it("returns not found for unknown photo", async () => {
-    const userId = await registerUser(context, "photo-delete-missing@example.com");
+    const { userId, authHeaders } = await registerUser(context, "photo-delete-missing@example.com");
     const eventId = await createEvent(context.run, { userId, title: "Photo Event" });
 
     const response = await context.app.inject({
       method: "DELETE",
-      url: `/events/${eventId}/photos/4a9a6f48-6db4-4f9f-bef3-f2bd9a4f0000?userId=${userId}`,
+      url: `/events/${eventId}/photos/4a9a6f48-6db4-4f9f-bef3-f2bd9a4f0000`,
+      headers: authHeaders,
     });
 
     expect(response.statusCode).toBe(404);

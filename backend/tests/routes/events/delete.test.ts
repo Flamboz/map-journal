@@ -9,7 +9,11 @@ async function registerUser(context: TestAppContext, email: string) {
     payload: { email, password: "supersecure" },
   });
 
-  return response.json().user.id as number;
+  const body = response.json() as { user: { id: number }; accessToken: string };
+  return {
+    userId: body.user.id,
+    authHeaders: { authorization: `Bearer ${body.accessToken}` },
+  };
 }
 
 describe("delete event route", () => {
@@ -24,12 +28,13 @@ describe("delete event route", () => {
   });
 
   it("deletes an owned event", async () => {
-    const userId = await registerUser(context, "event-delete@example.com");
+    const { userId, authHeaders } = await registerUser(context, "event-delete@example.com");
     const eventId = await createEvent(context.run, { userId, title: "Delete Me" });
 
     const response = await context.app.inject({
       method: "DELETE",
-      url: `/events/${eventId}?userId=${userId}`,
+      url: `/events/${eventId}`,
+      headers: authHeaders,
     });
 
     expect(response.statusCode).toBe(200);
@@ -37,13 +42,14 @@ describe("delete event route", () => {
   });
 
   it("forbids delete by another user", async () => {
-    const ownerId = await registerUser(context, "event-delete-owner@example.com");
-    const otherId = await registerUser(context, "event-delete-other@example.com");
-    const eventId = await createEvent(context.run, { userId: ownerId, title: "Protected" });
+    const owner = await registerUser(context, "event-delete-owner@example.com");
+    const other = await registerUser(context, "event-delete-other@example.com");
+    const eventId = await createEvent(context.run, { userId: owner.userId, title: "Protected" });
 
     const response = await context.app.inject({
       method: "DELETE",
-      url: `/events/${eventId}?userId=${otherId}`,
+      url: `/events/${eventId}`,
+      headers: other.authHeaders,
     });
 
     expect(response.statusCode).toBe(403);

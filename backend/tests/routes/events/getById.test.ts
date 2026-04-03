@@ -9,7 +9,11 @@ async function registerUser(context: TestAppContext, email: string) {
     payload: { email, password: "supersecure" },
   });
 
-  return response.json().user.id as number;
+  const body = response.json() as { user: { id: number }; accessToken: string };
+  return {
+    userId: body.user.id,
+    authHeaders: { authorization: `Bearer ${body.accessToken}` },
+  };
 }
 
 describe("get event by id route", () => {
@@ -24,12 +28,13 @@ describe("get event by id route", () => {
   });
 
   it("returns event by id", async () => {
-    const userId = await registerUser(context, "event-get@example.com");
+    const { userId, authHeaders } = await registerUser(context, "event-get@example.com");
     const eventId = await createEvent(context.run, { userId, title: "Gallery" });
 
     const response = await context.app.inject({
       method: "GET",
-      url: `/events/${eventId}?userId=${userId}`,
+      url: `/events/${eventId}`,
+      headers: authHeaders,
     });
 
     expect(response.statusCode).toBe(200);
@@ -37,11 +42,12 @@ describe("get event by id route", () => {
   });
 
   it("returns 404 when event does not exist", async () => {
-    const userId = await registerUser(context, "event-missing@example.com");
+    const { authHeaders } = await registerUser(context, "event-missing@example.com");
 
     const response = await context.app.inject({
       method: "GET",
-      url: `/events/4a9a6f48-6db4-4f9f-bef3-f2bd9a4f0000?userId=${userId}`,
+      url: "/events/4a9a6f48-6db4-4f9f-bef3-f2bd9a4f0000",
+      headers: authHeaders,
     });
 
     expect(response.statusCode).toBe(404);
@@ -49,13 +55,13 @@ describe("get event by id route", () => {
   });
 
   it("returns an event shared with the requesting user", async () => {
-    const ownerId = await registerUser(context, "owner-get-share@example.com");
-    const recipientId = await registerUser(context, "recipient-get-share@example.com");
+    const owner = await registerUser(context, "owner-get-share@example.com");
+    const recipient = await registerUser(context, "recipient-get-share@example.com");
     const createResponse = await context.app.inject({
       method: "POST",
       url: "/events",
+      headers: owner.authHeaders,
       payload: {
-        userId: ownerId,
         name: "Shared Gallery",
         startDate: "2026-03-10",
         visibility: "share_with",
@@ -68,7 +74,8 @@ describe("get event by id route", () => {
 
     const response = await context.app.inject({
       method: "GET",
-      url: `/events/${eventId}?userId=${recipientId}`,
+      url: `/events/${eventId}`,
+      headers: recipient.authHeaders,
     });
 
     expect(response.statusCode).toBe(200);

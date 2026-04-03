@@ -1,15 +1,16 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { get } from "../../db/sqlite";
-import { sendInvalidUser, sendServerError } from "../../utils/httpErrors";
-import { DEFAULT_PIN_ZOOM, parseUserId, UserQuerystring } from "./shared";
+import { sendServerError } from "../../utils/httpErrors";
+import { DEFAULT_PIN_ZOOM } from "./shared";
+import { requireAuthenticatedUserId } from "../../auth/requestAuth";
 
 export function registerMapPositionRoute(fastify: FastifyInstance) {
   fastify.get(
     "/map-position",
-    async (request: FastifyRequest<{ Querystring: UserQuerystring }>, reply: FastifyReply) => {
-      const userId = parseUserId(request.query.userId);
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const userId = requireAuthenticatedUserId(request, reply);
       if (!userId) {
-        return sendInvalidUser(reply);
+        return;
       }
 
       try {

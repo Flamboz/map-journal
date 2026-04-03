@@ -1,5 +1,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { sendError, sendServerError } from "../utils/httpErrors";
+import { issueAuthToken } from "../auth/token";
 import { isStrongPassword, isValidEmail, normalizeEmail } from "../utils/validators";
 import { authenticateUser, registerUser } from "../services/authService";
 import { loginSchema, registerSchema } from "./schemas/authSchemas";
@@ -27,7 +28,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
           return sendError(reply, 409, "USER_EXISTS", "An account with this email already exists.");
         }
 
-        return reply.status(201).send({ user });
+        return reply.status(201).send({ user, accessToken: issueAuthToken(user) });
       } catch (error) {
         return sendServerError(request, reply, error);
       }
@@ -52,7 +53,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
           return sendError(reply, 401, "INVALID_CREDENTIALS", "Invalid email or password.");
         }
 
-        return reply.status(200).send({ user });
+        return reply.status(200).send({ user, accessToken: issueAuthToken(user) });
       } catch (error) {
         return sendServerError(request, reply, error);
       }

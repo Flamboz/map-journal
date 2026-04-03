@@ -2,27 +2,22 @@ import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import {
   sendError,
   sendInvalidEvent,
-  sendInvalidUser,
   sendServerError,
 } from "../../utils/httpErrors";
 import {
   EventParams,
   parseEventId,
-  parseUserId,
-  UserQuerystring,
 } from "./shared";
 import { uploadEventPhotosForUser } from "../../services/photoService";
+import { requireAuthenticatedUserId } from "../../auth/requestAuth";
 
 export function registerUploadEventPhotosRoute(fastify: FastifyInstance) {
   fastify.post(
     "/events/:eventId/photos",
-    async (
-      request: FastifyRequest<{ Params: EventParams; Querystring: UserQuerystring }>,
-      reply: FastifyReply,
-    ) => {
-      const userId = parseUserId(request.query.userId);
+    async (request: FastifyRequest<{ Params: EventParams }>, reply: FastifyReply) => {
+      const userId = requireAuthenticatedUserId(request, reply);
       if (!userId) {
-        return sendInvalidUser(reply);
+        return;
       }
 
       const eventId = parseEventId(request.params.eventId);

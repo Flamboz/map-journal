@@ -1,19 +1,21 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { sendError, sendInvalidUser, sendServerError } from "../../utils/httpErrors";
-import { CreateEventBody, parseUserId } from "./shared";
+import { sendError, sendServerError } from "../../utils/httpErrors";
+import { CreateEventBody } from "./shared";
 import { createEventSchema } from "../schemas/eventSchemas";
 import { createEventForUser } from "../../services/eventService";
+import { requireAuthenticatedUserId } from "../../auth/requestAuth";
 
 export function registerCreateEventRoute(fastify: FastifyInstance) {
   fastify.post(
     "/events",
     { schema: createEventSchema },
     async (request: FastifyRequest<{ Body: CreateEventBody }>, reply: FastifyReply) => {
-      const body = request.body ?? {};
-      const userId = parseUserId(typeof body.userId === "number" ? String(body.userId) : body.userId);
+      const userId = requireAuthenticatedUserId(request, reply);
       if (!userId) {
-        return sendInvalidUser(reply);
+        return;
       }
+
+      const body = request.body ?? {};
 
       try {
         const result = await createEventForUser({ ...body, userId });

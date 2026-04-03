@@ -9,7 +9,7 @@ type Coordinates = {
 };
 
 type UseDraftPinStateArgs = {
-  userId: string | null;
+  authToken: string | null;
   onEventSaved: (event: MapEvent) => void;
   onDraftOpened?: () => void;
 };
@@ -27,7 +27,7 @@ type UseDraftPinStateResult = {
 };
 
 export function useDraftPinState({
-  userId,
+  authToken,
   onEventSaved,
   onDraftOpened,
 }: UseDraftPinStateArgs): UseDraftPinStateResult {
@@ -59,7 +59,7 @@ export function useDraftPinState({
   }
 
   async function saveDraftEvent(formState: EventFormState) {
-    if (!userId || !draftPosition) {
+    if (!authToken || !draftPosition) {
       return;
     }
 
@@ -67,8 +67,7 @@ export function useDraftPinState({
     setSaveError(null);
 
     try {
-      const createdEvent = await createEvent({
-        userId,
+      const createdEvent = await createEvent(authToken, {
         name: formState.name.trim(),
         startDate: formState.startDate,
         endDate: formState.endDate || undefined,
@@ -85,7 +84,7 @@ export function useDraftPinState({
       let uploadedPhotos = createdEvent.photos ?? [];
       if (formState.photos.length > 0) {
         try {
-          uploadedPhotos = await uploadEventPhotos(userId, createdEvent.id, formState.photos);
+          uploadedPhotos = await uploadEventPhotos(authToken, createdEvent.id, formState.photos);
         } catch {
           setSaveError("Event saved, but photo upload failed.");
         }

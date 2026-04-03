@@ -18,7 +18,7 @@ import { eventDraftValidationSchema } from "./mapViewHelpers";
 import type { EventFormState } from "./mapViewTypes";
 
 type EventDraftFormProps = {
-  userId: string | null;
+  authToken: string | null;
   draftPosition: { lat: number; lng: number } | null;
   isResolvingAddress: boolean;
   draftAddress: string | null;
@@ -33,7 +33,7 @@ type EventDraftFormProps = {
 };
 
 export function EventDraftForm({
-  userId,
+  authToken,
   draftPosition,
   isResolvingAddress,
   draftAddress,
@@ -264,7 +264,7 @@ export function EventDraftForm({
           <EventVisitCompanyField register={register} visitCompanyOptions={visitCompanyOptions} />
 
           <EventVisibilityFields
-            userId={userId}
+            authToken={authToken}
             currentUserEmail={currentUserEmail}
             visibility={visibility}
             sharedWithEmails={sharedWithEmails}

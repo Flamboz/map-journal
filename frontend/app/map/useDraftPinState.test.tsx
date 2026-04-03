@@ -65,7 +65,7 @@ describe("useDraftPinState", () => {
       },
     ]);
 
-    const { result } = renderHook(() => useDraftPinState({ userId: "1", onEventSaved }));
+    const { result } = renderHook(() => useDraftPinState({ authToken: "token-1", onEventSaved }));
 
     act(() => {
       result.current.openDraftFromMapClick({ lat: 50.45, lng: 30.52 });
@@ -76,13 +76,13 @@ describe("useDraftPinState", () => {
     });
 
     expect(createEvent).toHaveBeenCalledWith(
+      "token-1",
       expect.objectContaining({
-        userId: "1",
         name: "River Walk",
         description: "description",
       }),
     );
-    expect(uploadEventPhotos).toHaveBeenCalled();
+    expect(uploadEventPhotos).toHaveBeenCalledWith("token-1", expect.any(String), formState.photos);
     expect(onEventSaved).toHaveBeenCalledWith(
       expect.objectContaining({
         id: "550e8400-e29b-41d4-a716-446655440001",
@@ -112,7 +112,7 @@ describe("useDraftPinState", () => {
     });
     vi.mocked(uploadEventPhotos).mockRejectedValue(new Error("upload failed"));
 
-    const { result } = renderHook(() => useDraftPinState({ userId: "1", onEventSaved }));
+    const { result } = renderHook(() => useDraftPinState({ authToken: "token-1", onEventSaved }));
 
     act(() => {
       result.current.openDraftFromMapClick({ lat: 50.45, lng: 30.52 });
@@ -130,7 +130,7 @@ describe("useDraftPinState", () => {
     const onEventSaved = vi.fn();
     vi.mocked(createEvent).mockRejectedValue(new Error("create failed"));
 
-    const { result } = renderHook(() => useDraftPinState({ userId: "1", onEventSaved }));
+    const { result } = renderHook(() => useDraftPinState({ authToken: "token-1", onEventSaved }));
 
     act(() => {
       result.current.openDraftFromMapClick({ lat: 50.45, lng: 30.52 });

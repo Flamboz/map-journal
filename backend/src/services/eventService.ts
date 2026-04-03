@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import { all, get, run } from "../db/sqlite";
+import { all, get, run, withTransaction } from "../db/sqlite";
 import { reverseGeocodeCity } from "../utils/geocode";
 import { deleteUploadedFile, removeEventUploadDirectory, removeUserDirectoryIfEmpty } from "../utils/fileCleanup";
 import { failure, ServiceResult, success } from "./serviceResult";
@@ -332,25 +332,27 @@ export async function createEventForUser(input: CreateEventInput): Promise<Servi
     city = "";
   }
 
-  await run(
-    `INSERT INTO events (id, user_id, title, start_date, end_date, description, rating, labels, visit_company, city, lat, lng)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [
-      eventId,
-      input.userId,
-      name,
-      startDate,
-      endDate || null,
-      description,
-      normalizedRating,
-      JSON.stringify(labels),
-      visitCompany,
-      city,
-      lat,
-      lng,
-    ],
-  );
-  await syncEventShares(eventId, shareRecipientsResult.value.recipientUserIds);
+  await withTransaction(async () => {
+    await run(
+      `INSERT INTO events (id, user_id, title, start_date, end_date, description, rating, labels, visit_company, city, lat, lng)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        eventId,
+        input.userId,
+        name,
+        startDate,
+        endDate || null,
+        description,
+        normalizedRating,
+        JSON.stringify(labels),
+        visitCompany,
+        city,
+        lat,
+        lng,
+      ],
+    );
+    await syncEventShares(eventId, shareRecipientsResult.value.recipientUserIds);
+  });
 
   const event = await getNormalizedAccessibleEventById(eventId, input.userId);
 
@@ -439,13 +441,15 @@ export async function updateEventForUser(input: UpdateEventInput): Promise<Servi
     return shareRecipientsResult;
   }
 
-  await run(
-    `UPDATE events
-     SET title = ?, start_date = ?, end_date = ?, description = ?, rating = ?, labels = ?, visit_company = ?
-     WHERE id = ?`,
-    [nextName, nextStartDate, nextEndDate, nextDescription, normalizedRating, JSON.stringify(nextLabels), nextVisitCompany, input.eventId],
-  );
-  await syncEventShares(input.eventId, shareRecipientsResult.value.recipientUserIds);
+  await withTransaction(async () => {
+    await run(
+      `UPDATE events
+       SET title = ?, start_date = ?, end_date = ?, description = ?, rating = ?, labels = ?, visit_company = ?
+       WHERE id = ?`,
+      [nextName, nextStartDate, nextEndDate, nextDescription, normalizedRating, JSON.stringify(nextLabels), nextVisitCompany, input.eventId],
+    );
+    await syncEventShares(input.eventId, shareRecipientsResult.value.recipientUserIds);
+  });
 
   const updatedEvent = await getNormalizedAccessibleEventById(input.eventId, input.userId);
 
@@ -490,9 +494,11 @@ export async function deleteEventForUser(eventId: string, userId: number): Promi
 
   const photos = (await all("SELECT file_path FROM event_photos WHERE event_id = ?", [eventId])) as Array<{ file_path: string }>;
 
-  await run("DELETE FROM event_shares WHERE event_id = ?", [eventId]);
-  await run("DELETE FROM event_photos WHERE event_id = ?", [eventId]);
-  await run("DELETE FROM events WHERE id = ?", [eventId]);
+  await withTransaction(async () => {
+    await run("DELETE FROM event_shares WHERE event_id = ?", [eventId]);
+    await run("DELETE FROM event_photos WHERE event_id = ?", [eventId]);
+    await run("DELETE FROM events WHERE id = ?", [eventId]);
+  });
 
   for (const photo of photos) {
     deleteUploadedFile(photo.file_path);

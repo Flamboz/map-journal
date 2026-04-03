@@ -4,7 +4,7 @@ import type { MapEvent } from "./api";
 import { EventSearchFilterPanel } from "./EventSearchFilterPanel";
 
 type LeftSidebarProps = {
-  userId: string | null;
+  authToken: string | null;
   labelOptions: string[];
   visitCompanyOptions: string[];
   onResultsLoaded: (events: MapEvent[]) => void;
@@ -12,7 +12,7 @@ type LeftSidebarProps = {
 };
 
 export function LeftSidebar({
-  userId,
+  authToken,
   labelOptions,
   visitCompanyOptions,
   onResultsLoaded,
@@ -21,7 +21,7 @@ export function LeftSidebar({
   return (
     <aside className="flex h-full w-full flex-col gap-4 overflow-y-auto bg-[color:var(--paper-muted)] p-4 md:w-[22rem] md:min-w-[22rem] md:border-r md:border-[color:var(--border-soft)] lg:w-[25rem] lg:min-w-[25rem]">
       <EventSearchFilterPanel
-        userId={userId}
+        authToken={authToken}
         labelOptions={labelOptions}
         visitCompanyOptions={visitCompanyOptions}
         onResultsLoaded={onResultsLoaded}

@@ -10,6 +10,7 @@ type RunResult = { lastID: number | null };
 
 let SQL: SqlJsStatic | null = null;
 let db: Database | null = null;
+let transactionDepth = 0;
 
 async function init() {
   SQL = await initSqlJs();
@@ -229,7 +230,9 @@ function run(sql: string, params: SqlParams = []): Promise<RunResult> {
     stmt.bind(params);
     stmt.step();
     const res = db.exec("SELECT last_insert_rowid() as id;");
-    persist();
+    if (transactionDepth === 0) {
+      persist();
+    }
     const lastID = getLastInsertId(res);
     return Promise.resolve({ lastID });
   } finally {
@@ -266,5 +269,29 @@ function all<TRow extends SqlRow = SqlRow>(sql: string, params: SqlParams = []):
   }
 }
 
-export { init, run, get, all };
+async function withTransaction<T>(operation: () => Promise<T>): Promise<T> {
+  if (transactionDepth !== 0) {
+    throw new Error("Nested transactions are not supported.");
+  }
+
+  transactionDepth = 1;
+
+  try {
+    await run("BEGIN");
+    const result = await operation();
+    await run("COMMIT");
+    transactionDepth = 0;
+    persist();
+    return result;
+  } catch (error) {
+    try {
+      await run("ROLLBACK");
+    } finally {
+      transactionDepth = 0;
+    }
+    throw error;
+  }
+}
+
+export { init, run, get, all, withTransaction };
 export type { SqlValue };

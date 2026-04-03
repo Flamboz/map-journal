@@ -1,5 +1,4 @@
 export type UserQuerystring = {
-  userId?: string;
   search?: string;
   dateFrom?: string;
   dateTo?: string;
@@ -8,7 +7,6 @@ export type UserQuerystring = {
 };
 
 export type CreateEventBody = {
-  userId?: string | number;
   name?: string;
   date?: string;
   startDate?: string;
@@ -24,7 +22,6 @@ export type CreateEventBody = {
 };
 
 export type UpdateEventBody = {
-  userId?: string | number;
   name?: string;
   date?: string;
   startDate?: string;
@@ -220,13 +217,4 @@ export function parsePhotoId(photoId: string | undefined): string | null {
   }
 
   return photoId;
-}
-
-export function parseUserId(userId: string | undefined): number | null {
-  const parsed = Number(userId);
-  if (!Number.isInteger(parsed) || parsed <= 0) {
-    return null;
-  }
-
-  return parsed;
 }

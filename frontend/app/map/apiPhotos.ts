@@ -1,9 +1,9 @@
-import { buildApiUrl, normalizePhotos } from "./apiClient";
+import { buildApiUrl, buildAuthHeaders, normalizePhotos } from "./apiClient";
 import { createApiClientError } from "./apiErrors";
 import type { MapEventPhoto } from "./apiTypes";
 
 export async function uploadEventPhotos(
-  userId: string,
+  authToken: string,
   eventId: string,
   files: File[],
   onProgress?: (progress: { loaded: number; total: number }) => void,
@@ -17,7 +17,8 @@ export async function uploadEventPhotos(
 
   return await new Promise<MapEventPhoto[]>((resolve, reject) => {
     const xhr = new XMLHttpRequest();
-    xhr.open("POST", buildApiUrl(`/events/${eventId}/photos`, { userId }));
+    xhr.open("POST", buildApiUrl(`/events/${eventId}/photos`));
+    xhr.setRequestHeader("Authorization", `Bearer ${authToken}`);
 
     xhr.onload = () => {
       if (xhr.status === 201) {
@@ -52,12 +53,11 @@ export async function uploadEventPhotos(
   });
 }
 
-export async function deleteEventPhoto(userId: string, eventId: string, photoId: string): Promise<MapEventPhoto[]> {
+export async function deleteEventPhoto(authToken: string, eventId: string, photoId: string): Promise<MapEventPhoto[]> {
   const response = await fetch(
-    buildApiUrl(`/events/${encodeURIComponent(eventId)}/photos/${encodeURIComponent(photoId)}`, {
-      userId,
-    }),
+    buildApiUrl(`/events/${encodeURIComponent(eventId)}/photos/${encodeURIComponent(photoId)}`),
     {
+      headers: buildAuthHeaders(authToken),
       method: "DELETE",
     },
   );
@@ -82,12 +82,11 @@ export async function deleteEventPhoto(userId: string, eventId: string, photoId:
   return normalizePhotos(data.photos ?? []);
 }
 
-export async function setEventPreviewPhoto(userId: string, eventId: string, photoId: string): Promise<MapEventPhoto[]> {
+export async function setEventPreviewPhoto(authToken: string, eventId: string, photoId: string): Promise<MapEventPhoto[]> {
   const response = await fetch(
-    buildApiUrl(`/events/${encodeURIComponent(eventId)}/photos/${encodeURIComponent(photoId)}/preview`, {
-      userId,
-    }),
+    buildApiUrl(`/events/${encodeURIComponent(eventId)}/photos/${encodeURIComponent(photoId)}/preview`),
     {
+      headers: buildAuthHeaders(authToken),
       method: "PATCH",
     },
   );

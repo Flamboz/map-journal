@@ -9,7 +9,11 @@ async function registerUser(context: TestAppContext, email: string) {
     payload: { email, password: "supersecure" },
   });
 
-  return response.json().user.id as number;
+  const body = response.json() as { user: { id: number }; accessToken: string };
+  return {
+    userId: body.user.id,
+    authHeaders: { authorization: `Bearer ${body.accessToken}` },
+  };
 }
 
 describe("set preview photo route", () => {
@@ -24,9 +28,11 @@ describe("set preview photo route", () => {
   });
 
   it("rejects invalid event id", async () => {
+    const { authHeaders } = await registerUser(context, "photo-preview-invalid@example.com");
     const response = await context.app.inject({
       method: "PATCH",
-      url: "/events/not-a-uuid/photos/4a9a6f48-6db4-4f9f-bef3-f2bd9a4f0000/preview?userId=1",
+      url: "/events/not-a-uuid/photos/4a9a6f48-6db4-4f9f-bef3-f2bd9a4f0000/preview",
+      headers: authHeaders,
     });
 
     expect(response.statusCode).toBe(400);
@@ -34,12 +40,13 @@ describe("set preview photo route", () => {
   });
 
   it("returns photo not found when event exists but photo does not", async () => {
-    const userId = await registerUser(context, "photo-preview@example.com");
+    const { userId, authHeaders } = await registerUser(context, "photo-preview@example.com");
     const eventId = await createEvent(context.run, { userId, title: "Preview Event" });
 
     const response = await context.app.inject({
       method: "PATCH",
-      url: `/events/${eventId}/photos/4a9a6f48-6db4-4f9f-bef3-f2bd9a4f0000/preview?userId=${userId}`,
+      url: `/events/${eventId}/photos/4a9a6f48-6db4-4f9f-bef3-f2bd9a4f0000/preview`,
+      headers: authHeaders,
     });
 
     expect(response.statusCode).toBe(404);

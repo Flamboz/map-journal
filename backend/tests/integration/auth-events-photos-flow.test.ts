@@ -18,13 +18,15 @@ describe("integration: auth + events flow", () => {
       url: "/auth/register",
       payload: { email: "integration@example.com", password: "supersecure" },
     });
-    const userId = registerResponse.json().user.id as number;
+    const registerBody = registerResponse.json() as { user: { id: number }; accessToken: string };
+    const userId = registerBody.user.id;
+    const authHeaders = { authorization: `Bearer ${registerBody.accessToken}` };
 
     const createResponse = await context.app.inject({
       method: "POST",
       url: "/events",
+      headers: authHeaders,
       payload: {
-        userId,
         name: "Integration Event",
         startDate: "2026-03-10",
         lat: 40.7128,
@@ -37,20 +39,23 @@ describe("integration: auth + events flow", () => {
     const updateResponse = await context.app.inject({
       method: "PATCH",
       url: `/events/${eventId}`,
-      payload: { userId, name: "Updated Integration Event" },
+      headers: authHeaders,
+      payload: { name: "Updated Integration Event" },
     });
     expect(updateResponse.statusCode).toBe(200);
 
     const listResponse = await context.app.inject({
       method: "GET",
-      url: `/events?userId=${userId}`,
+      url: "/events",
+      headers: authHeaders,
     });
     expect(listResponse.statusCode).toBe(200);
     expect(listResponse.json().events).toHaveLength(1);
 
     const deleteResponse = await context.app.inject({
       method: "DELETE",
-      url: `/events/${eventId}?userId=${userId}`,
+      url: `/events/${eventId}`,
+      headers: authHeaders,
     });
     expect(deleteResponse.statusCode).toBe(200);
     expect(deleteResponse.json().success).toBe(true);

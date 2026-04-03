@@ -4,6 +4,13 @@ import type { MapEvent, MapEventPhoto } from "./apiTypes";
 type ApiQueryValue = string | number | null | undefined;
 type ApiQuery = Record<string, ApiQueryValue | ApiQueryValue[]>;
 
+export function buildAuthHeaders(authToken: string, headers: Record<string, string> = {}): Record<string, string> {
+  return {
+    ...headers,
+    Authorization: `Bearer ${authToken}`,
+  };
+}
+
 export function buildApiUrl(pathname: string, query?: ApiQuery): string {
   const url = new URL(pathname, API_URL);
 

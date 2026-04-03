@@ -9,7 +9,11 @@ async function registerUser(context: TestAppContext, email: string) {
     payload: { email, password: "supersecure" },
   });
 
-  return response.json().user.id as number;
+  const body = response.json() as { user: { id: number }; accessToken: string };
+  return {
+    userId: body.user.id,
+    authHeaders: { authorization: `Bearer ${body.accessToken}` },
+  };
 }
 
 describe("update event route", () => {
@@ -24,14 +28,14 @@ describe("update event route", () => {
   });
 
   it("updates an owned event", async () => {
-    const userId = await registerUser(context, "event-update@example.com");
+    const { userId, authHeaders } = await registerUser(context, "event-update@example.com");
     const eventId = await createEvent(context.run, { userId, title: "Before" });
 
     const response = await context.app.inject({
       method: "PATCH",
       url: `/events/${eventId}`,
+      headers: authHeaders,
       payload: {
-        userId,
         name: "After",
       },
     });
@@ -41,15 +45,15 @@ describe("update event route", () => {
   });
 
   it("forbids updates by another user", async () => {
-    const ownerId = await registerUser(context, "event-owner@example.com");
-    const otherId = await registerUser(context, "event-other@example.com");
-    const eventId = await createEvent(context.run, { userId: ownerId, title: "Private" });
+    const owner = await registerUser(context, "event-owner@example.com");
+    const other = await registerUser(context, "event-other@example.com");
+    const eventId = await createEvent(context.run, { userId: owner.userId, title: "Private" });
 
     const response = await context.app.inject({
       method: "PATCH",
       url: `/events/${eventId}`,
+      headers: other.authHeaders,
       payload: {
-        userId: otherId,
         name: "Hijack",
       },
     });
@@ -59,16 +63,16 @@ describe("update event route", () => {
   });
 
   it("allows owners to add and remove shared recipients", async () => {
-    const ownerId = await registerUser(context, "owner-update-share@example.com");
+    const owner = await registerUser(context, "owner-update-share@example.com");
     await registerUser(context, "friend-a-update-share@example.com");
     await registerUser(context, "friend-b-update-share@example.com");
-    const eventId = await createEvent(context.run, { userId: ownerId, title: "Before" });
+    const eventId = await createEvent(context.run, { userId: owner.userId, title: "Before" });
 
     const shareResponse = await context.app.inject({
       method: "PATCH",
       url: `/events/${eventId}`,
+      headers: owner.authHeaders,
       payload: {
-        userId: ownerId,
         visibility: "share_with",
         sharedWithEmails: ["friend-a-update-share@example.com", "friend-b-update-share@example.com"],
       },
@@ -83,8 +87,8 @@ describe("update event route", () => {
     const privateResponse = await context.app.inject({
       method: "PATCH",
       url: `/events/${eventId}`,
+      headers: owner.authHeaders,
       payload: {
-        userId: ownerId,
         visibility: "private",
         sharedWithEmails: [],
       },

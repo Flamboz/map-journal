@@ -1,6 +1,6 @@
 import { hashPassword, verifyPassword } from "../auth/hash";
 import { hasUserByEmail, getUserByEmail } from "../db/queries/authQueries";
-import { run } from "../db/sqlite";
+import { run, withTransaction } from "../db/sqlite";
 
 export async function registerUser(email: string, password: string) {
   const exists = await hasUserByEmail(email);
@@ -9,13 +9,19 @@ export async function registerUser(email: string, password: string) {
   }
 
   const passwordHash = await hashPassword(password);
-  const insertResult = (await run("INSERT INTO users (email, password_hash) VALUES (?, ?)", [
-    email,
-    passwordHash,
-  ])) as { lastID?: number };
+  const userId = await withTransaction(async () => {
+    const insertResult = (await run("INSERT INTO users (email, password_hash) VALUES (?, ?)", [
+      email,
+      passwordHash,
+    ])) as { lastID?: number };
 
-  const userId = insertResult.lastID ?? null;
-  await run("INSERT INTO profiles (user_id) VALUES (?)", [userId]);
+    const createdUserId = insertResult.lastID ?? null;
+    await run("INSERT INTO profiles (user_id) VALUES (?)", [createdUserId]);
+    return createdUserId;
+  });
+  if (userId === null) {
+    return null;
+  }
 
   return {
     id: userId,
