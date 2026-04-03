@@ -13,8 +13,6 @@ function loadEnvFile(relativePath: string) {
 
 loadEnvFile(".env.local");
 loadEnvFile(".env");
-loadEnvFile("../frontend/.env.local");
-loadEnvFile("../frontend/.env");
 
 const PORT = Number(process.env.PORT || 4000);
 

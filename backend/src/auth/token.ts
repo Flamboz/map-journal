@@ -15,9 +15,9 @@ export type AuthenticatedUser = {
 const DEFAULT_TOKEN_TTL_SECONDS = 60 * 60 * 24 * 30;
 
 function getAuthTokenSecret(): string {
-  const secret = process.env.AUTH_TOKEN_SECRET ?? process.env.NEXTAUTH_SECRET;
+  const secret = process.env.AUTH_TOKEN_SECRET;
   if (!secret) {
-    throw new Error("AUTH_TOKEN_SECRET or NEXTAUTH_SECRET must be set.");
+    throw new Error("AUTH_TOKEN_SECRET must be set.");
   }
 
   return secret;
