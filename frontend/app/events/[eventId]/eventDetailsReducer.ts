@@ -16,7 +16,7 @@ export type EventDetailsState = {
   photosToDelete?: string[];
 };
 
-type EventDetailsAction =
+export type EventDetailsAction =
   | { type: "START_EDIT" }
   | { type: "CANCEL_EDIT" }
   | { type: "OPEN_DELETE_MODAL" }

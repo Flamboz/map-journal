@@ -8,12 +8,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   deleteEvent,
-  deleteEventPhoto,
-  fetchEventById,
-  setEventPreviewPhoto,
   type MapEvent,
-  updateEvent,
-  uploadEventPhotos,
 } from "../../map/api";
 import { isApiErrorCode } from "../../map/apiErrors";
 import { eventDraftValidationSchema, formatEventDateRange } from "../../map/mapViewHelpers";
@@ -25,6 +20,7 @@ import EventDetailsReadOnlyView from "./EventDetailsReadOnlyView";
 import EventPhotosCarousel from "./EventPhotosCarousel";
 import { mapEventToFormState } from "./eventDetailsFormState";
 import { createInitialEventDetailsState, eventDetailsReducer } from "./eventDetailsReducer";
+import { useEventDetailsMutations } from "./useEventDetailsMutations";
 import { useEventDetailsOptions } from "./useEventDetailsOptions";
 
 type EventDetailsClientProps = {
@@ -113,6 +109,17 @@ export default function EventDetailsClient({ initialEvent, authToken, currentUse
     }
   }
 
+  const { saveChanges, handleAddPhotos, handleDeletePhoto, handleSetPreviewPhoto } = useEventDetailsMutations({
+    authToken,
+    state,
+    dispatch,
+    reset,
+    onMissingEvent: redirectMissingEvent,
+    onSaveSuccess: () => {
+      scrollToTop();
+    },
+  });
+
   async function confirmDeleteEvent() {
     dispatch({ type: "SET_SAVE_ERROR", payload: null });
     dispatch({ type: "SET_DELETING_EVENT", payload: true });
@@ -131,163 +138,6 @@ export default function EventDetailsClient({ initialEvent, authToken, currentUse
       dispatch({ type: "CLOSE_DELETE_MODAL" });
     } finally {
       dispatch({ type: "SET_DELETING_EVENT", payload: false });
-    }
-  }
-
-  async function saveChanges(values: EventFormState) {
-    dispatch({ type: "SET_SAVE_ERROR", payload: null });
-    dispatch({ type: "SET_SAVING", payload: true });
-
-    try {
-      // First, apply any staged photo deletions made while editing
-      const stagedDeletes = state.photosToDelete ?? [];
-      if (stagedDeletes.length > 0) {
-        dispatch({ type: "SET_PHOTO_ACTION_RUNNING", payload: true });
-        try {
-          for (const photoId of stagedDeletes) {
-            await deleteEventPhoto(authToken, state.event.id, photoId);
-          }
-        } catch (error) {
-          if (isApiErrorCode(error, "EVENT_NOT_FOUND")) {
-            redirectMissingEvent();
-            return;
-          }
-
-          dispatch({ type: "SET_SAVE_ERROR", payload: "Unable to update attachments. Please try again." });
-          return;
-        } finally {
-          dispatch({ type: "SET_PHOTO_ACTION_RUNNING", payload: false });
-        }
-      }
-
-      // Next, apply any staged preview change (draftPhotos[0] moved)
-      const stagedPreviewId = state.draftPhotos && state.draftPhotos.length > 0 ? state.draftPhotos[0].id : null;
-      const currentPreviewId = (state.event.photos && state.event.photos.length > 0 ? state.event.photos[0].id : null) ?? null;
-      if (stagedPreviewId && stagedPreviewId !== currentPreviewId) {
-        dispatch({ type: "SET_PHOTO_ACTION_RUNNING", payload: true });
-        try {
-          await setEventPreviewPhoto(authToken, state.event.id, stagedPreviewId);
-        } catch (error) {
-          if (isApiErrorCode(error, "EVENT_NOT_FOUND")) {
-            redirectMissingEvent();
-            return;
-          }
-
-          dispatch({ type: "SET_SAVE_ERROR", payload: "Unable to update attachments. Please try again." });
-          return;
-        } finally {
-          dispatch({ type: "SET_PHOTO_ACTION_RUNNING", payload: false });
-        }
-      }
-
-      const updatedEvent = await updateEvent(authToken, {
-        eventId: state.event.id,
-        name: values.name.trim(),
-        startDate: values.startDate,
-        endDate: values.endDate || undefined,
-        description: values.description.trim(),
-        rating: state.selectedRating,
-        labels: state.selectedLabels,
-        visitCompany: values.visitCompany,
-        visibility: values.visibility,
-        sharedWithEmails: values.sharedWithEmails,
-      });
-
-      const refreshedEvent = await fetchEventById(state.event.id, authToken);
-      dispatch({ type: "SAVE_SUCCESS", payload: refreshedEvent });
-      reset(mapEventToFormState(refreshedEvent));
-
-      // After a successful save, scroll the page to top so the user sees the read-only view
-      scrollToTop();
-
-      if (!updatedEvent) {
-        dispatch({ type: "SET_SAVE_ERROR", payload: "Unable to save event. Please try again." });
-      }
-    } catch (error) {
-      if (isApiErrorCode(error, "EVENT_NOT_FOUND")) {
-        redirectMissingEvent();
-        return;
-      }
-
-      dispatch({ type: "SET_SAVE_ERROR", payload: "Unable to save event. Please try again." });
-    } finally {
-      dispatch({ type: "SET_SAVING", payload: false });
-    }
-  }
-
-  async function handleAddPhotos(files: File[]) {
-    if (files.length === 0) {
-      return;
-    }
-
-    dispatch({ type: "SET_SAVE_ERROR", payload: null });
-    dispatch({ type: "SET_PHOTO_ACTION_RUNNING", payload: true });
-
-    try {
-      await uploadEventPhotos(authToken, state.event.id, files);
-      const refreshedEvent = await fetchEventById(state.event.id, authToken);
-      dispatch({ type: "SET_EVENT", payload: refreshedEvent });
-    } catch (error) {
-      if (isApiErrorCode(error, "EVENT_NOT_FOUND")) {
-        redirectMissingEvent();
-        return;
-      }
-
-      dispatch({ type: "SET_SAVE_ERROR", payload: "Unable to update attachments. Please try again." });
-    } finally {
-      dispatch({ type: "SET_PHOTO_ACTION_RUNNING", payload: false });
-    }
-  }
-
-  async function handleDeletePhoto(photoId: string) {
-    dispatch({ type: "SET_SAVE_ERROR", payload: null });
-    dispatch({ type: "SET_PHOTO_ACTION_RUNNING", payload: true });
-
-    // When editing, stage the deletion locally and do not call the API until save
-    if (state.isEditing) {
-      dispatch({ type: "MARK_PHOTO_FOR_DELETION", payload: photoId });
-      dispatch({ type: "SET_PHOTO_ACTION_RUNNING", payload: false });
-      return;
-    }
-
-    try {
-      const photos = await deleteEventPhoto(authToken, state.event.id, photoId);
-      dispatch({ type: "SET_EVENT", payload: { ...state.event, photos } });
-    } catch (error) {
-      if (isApiErrorCode(error, "EVENT_NOT_FOUND")) {
-        redirectMissingEvent();
-        return;
-      }
-
-      dispatch({ type: "SET_SAVE_ERROR", payload: "Unable to update attachments. Please try again." });
-    } finally {
-      dispatch({ type: "SET_PHOTO_ACTION_RUNNING", payload: false });
-    }
-  }
-
-  async function handleSetPreviewPhoto(photoId: string) {
-    dispatch({ type: "SET_SAVE_ERROR", payload: null });
-    dispatch({ type: "SET_PHOTO_ACTION_RUNNING", payload: true });
-
-    // When editing, stage the preview change locally and do not call the API until save
-    if (state.isEditing) {
-      dispatch({ type: "MARK_PHOTO_AS_PREVIEW", payload: photoId });
-      dispatch({ type: "SET_PHOTO_ACTION_RUNNING", payload: false });
-      return;
-    }
-
-    try {
-      const photos = await setEventPreviewPhoto(authToken, state.event.id, photoId);
-      dispatch({ type: "SET_EVENT", payload: { ...state.event, photos } });
-    } catch (error) {
-      if (isApiErrorCode(error, "EVENT_NOT_FOUND")) {
-        redirectMissingEvent();
-        return;
-      }
-
-      dispatch({ type: "SET_SAVE_ERROR", payload: "Unable to update attachments. Please try again." });
-    } finally {
-      dispatch({ type: "SET_PHOTO_ACTION_RUNNING", payload: false });
     }
   }
 

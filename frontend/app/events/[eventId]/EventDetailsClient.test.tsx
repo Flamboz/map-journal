@@ -88,9 +88,34 @@ it("stages preview during edit and applies on save", async () => {
     created_at: "2026-03-01T10:00:00.000Z",
     photos: [photo1, photo2],
     samePinEventIds: [eventId],
+    accessLevel: "owner",
+    visibility: "private",
+    ownerEmail: "",
+    sharedWithEmails: [],
   });
 
   vi.mocked(setEventPreviewPhoto).mockResolvedValue([]);
+  vi.mocked(updateEvent).mockResolvedValue({
+    id: eventId,
+    user_id: 1,
+    title: "River Walk",
+    name: "River Walk",
+    startDate: "2026-03-01",
+    endDate: null,
+    description: "",
+    rating: 7,
+    labels: [],
+    visitCompany: "",
+    lat: 50.45,
+    lng: 30.52,
+    created_at: "2026-03-01T10:00:00.000Z",
+    photos: [photo2, photo1],
+    samePinEventIds: [eventId],
+    accessLevel: "owner",
+    visibility: "private",
+    ownerEmail: "",
+    sharedWithEmails: [],
+  });
 
   const initialEvent = {
     id: eventId,
@@ -108,6 +133,10 @@ it("stages preview during edit and applies on save", async () => {
     created_at: "2026-03-01T10:00:00.000Z",
     photos: [photo1, photo2],
     samePinEventIds: [eventId],
+    accessLevel: "owner" as const,
+    visibility: "private" as const,
+    ownerEmail: "",
+    sharedWithEmails: [],
   };
 
   render(<EventDetailsClient initialEvent={initialEvent} authToken="token-1" currentUserEmail={null} />);
@@ -133,6 +162,27 @@ describe("EventDetailsClient delete flow", () => {
   const pushMock = vi.fn();
   const replaceMock = vi.fn();
   const refreshMock = vi.fn();
+  const resolvedEvent = {
+    id: eventId,
+    user_id: 1,
+    title: "River Walk",
+    name: "River Walk",
+    startDate: "2026-03-01",
+    endDate: null,
+    description: "",
+    rating: 7,
+    labels: [],
+    visitCompany: "",
+    lat: 50.45,
+    lng: 30.52,
+    created_at: "2026-03-01T10:00:00.000Z",
+    photos: [],
+    samePinEventIds: [eventId],
+    accessLevel: "owner" as const,
+    visibility: "private" as const,
+    ownerEmail: "",
+    sharedWithEmails: [],
+  };
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -144,24 +194,8 @@ describe("EventDetailsClient delete flow", () => {
 
     vi.mocked(fetchAllowedLabels).mockResolvedValue([]);
     vi.mocked(fetchAllowedVisitCompanies).mockResolvedValue([]);
-    vi.mocked(fetchEventById).mockResolvedValue({
-      id: eventId,
-      user_id: 1,
-      title: "River Walk",
-      name: "River Walk",
-      startDate: "2026-03-01",
-      endDate: null,
-      description: "",
-      rating: 7,
-      labels: [],
-      visitCompany: "",
-      lat: 50.45,
-      lng: 30.52,
-      created_at: "2026-03-01T10:00:00.000Z",
-      photos: [],
-      samePinEventIds: [eventId],
-    });
-    vi.mocked(updateEvent).mockResolvedValue({} as Awaited<ReturnType<typeof updateEvent>>);
+    vi.mocked(fetchEventById).mockResolvedValue(resolvedEvent);
+    vi.mocked(updateEvent).mockResolvedValue(resolvedEvent);
     vi.mocked(uploadEventPhotos).mockResolvedValue([]);
     vi.mocked(deleteEventPhoto).mockResolvedValue([]);
     vi.mocked(setEventPreviewPhoto).mockResolvedValue([]);
@@ -184,6 +218,10 @@ describe("EventDetailsClient delete flow", () => {
     created_at: "2026-03-01T10:00:00.000Z",
     photos: [],
     samePinEventIds: [eventId],
+    accessLevel: "owner" as const,
+    visibility: "private" as const,
+    ownerEmail: "",
+    sharedWithEmails: [],
   };
 
   it("opens delete confirmation modal when user clicks delete", async () => {
