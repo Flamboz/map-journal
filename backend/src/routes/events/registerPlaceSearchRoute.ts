@@ -1,5 +1,6 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { sendError, sendServerError } from "../../utils/httpErrors";
+import { reverseGeocodeAddress } from "../../utils/geocode";
 
 type PlaceSearchQuerystring = {
   q?: string;
@@ -14,6 +15,25 @@ type NominatimSearchItem = {
 };
 
 export function registerPlaceSearchRoute(fastify: FastifyInstance) {
+  fastify.get(
+    "/reverse-geocode",
+    async (request: FastifyRequest<{ Querystring: Pick<PlaceSearchQuerystring, "lat" | "lng"> }>, reply: FastifyReply) => {
+      const latitude = request.query.lat ? Number(request.query.lat) : Number.NaN;
+      const longitude = request.query.lng ? Number(request.query.lng) : Number.NaN;
+
+      if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+        return sendError(reply, 400, "INVALID_COORDINATES", "Valid lat and lng coordinates are required.");
+      }
+
+      try {
+        const address = await reverseGeocodeAddress(latitude, longitude);
+        return reply.status(200).send({ address });
+      } catch (error) {
+        return sendServerError(request, reply, error);
+      }
+    },
+  );
+
   fastify.get(
     "/place-search",
     async (request: FastifyRequest<{ Querystring: PlaceSearchQuerystring }>, reply: FastifyReply) => {

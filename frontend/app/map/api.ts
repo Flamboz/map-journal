@@ -22,4 +22,4 @@ export {
 
 export { fetchAllowedLabels, fetchAllowedVisitCompanies } from "./apiMetadata";
 export { deleteEventPhoto, setEventPreviewPhoto, uploadEventPhotos } from "./apiPhotos";
-export { searchPlaces } from "./apiPlaces";
+export { fetchReverseGeocodeAddress, searchPlaces } from "./apiPlaces";

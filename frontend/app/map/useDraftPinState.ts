@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { createEvent, type MapEvent, type PlaceSearchResult, uploadEventPhotos } from "./api";
+import { createEvent, fetchReverseGeocodeAddress, type MapEvent, type PlaceSearchResult, uploadEventPhotos } from "./api";
 import { formatShortAddress } from "./mapViewHelpers";
-import type { EventFormState, ReverseGeocodeAddress } from "./mapViewTypes";
+import type { EventFormState } from "./mapViewTypes";
 
 type Coordinates = {
   lat: number;
@@ -113,26 +113,12 @@ export function useDraftPinState({
       setIsResolvingAddress(true);
 
       try {
-        const requestUrl = new URL("https://nominatim.openstreetmap.org/reverse");
-        requestUrl.searchParams.set("format", "jsonv2");
-        requestUrl.searchParams.set("accept-language", "uk");
-        requestUrl.searchParams.set("lat", String(position.lat));
-        requestUrl.searchParams.set("lon", String(position.lng));
-
-        const response = await fetch(requestUrl.toString(), {
-          signal: abortController.signal,
-          headers: {
-            Accept: "application/json",
-            "Accept-Language": "uk",
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error("Unable to resolve address");
+        const address = await fetchReverseGeocodeAddress(position.lat, position.lng);
+        if (abortController.signal.aborted) {
+          return;
         }
 
-        const result = (await response.json()) as { address?: ReverseGeocodeAddress };
-        setDraftAddress(formatShortAddress(result.address));
+        setDraftAddress(formatShortAddress(address ?? undefined));
       } catch {
         if (!abortController.signal.aborted) {
           setDraftAddress(null);

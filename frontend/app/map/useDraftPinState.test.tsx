@@ -1,11 +1,12 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createEvent, uploadEventPhotos } from "./api";
+import { createEvent, fetchReverseGeocodeAddress, uploadEventPhotos } from "./api";
 import { useDraftPinState } from "./useDraftPinState";
 import type { EventFormState } from "./mapViewTypes";
 
 vi.mock("./api", () => ({
   createEvent: vi.fn(),
+  fetchReverseGeocodeAddress: vi.fn(),
   uploadEventPhotos: vi.fn(),
 }));
 
@@ -25,17 +26,11 @@ const formState: EventFormState = {
 describe("useDraftPinState", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => ({ address: { road: "Main", city: "Kyiv", country: "Ukraine" } }),
-      }),
-    );
-  });
-
-  afterEach(() => {
-    vi.unstubAllGlobals();
+    vi.mocked(fetchReverseGeocodeAddress).mockResolvedValue({
+      road: "Main",
+      city: "Kyiv",
+      country: "Ukraine",
+    });
   });
 
   it("saves draft event and uploads photos", async () => {
