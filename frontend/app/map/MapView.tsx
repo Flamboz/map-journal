@@ -14,6 +14,7 @@ import {
 import { EventDraftForm } from "./EventDraftForm";
 import { EventPreviewModal } from "./EventPreviewModal";
 import { LeftSidebar } from "./LeftSidebar";
+import { MapAuthProvider } from "./MapAuthContext";
 import { groupEventsByDistance } from "./mapViewHelpers";
 import { MapClickHandler, RecenterMap } from "./MapLeafletHelpers";
 import { useDraftPinState } from "./useDraftPinState";
@@ -131,8 +132,9 @@ export default function MapView({ initialError = null }: MapViewProps) {
   }, []);
 
   return (
-    <section className="relative h-[calc(100vh-var(--topbar-height))] w-full overflow-hidden" aria-label="map-view">
-      {isMobileViewport ? (
+    <MapAuthProvider authToken={authToken} currentUserEmail={currentUserEmail}>
+      <section className="relative h-[calc(100vh-var(--topbar-height))] w-full overflow-hidden" aria-label="map-view">
+        {isMobileViewport ? (
         <>
           <button
             type="button"
@@ -174,7 +176,6 @@ export default function MapView({ initialError = null }: MapViewProps) {
               </svg>
             </button>
             <LeftSidebar
-              authToken={authToken}
               labelOptions={labelOptions}
               visitCompanyOptions={visitCompanyOptions}
               onResultsLoaded={(nextEvents) => {
@@ -240,13 +241,11 @@ export default function MapView({ initialError = null }: MapViewProps) {
                   </svg>
                 </button>
                 <EventDraftForm
-                  authToken={authToken}
                   draftPosition={draftPosition}
                   isResolvingAddress={isResolvingAddress}
                   draftAddress={draftAddress}
                   saveError={saveError}
                   isSaving={isSaving}
-                  currentUserEmail={currentUserEmail}
                   labelOptions={labelOptions}
                   visitCompanyOptions={visitCompanyOptions}
                   onCancel={handleCancelDraft}
@@ -257,10 +256,9 @@ export default function MapView({ initialError = null }: MapViewProps) {
             </div>
           </div>
         </>
-      ) : (
+        ) : (
         <div className="flex h-full">
           <LeftSidebar
-            authToken={authToken}
             labelOptions={labelOptions}
             visitCompanyOptions={visitCompanyOptions}
             onResultsLoaded={(nextEvents) => {
@@ -327,13 +325,11 @@ export default function MapView({ initialError = null }: MapViewProps) {
 
           <div className="h-full w-[23rem] min-w-[23rem] border-l border-[color:var(--border-soft)] bg-[color:var(--paper-muted)] p-4 lg:w-[26rem] lg:min-w-[26rem]">
             <EventDraftForm
-              authToken={authToken}
               draftPosition={draftPosition}
               isResolvingAddress={isResolvingAddress}
               draftAddress={draftAddress}
               saveError={saveError}
               isSaving={isSaving}
-              currentUserEmail={currentUserEmail}
               labelOptions={labelOptions}
               visitCompanyOptions={visitCompanyOptions}
               onCancel={resetDraftState}
@@ -342,25 +338,26 @@ export default function MapView({ initialError = null }: MapViewProps) {
             />
           </div>
         </div>
-      )}
+        )}
 
-      {selectedGroup && (
-        <EventPreviewModal
-          events={selectedGroup.events}
-          currentIndex={selectedEventIndex}
-          onClose={clearSelection}
-          onPrevious={showPreviousEvent}
-          onNext={showNextEvent}
-          onDelete={(deletedId) => {
-            // remove the deleted event from local state so the pin vanishes immediately
-            setEvents((previous) => previous.filter((ev) => ev.id !== deletedId));
-            // bump version to force MarkerClusterGroup remount
-            setEventsVersion((v) => v + 1);
-            // clear selection to close the preview
-            clearSelection();
-          }}
-        />
-      )}
-    </section>
+        {selectedGroup && (
+          <EventPreviewModal
+            events={selectedGroup.events}
+            currentIndex={selectedEventIndex}
+            onClose={clearSelection}
+            onPrevious={showPreviousEvent}
+            onNext={showNextEvent}
+            onDelete={(deletedId) => {
+              // remove the deleted event from local state so the pin vanishes immediately
+              setEvents((previous) => previous.filter((ev) => ev.id !== deletedId));
+              // bump version to force MarkerClusterGroup remount
+              setEventsVersion((v) => v + 1);
+              // clear selection to close the preview
+              clearSelection();
+            }}
+          />
+        )}
+      </section>
+    </MapAuthProvider>
   );
 }

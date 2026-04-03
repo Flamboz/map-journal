@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { lookupShareableUserEmail, type EventVisibility } from "../map/api";
+import { useMapAuth } from "../map/MapAuthContext";
 
 type EventVisibilityFieldsProps = {
-  authToken: string | null;
-  currentUserEmail: string | null;
+  authToken?: string | null;
+  currentUserEmail?: string | null;
   visibility: EventVisibility;
   sharedWithEmails: string[];
   sharedWithError?: string;
@@ -30,6 +31,9 @@ export function EventVisibilityFields({
   onVisibilityChange,
   onSharedWithEmailsChange,
 }: EventVisibilityFieldsProps) {
+  const mapAuth = useMapAuth();
+  const resolvedAuthToken = authToken ?? mapAuth.authToken;
+  const resolvedCurrentUserEmail = currentUserEmail ?? mapAuth.currentUserEmail;
   const [pendingEmail, setPendingEmail] = useState("");
   const [addError, setAddError] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
@@ -51,12 +55,12 @@ export function EventVisibilityFields({
       return;
     }
 
-    if (!authToken) {
+    if (!resolvedAuthToken) {
       setAddError("You need to sign in before sharing events.");
       return;
     }
 
-    if (currentUserEmail && normalizedEmail === normalizeEmail(currentUserEmail)) {
+    if (resolvedCurrentUserEmail && normalizedEmail === normalizeEmail(resolvedCurrentUserEmail)) {
       setAddError("You cannot share an event with your own email.");
       return;
     }
@@ -70,7 +74,7 @@ export function EventVisibilityFields({
     setAddError(null);
 
     try {
-      const existingEmail = await lookupShareableUserEmail(authToken, normalizedEmail);
+      const existingEmail = await lookupShareableUserEmail(resolvedAuthToken, normalizedEmail);
       if (!existingEmail) {
         setAddError("Only registered users can be added.");
         return;

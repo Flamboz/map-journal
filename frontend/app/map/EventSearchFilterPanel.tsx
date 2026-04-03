@@ -3,10 +3,10 @@
 import { type FormEvent, useState } from "react";
 import { EventAccessBadge } from "../components/EventAccessBadge";
 import { EventLabelsField } from "../components/EventFormFields";
+import { useMapAuth } from "./MapAuthContext";
 import { fetchUserEvents, type EventSearchFilters, type MapEvent } from "./api";
 
 type EventSearchFilterPanelProps = {
-  authToken: string | null;
   labelOptions: string[];
   visitCompanyOptions: string[];
   onResultsLoaded: (events: MapEvent[]) => void;
@@ -14,12 +14,12 @@ type EventSearchFilterPanelProps = {
 };
 
 export function EventSearchFilterPanel({
-  authToken,
   labelOptions,
   visitCompanyOptions,
   onResultsLoaded,
   onResultClick,
 }: EventSearchFilterPanelProps) {
+  const { authToken } = useMapAuth();
   const [search, setSearch] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
