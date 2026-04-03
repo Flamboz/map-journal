@@ -8,7 +8,7 @@ import { deleteUploadedFile, removeEventUploadDirectory, removeUserDirectoryIfEm
 import { EventPhotosTableColumn, sanitizeFilename } from "../routes/events/shared";
 import { failure, ServiceResult, success } from "./serviceResult";
 
-type UploadPart = {
+export type UploadPart = {
   type: string;
   mimetype?: string;
   filename?: string;

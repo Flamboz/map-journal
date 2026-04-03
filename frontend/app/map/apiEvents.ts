@@ -1,4 +1,3 @@
-import { API_URL } from "../../lib/apiUrl";
 import { buildApiUrl, buildAuthHeaders, normalizeEvent } from "./apiClient";
 import { createApiClientError } from "./apiErrors";
 import type { CreateEventInput, LastMapPosition, MapEvent, UpdateEventInput } from "./apiTypes";
@@ -85,10 +84,13 @@ export async function fetchEventById(eventId: string, authToken: string): Promis
 }
 
 export async function createEvent(authToken: string, input: CreateEventInput): Promise<MapEvent> {
-  const response = await fetch(`${API_URL}/events`, {
+  const { photos = [], ...payload } = input;
+  const hasPhotos = photos.length > 0;
+
+  const response = await fetch(buildApiUrl("/events"), {
     method: "POST",
-    headers: buildAuthHeaders(authToken, { "Content-Type": "application/json" }),
-    body: JSON.stringify(input),
+    headers: hasPhotos ? buildAuthHeaders(authToken) : buildAuthHeaders(authToken, { "Content-Type": "application/json" }),
+    body: hasPhotos ? buildCreateEventFormData(payload, photos) : JSON.stringify(payload),
   });
 
   if (!response.ok) {
@@ -104,6 +106,17 @@ export async function createEvent(authToken: string, input: CreateEventInput): P
   }
 
   return normalizeEvent(data.event);
+}
+
+function buildCreateEventFormData(payload: Omit<CreateEventInput, "photos">, photos: File[]): FormData {
+  const formData = new FormData();
+  formData.append("payload", JSON.stringify(payload));
+
+  for (const photo of photos) {
+    formData.append("photos", photo);
+  }
+
+  return formData;
 }
 
 export async function updateEvent(authToken: string, input: UpdateEventInput): Promise<MapEvent> {

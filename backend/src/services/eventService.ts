@@ -14,6 +14,7 @@ import {
   DEFAULT_PIN_ZOOM,
 } from "../routes/events/shared";
 import { getSharedEmailsByEventIds, resolveShareRecipients, syncEventShares } from "./eventSharing";
+import { uploadEventPhotosForUser, type UploadPart } from "./photoService";
 
 const SAME_PIN_DISTANCE_METERS = 20;
 const EARTH_RADIUS_METERS = 6_371_000;
@@ -375,6 +376,44 @@ export async function createEventForUser(input: CreateEventInput): Promise<Servi
   }
 
   return success(normalizedEvent);
+}
+
+async function rollbackCreatedEvent(eventId: string, userId: number) {
+  try {
+    await deleteEventForUser(eventId, userId);
+  } catch {
+  }
+}
+
+export async function createEventWithPhotosForUser(
+  input: CreateEventInput,
+  photoParts: AsyncIterable<UploadPart>,
+): Promise<ServiceResult<Record<string, unknown>>> {
+  const createdEventResult = await createEventForUser(input);
+  if (!createdEventResult.ok) {
+    return createdEventResult;
+  }
+
+  const eventId = createdEventResult.value.id;
+  if (typeof eventId !== "string" || eventId.length === 0) {
+    return failure(500, "EVENT_CREATE_FAILED", "Event could not be created.");
+  }
+
+  try {
+    const uploadResult = await uploadEventPhotosForUser(eventId, input.userId, photoParts);
+    if (!uploadResult.ok) {
+      await rollbackCreatedEvent(eventId, input.userId);
+      return uploadResult;
+    }
+
+    return success({
+      ...createdEventResult.value,
+      photos: uploadResult.value,
+    });
+  } catch (error) {
+    await rollbackCreatedEvent(eventId, input.userId);
+    throw error;
+  }
 }
 
 export async function updateEventForUser(input: UpdateEventInput): Promise<ServiceResult<Record<string, unknown>>> {

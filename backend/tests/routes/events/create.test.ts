@@ -15,6 +15,25 @@ async function registerUser(context: TestAppContext, email: string) {
   };
 }
 
+async function buildMultipartEventPayload(payload: Record<string, unknown>, files: File[]) {
+  const formData = new FormData();
+  formData.append("payload", JSON.stringify(payload));
+
+  for (const file of files) {
+    formData.append("photos", file);
+  }
+
+  const request = new Request("http://localhost/events", {
+    method: "POST",
+    body: formData,
+  });
+
+  return {
+    contentType: request.headers.get("content-type") ?? "multipart/form-data",
+    payload: Buffer.from(await request.arrayBuffer()),
+  };
+}
+
 describe("create event route", () => {
   let context: TestAppContext;
 
@@ -49,6 +68,42 @@ describe("create event route", () => {
     const body = response.json();
     expect(body.event.name).toBe("Museum Trip");
     expect(typeof body.event.id).toBe("string");
+  });
+
+  it("creates an event with uploaded photos in a single multipart request", async () => {
+    const { authHeaders } = await registerUser(context, "event-create-photos@example.com");
+    const multipartBody = await buildMultipartEventPayload(
+      {
+        name: "Museum Trip",
+        startDate: "2026-03-10",
+        description: "A nice visit",
+        rating: 8,
+        labels: ["Museum"],
+        visitCompany: "Solo",
+        lat: 40.7128,
+        lng: -74.006,
+      },
+      [new File(["image-bytes"], "museum.png", { type: "image/png" })],
+    );
+
+    const response = await context.app.inject({
+      method: "POST",
+      url: "/events",
+      headers: {
+        ...authHeaders,
+        "content-type": multipartBody.contentType,
+      },
+      payload: multipartBody.payload,
+    });
+
+    expect(response.statusCode).toBe(201);
+    const body = response.json() as { event: { id: string; photos: Array<{ id: string }> } };
+    expect(body.event.photos).toHaveLength(1);
+
+    const storedPhotos = (await context.all("SELECT id FROM event_photos WHERE event_id = ?", [body.event.id])) as Array<{
+      id: string;
+    }>;
+    expect(storedPhotos).toHaveLength(1);
   });
 
   it("rejects invalid rating", async () => {

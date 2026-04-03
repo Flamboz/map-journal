@@ -1,13 +1,12 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createEvent, fetchReverseGeocodeAddress, uploadEventPhotos } from "./api";
+import { createEvent, fetchReverseGeocodeAddress } from "./api";
 import { useDraftPinState } from "./useDraftPinState";
 import type { EventFormState } from "./mapViewTypes";
 
 vi.mock("./api", () => ({
   createEvent: vi.fn(),
   fetchReverseGeocodeAddress: vi.fn(),
-  uploadEventPhotos: vi.fn(),
 }));
 
 const formState: EventFormState = {
@@ -33,7 +32,7 @@ describe("useDraftPinState", () => {
     });
   });
 
-  it("saves draft event and uploads photos", async () => {
+  it("saves draft event with photos in one request", async () => {
     const onEventSaved = vi.fn();
     vi.mocked(createEvent).mockResolvedValue({
       id: "550e8400-e29b-41d4-a716-446655440001",
@@ -49,16 +48,15 @@ describe("useDraftPinState", () => {
       lat: 50.45,
       lng: 30.52,
       created_at: "2026-03-01T10:00:00.000Z",
-      photos: [],
-    });
-    vi.mocked(uploadEventPhotos).mockResolvedValue([
-      {
+      photos: [
+        {
         id: "550e8400-e29b-41d4-a716-446655440011",
         path: "a.jpg",
         url: "/uploads/a.jpg",
         createdAt: "2026-03-01T10:00:00.000Z",
-      },
-    ]);
+        },
+      ],
+    });
 
     const { result } = renderHook(() => useDraftPinState({ authToken: "token-1", onEventSaved }));
 
@@ -75,9 +73,9 @@ describe("useDraftPinState", () => {
       expect.objectContaining({
         name: "River Walk",
         description: "description",
+        photos: formState.photos,
       }),
     );
-    expect(uploadEventPhotos).toHaveBeenCalledWith("token-1", expect.any(String), formState.photos);
     expect(onEventSaved).toHaveBeenCalledWith(
       expect.objectContaining({
         id: "550e8400-e29b-41d4-a716-446655440001",
@@ -85,40 +83,6 @@ describe("useDraftPinState", () => {
       }),
     );
     expect(result.current.draftPosition).toBeNull();
-  });
-
-  it("keeps event save successful when photo upload fails and surfaces warning", async () => {
-    const onEventSaved = vi.fn();
-    vi.mocked(createEvent).mockResolvedValue({
-      id: "550e8400-e29b-41d4-a716-446655440001",
-      user_id: 1,
-      title: "River Walk",
-      name: "River Walk",
-      startDate: "2026-03-01",
-      endDate: null,
-      description: "description",
-      rating: 7,
-      labels: ["Trip"],
-      visitCompany: "Friends",
-      lat: 50.45,
-      lng: 30.52,
-      created_at: "2026-03-01T10:00:00.000Z",
-      photos: [],
-    });
-    vi.mocked(uploadEventPhotos).mockRejectedValue(new Error("upload failed"));
-
-    const { result } = renderHook(() => useDraftPinState({ authToken: "token-1", onEventSaved }));
-
-    act(() => {
-      result.current.openDraftFromMapClick({ lat: 50.45, lng: 30.52 });
-    });
-
-    await act(async () => {
-      await result.current.saveDraftEvent(formState);
-    });
-
-    expect(onEventSaved).toHaveBeenCalled();
-    expect(result.current.saveError).toBeNull();
   });
 
   it("sets error when create event fails", async () => {

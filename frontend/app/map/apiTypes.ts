@@ -59,6 +59,7 @@ export type CreateEventInput = {
   visitCompany?: string;
   lat: number;
   lng: number;
+  photos?: File[];
   visibility: EventVisibility;
   sharedWithEmails: string[];
 };

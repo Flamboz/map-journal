@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { createEvent, fetchReverseGeocodeAddress, type MapEvent, type PlaceSearchResult, uploadEventPhotos } from "./api";
+import { createEvent, fetchReverseGeocodeAddress, type MapEvent, type PlaceSearchResult } from "./api";
 import { formatShortAddress } from "./mapViewHelpers";
 import type { EventFormState } from "./mapViewTypes";
 
@@ -77,20 +77,12 @@ export function useDraftPinState({
         visitCompany: formState.visitCompany,
         lat: draftPosition.lat,
         lng: draftPosition.lng,
+        photos: formState.photos,
         visibility: formState.visibility,
         sharedWithEmails: formState.sharedWithEmails,
       });
 
-      let uploadedPhotos = createdEvent.photos ?? [];
-      if (formState.photos.length > 0) {
-        try {
-          uploadedPhotos = await uploadEventPhotos(authToken, createdEvent.id, formState.photos);
-        } catch {
-          setSaveError("Event saved, but photo upload failed.");
-        }
-      }
-
-      onEventSaved({ ...createdEvent, photos: uploadedPhotos });
+      onEventSaved(createdEvent);
       resetDraftState();
     } catch {
       setSaveError("Unable to save event. Please try again.");
