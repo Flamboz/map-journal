@@ -7,6 +7,7 @@ type EventDetailsReadOnlyViewProps = {
   event: MapEvent;
   dateText: string;
   visitCompany?: string | null;
+  canEdit: boolean;
   isDeletingEvent: boolean;
   onStartEditing: () => void;
   onOpenDeleteModal: () => void;
@@ -16,11 +17,13 @@ export default function EventDetailsReadOnlyView({
   event,
   dateText,
   visitCompany,
+  canEdit,
   isDeletingEvent,
   onStartEditing,
   onOpenDeleteModal,
 }: EventDetailsReadOnlyViewProps) {
   const safeRating = getSafeRating(event.rating);
+  const sharedWithEmails = event.sharedWithEmails ?? [];
 
   return (
     <div className="mt-6 space-y-6">
@@ -30,7 +33,7 @@ export default function EventDetailsReadOnlyView({
         </div>
       </div>
 
-      <div className="mx-auto grid w-full max-w-3xl grid-cols-1 gap-4 md:grid-cols-2">
+      <div className="mx-auto grid w-full max-w-3xl grid-cols-1 gap-4 md:grid-cols-3">
         <div className="rounded-lg bg-white p-5 shadow-sm">
           <p className="text-xs font-medium text-gray-500">DATE</p>
           <p className="mt-2 text-lg text-gray-900">
@@ -41,6 +44,11 @@ export default function EventDetailsReadOnlyView({
               placeholderClassName="text-lg italic text-gray-500"
             />
           </p>
+        </div>
+
+        <div className="rounded-lg bg-white p-5 shadow-sm">
+          <p className="text-xs font-medium text-gray-500">VISIBILITY</p>
+          <p className="mt-2 text-lg text-gray-900">{event.visibility === "share_with" ? "Shared" : "Private"}</p>
         </div>
 
         <div className="rounded-lg bg-white p-5 shadow-sm">
@@ -107,48 +115,51 @@ export default function EventDetailsReadOnlyView({
             )}
           </div>
         </div>
+
+        <div className="rounded-lg bg-white p-5 shadow-sm">
+          <p className="text-xs font-medium text-gray-500">SHARED WITH</p>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            {sharedWithEmails.length > 0 ? (
+              sharedWithEmails.map((email) => (
+                <span
+                  key={email}
+                  className="rounded-full border border-gray-200 bg-[color:var(--background-2)] px-3 py-1 text-sm text-[color:var(--foreground)]"
+                >
+                  {email}
+                </span>
+              ))
+            ) : (
+              <EmptyValue placeholder="None" className="text-sm text-gray-700" placeholderClassName="text-sm italic text-gray-500" />
+            )}
+          </div>
+        </div>
       </div>
 
-      <div className="mx-auto flex w-full max-w-3xl items-center justify-between">
-        <button
-          type="button"
-          onClick={onOpenDeleteModal}
-          disabled={isDeletingEvent}
-          className="rounded-lg border border-red-200 bg-white px-4 py-3 text-sm font-medium text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {isDeletingEvent ? (
-            "Deleting..."
-          ) : (
-            <span className="inline-flex items-center gap-2">
-              <svg aria-hidden="true" className="h-5 w-5 text-red-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
-                <path d="M3 6h18" />
-                <path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" />
-                <path d="M19 6l-1 13a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                <line x1="10" y1="11" x2="10" y2="17" />
-                <line x1="14" y1="11" x2="14" y2="17" />
-              </svg>
-              <span>Delete event</span>
-            </span>
-          )}
-        </button>
+      {canEdit ? (
+        <div className="mx-auto flex w-full max-w-3xl items-center justify-between">
+          <button
+            type="button"
+            onClick={onOpenDeleteModal}
+            disabled={isDeletingEvent}
+            className="rounded-lg border border-red-200 bg-white px-4 py-3 text-sm font-medium text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isDeletingEvent ? "Deleting..." : "Delete event"}
+          </button>
 
-        <div>
           <button
             type="button"
             onClick={onStartEditing}
             disabled={isDeletingEvent}
             className="rounded-full bg-slate-900 px-6 py-3 text-sm font-medium text-white hover:bg-slate-800"
           >
-            <span className="inline-flex items-center gap-2">
-              <svg aria-hidden="true" className="h-5 w-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
-                <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" />
-                <path d="M20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
-              </svg>
-              <span>Edit event</span>
-            </span>
+            Edit event
           </button>
         </div>
-      </div>
+      ) : (
+        <div className="mx-auto w-full max-w-3xl rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+          This event is shared with you. You can view it here, but edits, deletes, and attachment changes are disabled.
+        </div>
+      )}
     </div>
   );
 }

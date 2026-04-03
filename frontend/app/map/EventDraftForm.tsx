@@ -12,16 +12,19 @@ import {
   EventNameField,
   EventVisitCompanyField,
 } from "../components/EventFormFields";
+import { EventVisibilityFields } from "../components/EventVisibilityFields";
 import { EMPTY_FORM_STATE } from "./mapViewConstants";
 import { eventDraftValidationSchema } from "./mapViewHelpers";
 import type { EventFormState } from "./mapViewTypes";
 
 type EventDraftFormProps = {
+  userId: string | null;
   draftPosition: { lat: number; lng: number } | null;
   isResolvingAddress: boolean;
   draftAddress: string | null;
   saveError: string | null;
   isSaving: boolean;
+  currentUserEmail: string | null;
   labelOptions: string[];
   visitCompanyOptions: string[];
   onCancel: () => void;
@@ -30,11 +33,13 @@ type EventDraftFormProps = {
 };
 
 export function EventDraftForm({
+  userId,
   draftPosition,
   isResolvingAddress,
   draftAddress,
   saveError,
   isSaving,
+  currentUserEmail,
   labelOptions,
   visitCompanyOptions,
   onCancel,
@@ -56,11 +61,14 @@ export function EventDraftForm({
     reset,
     getValues,
     setValue,
+    watch,
     formState: { errors },
   } = useForm<EventFormState>({
     resolver: zodResolver(eventDraftValidationSchema),
     defaultValues: EMPTY_FORM_STATE,
   });
+  const visibility = watch("visibility");
+  const sharedWithEmails = watch("sharedWithEmails");
 
   function getTodayLocalDateString() {
     const d = new Date();
@@ -254,6 +262,21 @@ export function EventDraftForm({
           />
 
           <EventVisitCompanyField register={register} visitCompanyOptions={visitCompanyOptions} />
+
+          <EventVisibilityFields
+            userId={userId}
+            currentUserEmail={currentUserEmail}
+            visibility={visibility}
+            sharedWithEmails={sharedWithEmails}
+            sharedWithError={errors.sharedWithEmails?.message}
+            disabled={isSaving}
+            onVisibilityChange={(nextVisibility) =>
+              setValue("visibility", nextVisibility, { shouldDirty: true, shouldValidate: true })
+            }
+            onSharedWithEmailsChange={(nextSharedWithEmails) =>
+              setValue("sharedWithEmails", nextSharedWithEmails, { shouldDirty: true, shouldValidate: true })
+            }
+          />
 
           <div>
             <label className="mb-1 block text-sm font-semibold text-slate-800" htmlFor="event-photos">

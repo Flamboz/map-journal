@@ -1,4 +1,5 @@
 import type { FieldErrors, UseFormRegister } from "react-hook-form";
+import { EventVisibilityFields } from "../../components/EventVisibilityFields";
 import StarRating from "../../components/StarRating";
 import {
   EventDateRangeFields,
@@ -8,6 +9,7 @@ import {
   EventVisitCompanyField,
 } from "../../components/EventFormFields";
 import type { EventFormState } from "../../map/mapViewTypes";
+import type { EventVisibility } from "../../map/api";
 
 type EventDetailsEditFormProps = {
   register: UseFormRegister<EventFormState>;
@@ -25,6 +27,12 @@ type EventDetailsEditFormProps = {
   saveError: string | null;
   isSaving: boolean;
   isPhotoActionRunning: boolean;
+  userId: string;
+  currentUserEmail: string | null;
+  visibility: EventVisibility;
+  sharedWithEmails: string[];
+  onVisibilityChange: (visibility: EventVisibility) => void;
+  onSharedWithEmailsChange: (sharedWithEmails: string[]) => void;
   onCancel: () => void;
   onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
 };
@@ -45,6 +53,12 @@ export default function EventDetailsEditForm({
   saveError,
   isSaving,
   isPhotoActionRunning,
+  userId,
+  currentUserEmail,
+  visibility,
+  sharedWithEmails,
+  onVisibilityChange,
+  onSharedWithEmailsChange,
   onCancel,
   onSubmit,
 }: EventDetailsEditFormProps) {
@@ -83,6 +97,17 @@ export default function EventDetailsEditForm({
       />
 
       <EventVisitCompanyField register={register} visitCompanyOptions={visitCompanyOptions} />
+
+      <EventVisibilityFields
+        userId={userId}
+        currentUserEmail={currentUserEmail}
+        visibility={visibility}
+        sharedWithEmails={sharedWithEmails}
+        sharedWithError={errors.sharedWithEmails?.message}
+        disabled={isSaving || isPhotoActionRunning}
+        onVisibilityChange={onVisibilityChange}
+        onSharedWithEmailsChange={onSharedWithEmailsChange}
+      />
 
       {saveError && <p className="text-sm text-red-600">{saveError}</p>}
 

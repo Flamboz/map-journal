@@ -8,10 +8,12 @@ import {
 } from "../../utils/httpErrors";
 import { EventParams, parseEventId, parseUserId, UpdateEventBody } from "./shared";
 import { updateEventForUser } from "../../services/eventService";
+import { updateEventSchema } from "../schemas/eventSchemas";
 
 export function registerUpdateEventRoute(fastify: FastifyInstance) {
   fastify.patch(
     "/events/:eventId",
+    { schema: updateEventSchema },
     async (
       request: FastifyRequest<{ Params: EventParams; Body: UpdateEventBody }>,
       reply: FastifyReply,

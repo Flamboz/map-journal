@@ -59,5 +59,9 @@ export function normalizeEvent(event: MapEvent): MapEvent {
   return {
     ...event,
     photos: normalizePhotos(event.photos ?? []),
+    accessLevel: event.accessLevel === "shared" ? "shared" : "owner",
+    visibility: event.visibility === "share_with" ? "share_with" : "private",
+    ownerEmail: event.ownerEmail ?? "",
+    sharedWithEmails: event.sharedWithEmails ?? [],
   };
 }

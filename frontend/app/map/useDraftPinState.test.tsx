@@ -18,6 +18,8 @@ const formState: EventFormState = {
   labels: ["Trip"],
   visitCompany: "Friends",
   photos: [new File(["img"], "photo.png", { type: "image/png" })],
+  visibility: "private",
+  sharedWithEmails: [],
 };
 
 describe("useDraftPinState", () => {

@@ -1,6 +1,7 @@
 "use client";
 
 import { type FormEvent, useState } from "react";
+import { EventAccessBadge } from "../components/EventAccessBadge";
 import { EventLabelsField } from "../components/EventFormFields";
 import { fetchUserEvents, type EventSearchFilters, type MapEvent } from "./api";
 
@@ -232,6 +233,9 @@ export function EventSearchFilterPanel({
                     aria-label={`Open event ${event.title}`}
                   >
                     <p className="break-words font-medium text-slate-900">{event.title}</p>
+                    <div className="mt-2">
+                      <EventAccessBadge event={event} />
+                    </div>
                     {event.startDate && <p className="text-xs text-slate-600">{event.startDate}</p>}
                   </button>
                 </li>

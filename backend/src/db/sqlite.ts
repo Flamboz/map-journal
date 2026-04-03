@@ -66,6 +66,13 @@ async function tableExists(tableName: string): Promise<boolean> {
   return Boolean(row?.name);
 }
 
+async function getTableColumns(tableName: string): Promise<string[]> {
+  const rows = (await all(`PRAGMA table_info(${tableName})`)) as Array<{ name?: string }>;
+  return rows
+    .map((row) => row.name)
+    .filter((columnName): columnName is string => typeof columnName === "string" && columnName.length > 0);
+}
+
 async function createEventsTable() {
   await run(`
     CREATE TABLE IF NOT EXISTS events (
@@ -99,6 +106,57 @@ async function createEventPhotosTable() {
   `);
 }
 
+async function createEventSharesTable() {
+  await run(`
+    CREATE TABLE IF NOT EXISTS event_shares (
+      event_id TEXT NOT NULL,
+      shared_with_user_id INTEGER NOT NULL,
+      created_at TEXT DEFAULT (datetime('now')),
+      PRIMARY KEY (event_id, shared_with_user_id),
+      FOREIGN KEY(event_id) REFERENCES events(id),
+      FOREIGN KEY(shared_with_user_id) REFERENCES users(id)
+    );
+  `);
+}
+
+async function ensureEventSharesSchema() {
+  const hasEventSharesTable = await tableExists("event_shares");
+  if (!hasEventSharesTable) {
+    await createEventSharesTable();
+    return;
+  }
+
+  const columns = await getTableColumns("event_shares");
+  const hasEventId = columns.includes("event_id");
+  const hasSharedWithUserId = columns.includes("shared_with_user_id");
+
+  if (hasEventId && hasSharedWithUserId) {
+    return;
+  }
+
+  const hasLegacyUserId = columns.includes("user_id");
+  const temporaryTableName = `event_shares_legacy_${Date.now()}`;
+
+  await run(`ALTER TABLE event_shares RENAME TO ${temporaryTableName}`);
+  await createEventSharesTable();
+
+  if (hasEventId && (hasSharedWithUserId || hasLegacyUserId)) {
+    const sourceUserColumn = hasSharedWithUserId ? "shared_with_user_id" : "user_id";
+    const hasCreatedAt = columns.includes("created_at");
+    const createdAtSelect = hasCreatedAt ? "created_at" : "datetime('now')";
+
+    await run(`
+      INSERT OR IGNORE INTO event_shares (event_id, shared_with_user_id, created_at)
+      SELECT event_id, ${sourceUserColumn}, ${createdAtSelect}
+      FROM ${temporaryTableName}
+      WHERE event_id IS NOT NULL
+        AND ${sourceUserColumn} IS NOT NULL
+    `);
+  }
+
+  await run(`DROP TABLE ${temporaryTableName}`);
+}
+
 async function ensureEventsAndPhotosSchema() {
   const hasEventsTable = await tableExists("events");
   if (!hasEventsTable) {
@@ -122,10 +180,21 @@ async function ensureEventsAndPhotosSchema() {
       await ensureColumn("event_photos", "original_name TEXT");
       await ensureColumn("event_photos", "size_bytes INTEGER");
     }
+
   }
+
+  await ensureEventSharesSchema();
 
   await run(`
     CREATE INDEX IF NOT EXISTS idx_event_photos_event_id ON event_photos(event_id);
+  `);
+
+  await run(`
+    CREATE INDEX IF NOT EXISTS idx_event_shares_shared_with_user_id ON event_shares(shared_with_user_id);
+  `);
+
+  await run(`
+    CREATE INDEX IF NOT EXISTS idx_event_shares_event_id ON event_shares(event_id);
   `);
 
   await run(`

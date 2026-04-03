@@ -118,6 +118,8 @@ export async function updateEvent(input: UpdateEventInput): Promise<MapEvent> {
       rating: input.rating,
       labels: input.labels,
       visitCompany: input.visitCompany,
+      visibility: input.visibility,
+      sharedWithEmails: input.sharedWithEmails,
     }),
   });
 
@@ -152,4 +154,17 @@ export async function deleteEvent(userId: string, eventId: string): Promise<void
   if (!response.ok) {
     throw createApiClientError("EVENT_DELETE_FAILED");
   }
+}
+
+export async function lookupShareableUserEmail(userId: string, email: string): Promise<string | null> {
+  const response = await fetch(buildApiUrl("/events/shareable-users/lookup", { userId, email }), {
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw createApiClientError("EVENT_CREATE_FAILED");
+  }
+
+  const data = (await response.json()) as { exists?: boolean; email?: string | null };
+  return data.exists ? data.email ?? null : null;
 }

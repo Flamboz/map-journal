@@ -13,6 +13,7 @@ import {
   normalizeLabels,
   DEFAULT_PIN_ZOOM,
 } from "../routes/events/shared";
+import { getSharedEmailsByEventIds, resolveShareRecipients, syncEventShares } from "./eventSharing";
 
 const SAME_PIN_DISTANCE_METERS = 20;
 const EARTH_RADIUS_METERS = 6_371_000;
@@ -38,6 +39,8 @@ type CreateEventInput = {
   visitCompany?: string;
   lat?: number;
   lng?: number;
+  visibility?: string;
+  sharedWithEmails?: string[];
 };
 
 type UpdateEventInput = {
@@ -51,6 +54,8 @@ type UpdateEventInput = {
   rating?: number | string | null;
   labels?: string[];
   visitCompany?: string;
+  visibility?: string;
+  sharedWithEmails?: string[];
 };
 
 function toRadians(value: number): number {
@@ -98,19 +103,81 @@ function parseStoredLabels(rawLabels?: string | null): string[] {
   }
 }
 
+async function getAccessibleEventRows(input: {
+  userId: number;
+  whereClauses: string[];
+  params: Array<number | string>;
+}) {
+  return (await all(
+    `SELECT DISTINCT
+       events.id,
+       events.user_id,
+       events.title,
+       events.start_date,
+       events.end_date,
+       events.description,
+       events.rating,
+       events.labels,
+       events.visit_company,
+       events.city,
+       events.lat,
+       events.lng,
+       events.created_at,
+       owners.email AS owner_email,
+       CASE WHEN events.user_id = ? THEN 'owner' ELSE 'shared' END AS access_level
+     FROM events
+     INNER JOIN users AS owners ON owners.id = events.user_id
+     LEFT JOIN event_shares AS requester_shares
+       ON requester_shares.event_id = events.id
+      AND requester_shares.shared_with_user_id = ?
+     WHERE (${input.whereClauses.join(" AND ")})
+     ORDER BY events.created_at DESC, events.id DESC`,
+    [input.userId, input.userId, ...input.params],
+  )) as EventRow[];
+}
+
+async function getNormalizedAccessibleEventById(eventId: string, userId: number): Promise<EventRow | null> {
+  return (await get(
+    `SELECT DISTINCT
+       events.id,
+       events.user_id,
+       events.title,
+       events.start_date,
+       events.end_date,
+       events.description,
+       events.rating,
+       events.labels,
+       events.visit_company,
+       events.city,
+       events.lat,
+       events.lng,
+       events.created_at,
+       owners.email AS owner_email,
+       CASE WHEN events.user_id = ? THEN 'owner' ELSE 'shared' END AS access_level
+     FROM events
+     INNER JOIN users AS owners ON owners.id = events.user_id
+     LEFT JOIN event_shares AS requester_shares
+       ON requester_shares.event_id = events.id
+      AND requester_shares.shared_with_user_id = ?
+     WHERE events.id = ?
+       AND (events.user_id = ? OR requester_shares.shared_with_user_id IS NOT NULL)`,
+    [userId, userId, eventId, userId],
+  )) as EventRow | null;
+}
+
 export async function listEventsForUser(input: ListEventsInput) {
-  const whereClauses: string[] = ["user_id = ?"];
+  const whereClauses: string[] = ["(events.user_id = ? OR requester_shares.shared_with_user_id IS NOT NULL)"];
   const params: Array<number | string> = [input.userId];
   const trimmedSearch = input.search?.trim();
 
   if (trimmedSearch) {
-    whereClauses.push("(instr(title, ?) > 0 OR instr(COALESCE(description, ''), ?) > 0)");
+    whereClauses.push("(instr(events.title, ?) > 0 OR instr(COALESCE(events.description, ''), ?) > 0)");
     params.push(trimmedSearch, trimmedSearch);
   }
 
   const labels = normalizeQueryLabels(input.labels);
   if (labels.length > 0) {
-    const labelWhere = labels.map(() => "labels LIKE ?").join(" OR ");
+    const labelWhere = labels.map(() => "events.labels LIKE ?").join(" OR ");
     whereClauses.push(`(${labelWhere})`);
 
     for (const label of labels) {
@@ -120,33 +187,31 @@ export async function listEventsForUser(input: ListEventsInput) {
 
   const visitCompany = input.visitCompany?.trim();
   if (visitCompany && ALLOWED_VISIT_COMPANIES.has(visitCompany)) {
-    whereClauses.push("visit_company = ?");
+    whereClauses.push("events.visit_company = ?");
     params.push(visitCompany);
   }
 
   const dateFrom = input.dateFrom?.trim();
   const dateTo = input.dateTo?.trim();
   if (dateFrom || dateTo) {
-    whereClauses.push("start_date IS NOT NULL");
+    whereClauses.push("events.start_date IS NOT NULL");
 
     if (dateTo) {
-      whereClauses.push("start_date <= ?");
+      whereClauses.push("events.start_date <= ?");
       params.push(dateTo);
     }
 
     if (dateFrom) {
-      whereClauses.push("COALESCE(end_date, start_date) >= ?");
+      whereClauses.push("COALESCE(events.end_date, events.start_date) >= ?");
       params.push(dateFrom);
     }
   }
 
-  const events = (await all(
-    `SELECT id, user_id, title, start_date, end_date, description, rating, labels, visit_company, city, lat, lng, created_at
-     FROM events
-     WHERE ${whereClauses.join(" AND ")}
-     ORDER BY created_at DESC, id DESC`,
+  const events = await getAccessibleEventRows({
+    userId: input.userId,
+    whereClauses,
     params,
-  )) as EventRow[];
+  });
 
   const eventIds = events.map((event) => event.id);
   const photos =
@@ -159,17 +224,17 @@ export async function listEventsForUser(input: ListEventsInput) {
           eventIds,
         )) as EventPhotoRow[])
       : [];
+  const sharedEmailsByEvent = await getSharedEmailsByEventIds(eventIds);
 
-  return normalizeEventRows(events, groupPhotosByEvent(photos));
+  return normalizeEventRows(events, {
+    photosByEvent: groupPhotosByEvent(photos),
+    sharedEmailsByEvent,
+    requestUserId: input.userId,
+  });
 }
 
 export async function getEventByIdForUser(eventId: string, userId: number): Promise<ServiceResult<Record<string, unknown>>> {
-  const event = (await get(
-    `SELECT id, user_id, title, start_date, end_date, description, rating, labels, visit_company, city, lat, lng, created_at
-     FROM events
-     WHERE id = ? AND user_id = ?`,
-    [eventId, userId],
-  )) as EventRow | null;
+  const event = await getNormalizedAccessibleEventById(eventId, userId);
 
   if (!event) {
     return failure(404, "EVENT_NOT_FOUND", "Event not found.");
@@ -178,10 +243,11 @@ export async function getEventByIdForUser(eventId: string, userId: number): Prom
   const photos = (await all(
     `SELECT id, event_id, file_path, sort_order, created_at
      FROM event_photos
-     WHERE event_id = ?
+      WHERE event_id = ?
      ORDER BY sort_order ASC, created_at ASC, id ASC`,
     [eventId],
   )) as EventPhotoRow[];
+  const sharedEmailsByEvent = await getSharedEmailsByEventIds([eventId]);
 
   const latitudeDelta = SAME_PIN_DISTANCE_METERS / 111_320;
   const latitudeRadians = toRadians(event.lat);
@@ -190,16 +256,23 @@ export async function getEventByIdForUser(eventId: string, userId: number): Prom
   const longitudeDelta = SAME_PIN_DISTANCE_METERS / (111_320 * safeCosineLatitude);
 
   const samePinEventCandidates = (await all(
-    `SELECT id, lat, lng
+    `SELECT DISTINCT events.id, events.lat, events.lng
      FROM events
-     WHERE user_id = ?
-       AND lat BETWEEN ? AND ?
-       AND lng BETWEEN ? AND ?
-     ORDER BY created_at DESC, id DESC`,
-    [userId, event.lat - latitudeDelta, event.lat + latitudeDelta, event.lng - longitudeDelta, event.lng + longitudeDelta],
+     LEFT JOIN event_shares AS requester_shares
+       ON requester_shares.event_id = events.id
+      AND requester_shares.shared_with_user_id = ?
+     WHERE (events.user_id = ? OR requester_shares.shared_with_user_id IS NOT NULL)
+       AND events.lat BETWEEN ? AND ?
+       AND events.lng BETWEEN ? AND ?
+     ORDER BY events.created_at DESC, events.id DESC`,
+    [userId, userId, event.lat - latitudeDelta, event.lat + latitudeDelta, event.lng - longitudeDelta, event.lng + longitudeDelta],
   )) as Array<{ id: string; lat: number; lng: number }>;
 
-  const normalizedEvent = normalizeEventRows([event], groupPhotosByEvent(photos))[0];
+  const normalizedEvent = normalizeEventRows([event], {
+    photosByEvent: groupPhotosByEvent(photos),
+    sharedEmailsByEvent,
+    requestUserId: userId,
+  })[0];
 
   const samePinEventIds = samePinEventCandidates
     .filter((candidate) =>
@@ -243,6 +316,15 @@ export async function createEventForUser(input: CreateEventInput): Promise<Servi
     return failure(400, "INVALID_VISIT_COMPANY", "Invalid visit company value.");
   }
 
+  const shareRecipientsResult = await resolveShareRecipients({
+    ownerUserId: input.userId,
+    visibility: input.visibility,
+    sharedWithEmails: input.sharedWithEmails,
+  });
+  if (!shareRecipientsResult.ok) {
+    return shareRecipientsResult;
+  }
+
   const eventId = randomUUID();
 
   let city = await reverseGeocodeCity(lat, lng);
@@ -268,19 +350,19 @@ export async function createEventForUser(input: CreateEventInput): Promise<Servi
       lng,
     ],
   );
+  await syncEventShares(eventId, shareRecipientsResult.value.recipientUserIds);
 
-  const event = (await get(
-    `SELECT id, user_id, title, start_date, end_date, description, rating, labels, visit_company, city, lat, lng, created_at
-     FROM events
-     WHERE id = ?`,
-    [eventId],
-  )) as EventRow | null;
+  const event = await getNormalizedAccessibleEventById(eventId, input.userId);
 
   if (!event) {
     return failure(404, "EVENT_NOT_FOUND", "Event not found.");
   }
 
-  const normalizedEvent = normalizeEventRows([event])[0];
+  const sharedEmailsByEvent = await getSharedEmailsByEventIds([eventId]);
+  const normalizedEvent = normalizeEventRows([event], {
+    sharedEmailsByEvent,
+    requestUserId: input.userId,
+  })[0];
   try {
     await run(
       `INSERT OR REPLACE INTO map_positions (user_id, lat, lng, zoom, updated_at)
@@ -346,19 +428,26 @@ export async function updateEventForUser(input: UpdateEventInput): Promise<Servi
     return failure(400, "INVALID_VISIT_COMPANY", "Invalid visit company value.");
   }
 
+  const existingSharedEmailsByEvent = await getSharedEmailsByEventIds([input.eventId]);
+  const existingSharedEmails = existingSharedEmailsByEvent.get(input.eventId) ?? [];
+  const shareRecipientsResult = await resolveShareRecipients({
+    ownerUserId: input.userId,
+    visibility: input.visibility ?? (existingSharedEmails.length > 0 ? "share_with" : "private"),
+    sharedWithEmails: input.sharedWithEmails ?? existingSharedEmails,
+  });
+  if (!shareRecipientsResult.ok) {
+    return shareRecipientsResult;
+  }
+
   await run(
     `UPDATE events
      SET title = ?, start_date = ?, end_date = ?, description = ?, rating = ?, labels = ?, visit_company = ?
      WHERE id = ?`,
     [nextName, nextStartDate, nextEndDate, nextDescription, normalizedRating, JSON.stringify(nextLabels), nextVisitCompany, input.eventId],
   );
+  await syncEventShares(input.eventId, shareRecipientsResult.value.recipientUserIds);
 
-  const updatedEvent = (await get(
-    `SELECT id, user_id, title, start_date, end_date, description, rating, labels, visit_company, city, lat, lng, created_at
-     FROM events
-     WHERE id = ?`,
-    [input.eventId],
-  )) as EventRow | null;
+  const updatedEvent = await getNormalizedAccessibleEventById(input.eventId, input.userId);
 
   if (!updatedEvent) {
     return failure(404, "EVENT_NOT_FOUND", "Event not found.");
@@ -371,8 +460,13 @@ export async function updateEventForUser(input: UpdateEventInput): Promise<Servi
      ORDER BY sort_order ASC, created_at ASC, id ASC`,
     [input.eventId],
   )) as EventPhotoRow[];
+  const sharedEmailsByEvent = await getSharedEmailsByEventIds([input.eventId]);
 
-  const normalizedEvent = normalizeEventRows([updatedEvent], groupPhotosByEvent(photos))[0];
+  const normalizedEvent = normalizeEventRows([updatedEvent], {
+    photosByEvent: groupPhotosByEvent(photos),
+    sharedEmailsByEvent,
+    requestUserId: input.userId,
+  })[0];
   try {
     await run(
       `INSERT OR REPLACE INTO map_positions (user_id, lat, lng, zoom, updated_at)
@@ -396,6 +490,7 @@ export async function deleteEventForUser(eventId: string, userId: number): Promi
 
   const photos = (await all("SELECT file_path FROM event_photos WHERE event_id = ?", [eventId])) as Array<{ file_path: string }>;
 
+  await run("DELETE FROM event_shares WHERE event_id = ?", [eventId]);
   await run("DELETE FROM event_photos WHERE event_id = ?", [eventId]);
   await run("DELETE FROM events WHERE id = ?", [eventId]);
 

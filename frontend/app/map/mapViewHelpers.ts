@@ -28,10 +28,16 @@ export const eventDraftValidationSchema = z
     labels: z.array(z.string()),
     visitCompany: z.string(),
     photos: z.array(z.any()),
+    visibility: z.enum(["private", "share_with"]),
+    sharedWithEmails: z.array(z.string()),
   })
   .refine((values) => !values.endDate || values.endDate >= values.startDate, {
     path: ["endDate"],
     message: "End date cannot be before start date.",
+  })
+  .refine((values) => values.visibility === "private" || values.sharedWithEmails.length > 0, {
+    path: ["sharedWithEmails"],
+    message: "Add at least one existing email when sharing an event.",
   });
 
 export type MapEventGroup = {

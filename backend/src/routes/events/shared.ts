@@ -19,6 +19,8 @@ export type CreateEventBody = {
   visitCompany?: string;
   lat?: number;
   lng?: number;
+  visibility?: string;
+  sharedWithEmails?: string[];
 };
 
 export type UpdateEventBody = {
@@ -31,6 +33,8 @@ export type UpdateEventBody = {
   rating?: number | string | null;
   labels?: string[];
   visitCompany?: string;
+  visibility?: string;
+  sharedWithEmails?: string[];
 };
 
 export type EventParams = {
@@ -65,6 +69,8 @@ export type EventRow = {
   lat: number;
   lng: number;
   created_at: string;
+  owner_email?: string | null;
+  access_level?: "owner" | "shared" | null;
 };
 
 export type EventPhotoRow = {
@@ -80,6 +86,12 @@ export type NormalizedEventPhoto = {
   path: string;
   url: string;
   createdAt: string;
+};
+
+type NormalizeEventRowsOptions = {
+  photosByEvent?: Map<string, NormalizedEventPhoto[]>;
+  sharedEmailsByEvent?: Map<string, string[]>;
+  requestUserId?: number;
 };
 
 export const ALLOWED_LABEL_VALUES: string[] = [
@@ -108,6 +120,8 @@ export const ALLOWED_VISIT_COMPANIES = new Set(ALLOWED_VISIT_COMPANY_VALUES);
 
 export const MAX_UPLOAD_BYTES = Number.MAX_SAFE_INTEGER;
 export const DEFAULT_PIN_ZOOM = 13;
+export const PRIVATE_VISIBILITY = "private";
+export const SHARE_WITH_VISIBILITY = "share_with";
 
 export function groupPhotosByEvent(
   photos: EventPhotoRow[],
@@ -128,7 +142,10 @@ export function groupPhotosByEvent(
   return photosByEvent;
 }
 
-export function normalizeEventRows(events: EventRow[], photosByEvent: Map<string, NormalizedEventPhoto[]> = new Map()) {
+export function normalizeEventRows(events: EventRow[], options: NormalizeEventRowsOptions = {}) {
+  const photosByEvent = options.photosByEvent ?? new Map();
+  const sharedEmailsByEvent = options.sharedEmailsByEvent ?? new Map();
+
   return events.map((event) => ({
     id: event.id,
     user_id: event.user_id,
@@ -145,6 +162,15 @@ export function normalizeEventRows(events: EventRow[], photosByEvent: Map<string
     lng: event.lng,
     created_at: event.created_at,
     photos: photosByEvent.get(event.id) ?? [],
+    accessLevel:
+      event.access_level === "shared"
+        ? "shared"
+        : options.requestUserId !== undefined && Number(event.user_id) === options.requestUserId
+          ? "owner"
+          : "shared",
+    visibility: (sharedEmailsByEvent.get(event.id) ?? []).length > 0 ? SHARE_WITH_VISIBILITY : PRIVATE_VISIBILITY,
+    ownerEmail: event.owner_email ?? "",
+    sharedWithEmails: sharedEmailsByEvent.get(event.id) ?? [],
   }));
 }
 

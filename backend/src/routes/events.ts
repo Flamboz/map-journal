@@ -8,11 +8,13 @@ import { registerMapPositionRoute } from "./events/registerMapPositionRoute";
 import { registerMetadataRoutes } from "./events/registerMetadataRoutes";
 import { registerPlaceSearchRoute } from "./events/registerPlaceSearchRoute";
 import { registerSetPreviewPhotoRoute } from "./events/registerSetPreviewPhotoRoute";
+import { registerLookupShareUserRoute } from "./events/registerLookupShareUserRoute";
 import { registerUpdateEventRoute } from "./events/registerUpdateEventRoute";
 import { registerUploadEventPhotosRoute } from "./events/registerUploadEventPhotosRoute";
 
 export default async function eventsRoutes(fastify: FastifyInstance) {
   registerMetadataRoutes(fastify);
+  registerLookupShareUserRoute(fastify);
   registerGetEventsRoute(fastify);
   registerGetEventByIdRoute(fastify);
   registerCreateEventRoute(fastify);

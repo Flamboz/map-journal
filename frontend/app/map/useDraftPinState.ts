@@ -78,6 +78,8 @@ export function useDraftPinState({
         visitCompany: formState.visitCompany,
         lat: draftPosition.lat,
         lng: draftPosition.lng,
+        visibility: formState.visibility,
+        sharedWithEmails: formState.sharedWithEmails,
       });
 
       let uploadedPhotos = createdEvent.photos ?? [];

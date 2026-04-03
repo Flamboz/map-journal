@@ -10,6 +10,9 @@ export type PlaceSearchResult = {
   lng: number;
 };
 
+export type EventVisibility = "private" | "share_with";
+export type EventAccessLevel = "owner" | "shared";
+
 export type MapEventPhoto = {
   id: string;
   path: string;
@@ -40,6 +43,10 @@ export type MapEvent = {
   created_at: string;
   photos?: MapEventPhoto[];
   samePinEventIds?: string[];
+  accessLevel?: EventAccessLevel;
+  visibility?: EventVisibility;
+  ownerEmail?: string;
+  sharedWithEmails?: string[];
 };
 
 export type CreateEventInput = {
@@ -53,6 +60,8 @@ export type CreateEventInput = {
   visitCompany?: string;
   lat: number;
   lng: number;
+  visibility: EventVisibility;
+  sharedWithEmails: string[];
 };
 
 export type UpdateEventInput = {
@@ -65,4 +74,6 @@ export type UpdateEventInput = {
   rating?: number | null;
   labels?: string[];
   visitCompany?: string;
+  visibility: EventVisibility;
+  sharedWithEmails: string[];
 };

@@ -1,5 +1,7 @@
 export type {
   CreateEventInput,
+  EventAccessLevel,
+  EventVisibility,
   LastMapPosition,
   MapEvent,
   MapEventPhoto,
@@ -14,6 +16,7 @@ export {
   fetchEventById,
   fetchLastMapPosition,
   fetchUserEvents,
+  lookupShareableUserEmail,
   updateEvent,
 } from "./apiEvents";
 

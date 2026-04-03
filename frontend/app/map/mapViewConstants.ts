@@ -47,4 +47,6 @@ export const EMPTY_FORM_STATE: EventFormState = {
   labels: [],
   visitCompany: "",
   photos: [],
+  visibility: "private",
+  sharedWithEmails: [],
 };

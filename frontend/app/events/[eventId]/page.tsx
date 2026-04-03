@@ -15,6 +15,7 @@ export default async function EventDetailsPage({ params }: EventDetailsPageProps
   const { eventId } = await params;
   const session = await getServerSession(authOptions);
   const userId = session?.user?.id ? String(session.user.id) : "";
+  const currentUserEmail = session?.user?.email ?? null;
 
   if (!userId) {
     redirect("/auth/signin");
@@ -31,5 +32,5 @@ export default async function EventDetailsPage({ params }: EventDetailsPageProps
     throw error;
   }
 
-  return <EventDetailsClient initialEvent={event} userId={userId} />;
+  return <EventDetailsClient initialEvent={event} userId={userId} currentUserEmail={currentUserEmail} />;
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useReducer, useState } from "react";
+import { useEffect, useMemo, useReducer } from "react";
 import { useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -9,8 +9,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   deleteEvent,
   deleteEventPhoto,
-  fetchAllowedLabels,
-  fetchAllowedVisitCompanies,
   fetchEventById,
   setEventPreviewPhoto,
   type MapEvent,
@@ -25,32 +23,21 @@ import DeleteEventConfirmationModal from "./DeleteEventConfirmationModal";
 import EventDetailsEditForm from "./EventDetailsEditForm";
 import EventDetailsReadOnlyView from "./EventDetailsReadOnlyView";
 import EventPhotosCarousel from "./EventPhotosCarousel";
+import { mapEventToFormState } from "./eventDetailsFormState";
 import { createInitialEventDetailsState, eventDetailsReducer } from "./eventDetailsReducer";
+import { useEventDetailsOptions } from "./useEventDetailsOptions";
 
 type EventDetailsClientProps = {
   initialEvent: MapEvent;
   userId: string;
+  currentUserEmail: string | null;
 };
 
-function mapEventToFormState(event: MapEvent): EventFormState {
-  return {
-    name: event.name ?? event.title,
-    startDate: event.startDate ?? "",
-    endDate: event.endDate ?? "",
-    description: event.description ?? "",
-    rating: event.rating ?? null,
-    labels: event.labels ?? [],
-    visitCompany: event.visitCompany ?? "",
-    photos: [],
-  };
-}
-
-export default function EventDetailsClient({ initialEvent, userId }: EventDetailsClientProps) {
+export default function EventDetailsClient({ initialEvent, userId, currentUserEmail }: EventDetailsClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [state, dispatch] = useReducer(eventDetailsReducer, initialEvent, createInitialEventDetailsState);
-  const [labelOptions, setLabelOptions] = useState<string[]>([]);
-  const [visitCompanyOptions, setVisitCompanyOptions] = useState<string[]>([]);
+  const { labelOptions, visitCompanyOptions } = useEventDetailsOptions();
 
   const {
     register,
@@ -58,11 +45,15 @@ export default function EventDetailsClient({ initialEvent, userId }: EventDetail
     reset,
     getValues,
     setValue,
+    watch,
     formState: { errors },
   } = useForm<EventFormState>({
     resolver: zodResolver(eventDraftValidationSchema),
     defaultValues: mapEventToFormState(initialEvent),
   });
+  const visibility = watch("visibility");
+  const sharedWithEmails = watch("sharedWithEmails");
+  const canEdit = state.event.accessLevel === "owner";
 
   const samePinEventIds = useMemo(() => state.event.samePinEventIds ?? [state.event.id], [state.event.id, state.event.samePinEventIds]);
   const currentPinEventIndex = samePinEventIds.indexOf(state.event.id);
@@ -73,41 +64,20 @@ export default function EventDetailsClient({ initialEvent, userId }: EventDetail
   const nextPinEventId = hasPinNavigation ? samePinEventIds[(currentPinEventIndex + 1) % samePinEventIds.length] : null;
 
   useEffect(() => {
-    // If URL contains ?edit=true, start in edit mode.
-    if (searchParams?.get("edit") === "true") {
+    if (canEdit && searchParams?.get("edit") === "true") {
       startEditing();
     }
-
-    let active = true;
-
-    Promise.all([fetchAllowedLabels(), fetchAllowedVisitCompanies()])
-      .then(([labels, visitCompanies]) => {
-        if (!active) {
-          return;
-        }
-
-        setLabelOptions(labels);
-        setVisitCompanyOptions(visitCompanies);
-      })
-      .catch(() => {
-        if (!active) {
-          return;
-        }
-
-        setLabelOptions([]);
-        setVisitCompanyOptions([]);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, []);
+  }, [canEdit, searchParams]);
 
   function redirectMissingEvent() {
     router.replace("/?error=event-not-found");
   }
 
   function startEditing() {
+    if (!canEdit) {
+      return;
+    }
+
     dispatch({ type: "START_EDIT" });
     reset(mapEventToFormState(state.event));
     scrollToTop();
@@ -216,6 +186,8 @@ export default function EventDetailsClient({ initialEvent, userId }: EventDetail
         rating: state.selectedRating,
         labels: state.selectedLabels,
         visitCompany: values.visitCompany,
+        visibility: values.visibility,
+        sharedWithEmails: values.sharedWithEmails,
       });
 
       const refreshedEvent = await fetchEventById(state.event.id, userId);
@@ -346,10 +318,10 @@ export default function EventDetailsClient({ initialEvent, userId }: EventDetail
       <EventPhotosCarousel
         photos={(state.isEditing ? state.draftPhotos ?? state.event.photos : state.event.photos) ?? []}
         eventName={state.event.name ?? state.event.title}
-        isUpdatingPhotos={state.isEditing ? state.isPhotoActionRunning || state.isSaving : false}
-        onAddPhotos={state.isEditing ? handleAddPhotos : undefined}
-        onDeletePhoto={state.isEditing ? handleDeletePhoto : undefined}
-        onSetPreviewPhoto={state.isEditing ? handleSetPreviewPhoto : undefined}
+        isUpdatingPhotos={canEdit && state.isEditing ? state.isPhotoActionRunning || state.isSaving : false}
+        onAddPhotos={canEdit && state.isEditing ? handleAddPhotos : undefined}
+        onDeletePhoto={canEdit && state.isEditing ? handleDeletePhoto : undefined}
+        onSetPreviewPhoto={canEdit && state.isEditing ? handleSetPreviewPhoto : undefined}
       />
 
       {!state.isEditing && (
@@ -358,6 +330,7 @@ export default function EventDetailsClient({ initialEvent, userId }: EventDetail
             event={state.event}
             dateText={dateText}
             visitCompany={visitCompany}
+            canEdit={canEdit}
             isDeletingEvent={state.isDeletingEvent}
             onStartEditing={startEditing}
             onOpenDeleteModal={openDeleteModal}
@@ -365,7 +338,7 @@ export default function EventDetailsClient({ initialEvent, userId }: EventDetail
         </>
       )}
 
-      {state.isEditing && (
+      {state.isEditing && canEdit && (
         <EventDetailsEditForm
           register={register}
           errors={errors}
@@ -382,6 +355,16 @@ export default function EventDetailsClient({ initialEvent, userId }: EventDetail
           saveError={state.saveError}
           isSaving={state.isSaving}
           isPhotoActionRunning={state.isPhotoActionRunning}
+          userId={userId}
+          currentUserEmail={currentUserEmail}
+          visibility={visibility}
+          sharedWithEmails={sharedWithEmails}
+          onVisibilityChange={(nextVisibility) =>
+            setValue("visibility", nextVisibility, { shouldDirty: true, shouldValidate: true })
+          }
+          onSharedWithEmailsChange={(nextSharedWithEmails) =>
+            setValue("sharedWithEmails", nextSharedWithEmails, { shouldDirty: true, shouldValidate: true })
+          }
           onCancel={cancelEditing}
           onSubmit={handleSubmit(saveChanges)}
         />

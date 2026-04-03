@@ -1,3 +1,4 @@
+import type { EventVisibility } from "./apiTypes";
 import type { LatLngExpression } from "leaflet";
 
 export type VisitCompany = string;
@@ -11,6 +12,8 @@ export type EventFormState = {
   labels: string[];
   visitCompany: VisitCompany;
   photos: File[];
+  visibility: EventVisibility;
+  sharedWithEmails: string[];
 };
 
 export type FormErrors = {

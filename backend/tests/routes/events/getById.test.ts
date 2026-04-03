@@ -47,4 +47,32 @@ describe("get event by id route", () => {
     expect(response.statusCode).toBe(404);
     expect(response.json().error).toBe("EVENT_NOT_FOUND");
   });
+
+  it("returns an event shared with the requesting user", async () => {
+    const ownerId = await registerUser(context, "owner-get-share@example.com");
+    const recipientId = await registerUser(context, "recipient-get-share@example.com");
+    const createResponse = await context.app.inject({
+      method: "POST",
+      url: "/events",
+      payload: {
+        userId: ownerId,
+        name: "Shared Gallery",
+        startDate: "2026-03-10",
+        visibility: "share_with",
+        sharedWithEmails: ["recipient-get-share@example.com"],
+        lat: 40.7128,
+        lng: -74.006,
+      },
+    });
+    const eventId = createResponse.json().event.id as string;
+
+    const response = await context.app.inject({
+      method: "GET",
+      url: `/events/${eventId}?userId=${recipientId}`,
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json().event.accessLevel).toBe("shared");
+    expect(response.json().event.sharedWithEmails).toEqual(["recipient-get-share@example.com"]);
+  });
 });

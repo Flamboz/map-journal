@@ -30,6 +30,7 @@ export default function MapView({ initialError = null }: MapViewProps) {
   const [isMobileViewport, setIsMobileViewport] = useState(false);
   const [isMobileDraftOpen, setIsMobileDraftOpen] = useState(false);
   const userId = session?.user?.id ? String(session.user.id) : null;
+  const currentUserEmail = session?.user?.email ?? null;
   const {
     centerState,
     setCenterState,
@@ -239,11 +240,13 @@ export default function MapView({ initialError = null }: MapViewProps) {
                   </svg>
                 </button>
                 <EventDraftForm
+                  userId={userId}
                   draftPosition={draftPosition}
                   isResolvingAddress={isResolvingAddress}
                   draftAddress={draftAddress}
                   saveError={saveError}
                   isSaving={isSaving}
+                  currentUserEmail={currentUserEmail}
                   labelOptions={labelOptions}
                   visitCompanyOptions={visitCompanyOptions}
                   onCancel={handleCancelDraft}
@@ -324,11 +327,13 @@ export default function MapView({ initialError = null }: MapViewProps) {
 
           <div className="h-full w-[23rem] min-w-[23rem] border-l border-[color:var(--border-soft)] bg-[color:var(--paper-muted)] p-4 lg:w-[26rem] lg:min-w-[26rem]">
             <EventDraftForm
+              userId={userId}
               draftPosition={draftPosition}
               isResolvingAddress={isResolvingAddress}
               draftAddress={draftAddress}
               saveError={saveError}
               isSaving={isSaving}
+              currentUserEmail={currentUserEmail}
               labelOptions={labelOptions}
               visitCompanyOptions={visitCompanyOptions}
               onCancel={resetDraftState}

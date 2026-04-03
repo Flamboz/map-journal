@@ -66,4 +66,49 @@ describe("create event route", () => {
     expect(response.statusCode).toBe(400);
     expect(response.json().error).toBe("INVALID_RATING");
   });
+
+  it("creates a shared event for existing recipient emails", async () => {
+    const ownerId = await registerUser(context, "owner-create-share@example.com");
+    await registerUser(context, "friend-create-share@example.com");
+
+    const response = await context.app.inject({
+      method: "POST",
+      url: "/events",
+      payload: {
+        userId: ownerId,
+        name: "Shared Museum Trip",
+        startDate: "2026-03-10",
+        visibility: "share_with",
+        sharedWithEmails: ["friend-create-share@example.com"],
+        lat: 40.7128,
+        lng: -74.006,
+      },
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(response.json().event.visibility).toBe("share_with");
+    expect(response.json().event.sharedWithEmails).toEqual(["friend-create-share@example.com"]);
+    expect(response.json().event.accessLevel).toBe("owner");
+  });
+
+  it("rejects shared events when the email does not belong to an existing account", async () => {
+    const ownerId = await registerUser(context, "owner-create-invalid@example.com");
+
+    const response = await context.app.inject({
+      method: "POST",
+      url: "/events",
+      payload: {
+        userId: ownerId,
+        name: "Invalid Share",
+        startDate: "2026-03-10",
+        visibility: "share_with",
+        sharedWithEmails: ["missing-user@example.com"],
+        lat: 40.7128,
+        lng: -74.006,
+      },
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json().error).toBe("SHARED_USER_NOT_FOUND");
+  });
 });
