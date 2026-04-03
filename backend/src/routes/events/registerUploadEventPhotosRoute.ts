@@ -30,13 +30,13 @@ export function registerUploadEventPhotosRoute(fastify: FastifyInstance) {
         return sendInvalidEvent(reply);
       }
 
-      const isMultipart = typeof (request as any).isMultipart === "function" && (request as any).isMultipart();
+      const isMultipart = request.isMultipart();
       if (!isMultipart) {
         return sendError(reply, 400, "INVALID_MULTIPART", "Photos must be sent as multipart/form-data.");
       }
 
       try {
-        const result = await uploadEventPhotosForUser(eventId, userId, request.parts() as any);
+        const result = await uploadEventPhotosForUser(eventId, userId, request.parts());
         if (!result.ok) {
           return sendError(reply, result.error.statusCode, result.error.error, result.error.message);
         }

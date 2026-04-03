@@ -2,6 +2,11 @@ import * as z from "zod";
 import type { MapEvent } from "./api";
 import type { ReverseGeocodeAddress } from "./mapViewTypes";
 
+const uploadedPhotoSchema = z.custom<File>(
+  (value) => typeof File !== "undefined" && value instanceof File,
+  { message: "Expected an uploaded file." },
+);
+
 export function formatShortAddress(address?: ReverseGeocodeAddress): string | null {
   if (!address) {
     return null;
@@ -27,7 +32,7 @@ export const eventDraftValidationSchema = z
     rating: z.number().int().min(1).max(10).nullable(),
     labels: z.array(z.string()),
     visitCompany: z.string(),
-    photos: z.array(z.any()),
+    photos: z.array(uploadedPhotoSchema),
     visibility: z.enum(["private", "share_with"]),
     sharedWithEmails: z.array(z.string()),
   })

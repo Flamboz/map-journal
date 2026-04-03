@@ -2,7 +2,7 @@ import { randomUUID } from "crypto";
 import fs from "fs";
 import path from "path";
 import { pipeline } from "stream/promises";
-import { all, get, run } from "../db/sqlite";
+import { all, get, run, type SqlValue } from "../db/sqlite";
 import { getOrderedPhotoIds, resequencePhotoSortOrder } from "../db/queries/photoQueries";
 import { deleteUploadedFile, removeEventUploadDirectory, removeUserDirectoryIfEmpty } from "../utils/fileCleanup";
 import { EventPhotosTableColumn, sanitizeFilename } from "../routes/events/shared";
@@ -67,15 +67,15 @@ export async function uploadEventPhotosForUser(
     const tempFilePath = absoluteFilePath + ".part";
     let sizeBytes = 0;
 
-    if ((part as any).file && typeof (part as any).file.pipe === "function") {
-      const readStream: NodeJS.ReadableStream = (part as any).file;
+    if (part.file && typeof part.file.pipe === "function") {
+      const readStream = part.file;
       readStream.on("data", (chunk: Buffer) => {
         sizeBytes += chunk.length;
       });
 
       const writeStream = fs.createWriteStream(tempFilePath, { flags: "w" });
       try {
-        await pipeline(readStream as any, writeStream);
+        await pipeline(readStream, writeStream);
         await fs.promises.rename(tempFilePath, absoluteFilePath);
       } catch (err) {
         // cleanup temp file on failure
@@ -95,7 +95,7 @@ export async function uploadEventPhotosForUser(
 
     const relativePath = path.posix.join(`user-${userId}`, `event-${eventId}`, storedFileName);
 
-    const insertPayload: Record<string, unknown> = {
+    const insertPayload: Record<string, SqlValue> = {
       id: randomUUID(),
       event_id: eventId,
       file_path: relativePath,

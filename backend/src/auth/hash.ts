@@ -7,8 +7,8 @@ export async function hashPassword(password: string) {
 
 export async function verifyPassword(hash: string, password: string) {
   try {
-    return bcrypt.compare(password, hash);
-  } catch (e) {
+    return await bcrypt.compare(password, hash);
+  } catch {
     return false;
   }
 }

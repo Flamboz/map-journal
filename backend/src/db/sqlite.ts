@@ -1,10 +1,14 @@
-import initSqlJs, { Database } from "sql.js";
+import initSqlJs, { Database, type QueryExecResult, type SqlJsStatic, type SqlValue } from "sql.js";
 import fs from "fs";
 import path from "path";
 
 const DB_PATH = process.env.SQLITE_PATH || path.join(process.cwd(), "data.sqlite");
 
-let SQL: any;
+type SqlParams = readonly SqlValue[];
+type SqlRow = Record<string, SqlValue>;
+type RunResult = { lastID: number | null };
+
+let SQL: SqlJsStatic | null = null;
 let db: Database | null = null;
 
 async function init() {
@@ -60,14 +64,12 @@ async function ensureColumn(tableName: string, columnSql: string) {
 }
 
 async function tableExists(tableName: string): Promise<boolean> {
-  const row = (await get(`SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?`, [tableName])) as
-    | { name?: string }
-    | null;
+  const row = await get<{ name?: string }>(`SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?`, [tableName]);
   return Boolean(row?.name);
 }
 
 async function getTableColumns(tableName: string): Promise<string[]> {
-  const rows = (await all(`PRAGMA table_info(${tableName})`)) as Array<{ name?: string }>;
+  const rows = await all<{ name?: string }>(`PRAGMA table_info(${tableName})`);
   return rows
     .map((row) => row.name)
     .filter((columnName): columnName is string => typeof columnName === "string" && columnName.length > 0);
@@ -215,45 +217,48 @@ function persist() {
   fs.writeFileSync(DB_PATH, buffer);
 }
 
-function run(sql: string, params: any[] = []) {
+function getLastInsertId(results: QueryExecResult[]): number | null {
+  const lastInsertId = results[0]?.values[0]?.[0];
+  return typeof lastInsertId === "number" ? lastInsertId : null;
+}
+
+function run(sql: string, params: SqlParams = []): Promise<RunResult> {
   if (!db) throw new Error("DB not initialized");
   const stmt = db.prepare(sql);
   try {
     stmt.bind(params);
     stmt.step();
-    // fetch last insert id
     const res = db.exec("SELECT last_insert_rowid() as id;");
     persist();
-    const lastID = res && res[0] && res[0].values && res[0].values[0] ? res[0].values[0][0] : null;
+    const lastID = getLastInsertId(res);
     return Promise.resolve({ lastID });
   } finally {
     stmt.free();
   }
 }
 
-function get(sql: string, params: any[] = []) {
+function get<TRow extends SqlRow = SqlRow>(sql: string, params: SqlParams = []): Promise<TRow | null> {
   if (!db) throw new Error("DB not initialized");
   const stmt = db.prepare(sql);
-  const out: any = {};
   try {
     stmt.bind(params);
     const ok = stmt.step();
     if (!ok) return Promise.resolve(null);
-    const row = stmt.getAsObject();
+    const row = stmt.getAsObject() as TRow;
     return Promise.resolve(row);
   } finally {
     stmt.free();
   }
 }
 
-function all(sql: string, params: any[] = []) {
+function all<TRow extends SqlRow = SqlRow>(sql: string, params: SqlParams = []): Promise<TRow[]> {
   if (!db) throw new Error("DB not initialized");
   const stmt = db.prepare(sql);
-  const rows: any[] = [];
+  const rows: TRow[] = [];
   try {
     stmt.bind(params);
     while (stmt.step()) {
-      rows.push(stmt.getAsObject());
+      rows.push(stmt.getAsObject() as TRow);
     }
     return Promise.resolve(rows);
   } finally {
@@ -262,3 +267,4 @@ function all(sql: string, params: any[] = []) {
 }
 
 export { init, run, get, all };
+export type { SqlValue };

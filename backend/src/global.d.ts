@@ -1,15 +1,27 @@
 declare module "sql.js" {
-  const initSqlJs: any;
-  export default initSqlJs;
-  export type Database = any;
-}
+  export type SqlValue = number | string | Uint8Array | null;
 
-// Provide minimal fallbacks so the TS server won't error if node_modules aren't installed yet
-declare module "fastify" {
-  import type { IncomingMessage, ServerResponse } from "http";
-  const fastify: any;
-  export type FastifyInstance = any;
-  export type FastifyRequest<T = any> = any;
-  export type FastifyReply = any;
-  export default fastify;
+  export interface QueryExecResult {
+    columns: string[];
+    values: SqlValue[][];
+  }
+
+  export interface Statement {
+    bind(values: readonly SqlValue[]): void;
+    step(): boolean;
+    getAsObject(): Record<string, SqlValue>;
+    free(): void;
+  }
+
+  export interface Database {
+    prepare(sql: string): Statement;
+    exec(sql: string): QueryExecResult[];
+    export(): Uint8Array;
+  }
+
+  export interface SqlJsStatic {
+    Database: new (data?: Uint8Array) => Database;
+  }
+
+  export default function initSqlJs(): Promise<SqlJsStatic>;
 }

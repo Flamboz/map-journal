@@ -47,8 +47,7 @@ export function normalizePhotos(photos: MapEventPhoto[] = []): MapEventPhoto[] {
         const ext = pathname.split(".").pop()?.toLowerCase() ?? "";
         const videoExts = new Set(["mp4", "webm", "ogg", "mov", "mkv", "m4v"]);
         if (videoExts.has(ext)) return "video";
-      } catch (e) {
-        console.log(e)
+      } catch {
       }
       return "photo";
     })(),
