@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import { MapContainer, Marker, TileLayer, ZoomControl } from "react-leaflet";
 import MarkerClusterGroup from "react-leaflet-cluster";
@@ -57,7 +57,7 @@ export default function MapView({ initialError = null }: MapViewProps) {
     }
   }, [globalError]);
   const [eventsVersion, setEventsVersion] = useState(0);
-  const groupedEvents = groupEventsByDistance(events, PIN_GROUP_DISTANCE_METERS);
+  const groupedEvents = useMemo(() => groupEventsByDistance(events, PIN_GROUP_DISTANCE_METERS), [events]);
   const {
     selectedEventIndex,
     selectedGroup,
