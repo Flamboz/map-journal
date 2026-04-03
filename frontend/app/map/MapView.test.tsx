@@ -62,6 +62,7 @@ describe("MapView", () => {
     vi.mocked(useSession).mockReturnValue({
       status: "authenticated",
       data: {
+        accessToken: "token-1",
         user: {
           id: "1",
           email: "test@example.com",
@@ -85,8 +86,8 @@ describe("MapView", () => {
     render(<MapView />);
 
     await waitFor(() => {
-      expect(fetchLastMapPosition).toHaveBeenCalledWith("1");
-      expect(fetchUserEvents).toHaveBeenCalledWith("1");
+      expect(fetchLastMapPosition).toHaveBeenCalledWith("token-1");
+      expect(fetchUserEvents).toHaveBeenCalledWith("token-1");
       expect(mockSetView).toHaveBeenCalledWith([51.5, -0.09], 12);
     });
   });
@@ -342,7 +343,7 @@ describe("MapView", () => {
     render(<MapView />);
 
     await waitFor(() => {
-      expect(fetchUserEvents).toHaveBeenCalledWith("1");
+      expect(fetchUserEvents).toHaveBeenCalledWith("token-1");
     });
 
     act(() => {
@@ -401,15 +402,15 @@ describe("MapView", () => {
 
     await waitFor(() => {
       expect(createEvent).toHaveBeenCalledWith(
+        "token-1",
         expect.objectContaining({
-          userId: "1",
           name: "City Walk",
           lat: 50.45,
           lng: 30.52,
         }),
       );
       expect(uploadEventPhotos).toHaveBeenCalledWith(
-        "1",
+        "token-1",
         "00000000-0000-4000-8000-000000000010",
         expect.any(Array),
       );
@@ -479,7 +480,7 @@ describe("MapView", () => {
 
     await waitFor(() => {
       expect(fetchUserEvents).toHaveBeenCalledTimes(1);
-      expect(fetchUserEvents).toHaveBeenCalledWith("1");
+      expect(fetchUserEvents).toHaveBeenCalledWith("token-1");
     });
 
     fireEvent.change(screen.getByLabelText("Text"), { target: { value: "Cafe" } });
@@ -498,7 +499,7 @@ describe("MapView", () => {
 
     await waitFor(() => {
       expect(fetchUserEvents).toHaveBeenCalledTimes(2);
-      expect(fetchUserEvents).toHaveBeenLastCalledWith("1", {
+      expect(fetchUserEvents).toHaveBeenLastCalledWith("token-1", {
         search: "Cafe",
         dateFrom: "2026-03-01",
         dateTo: "2026-03-10",

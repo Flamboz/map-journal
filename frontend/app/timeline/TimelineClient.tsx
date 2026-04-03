@@ -7,7 +7,6 @@ import { formatEventDateRange } from "../map/mapViewHelpers";
 
 type Props = {
   initialEvents: MapEvent[];
-  userId: string;
 };
 
 function formatYearMonth(dateStr?: string | null) {

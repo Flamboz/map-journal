@@ -26,11 +26,11 @@ vi.mock("../../map/api", () => ({
 vi.mock("./EventDetailsClient", () => ({
   default: ({
     initialEvent,
-    userId,
+    authToken,
   }: {
     initialEvent: { id: string; title: string };
-    userId: string;
-  }) => <div data-testid="event-details-client">{`${initialEvent.id}-${initialEvent.title}-${userId}`}</div>,
+    authToken: string;
+  }) => <div data-testid="event-details-client">{`${initialEvent.id}-${initialEvent.title}-${authToken}`}</div>,
 }));
 
 describe("Event details page", () => {
@@ -42,6 +42,7 @@ describe("Event details page", () => {
     const eventId = "550e8400-e29b-41d4-a716-446655440001";
 
     vi.mocked(getServerSession).mockResolvedValue({
+      accessToken: "token-1",
       user: {
         id: "1",
       },
@@ -88,12 +89,13 @@ describe("Event details page", () => {
 
     render(view);
 
-    expect(fetchEventById).toHaveBeenCalledWith(eventId, "1");
-    expect(screen.getByTestId("event-details-client")).toHaveTextContent(`${eventId}-River Walk-1`);
+    expect(fetchEventById).toHaveBeenCalledWith(eventId, "token-1");
+    expect(screen.getByTestId("event-details-client")).toHaveTextContent(`${eventId}-River Walk-token-1`);
   });
 
   it("redirects to map with error when event no longer exists", async () => {
     vi.mocked(getServerSession).mockResolvedValue({
+      accessToken: "token-1",
       user: {
         id: "1",
       },

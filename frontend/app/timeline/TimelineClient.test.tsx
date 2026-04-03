@@ -35,7 +35,7 @@ const sampleEvents = [
 
 describe("TimelineClient", () => {
   it("renders grouped years and months and shows event info", () => {
-    render(<TimelineClient initialEvents={sampleEvents} userId="1" />);
+    render(<TimelineClient initialEvents={sampleEvents} />);
 
     expect(screen.getByText("2026")).toBeInTheDocument();
     expect(screen.getByText("2025")).toBeInTheDocument();

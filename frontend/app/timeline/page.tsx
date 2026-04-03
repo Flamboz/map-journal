@@ -7,13 +7,12 @@ import TimelineClient from "./TimelineClient";
 export default async function TimelinePage() {
   const session = await getServerSession(authOptions);
   const authToken = session?.accessToken ?? "";
-  const userId = session?.user?.id ? String(session.user.id) : "";
 
-  if (!userId || !authToken) {
+  if (!authToken) {
     redirect("/auth/signin");
   }
 
   const events = await fetchUserEvents(authToken);
 
-  return <TimelineClient initialEvents={events} userId={userId} />;
+  return <TimelineClient initialEvents={events} />;
 }
