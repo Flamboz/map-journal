@@ -2,21 +2,14 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
-import { MapContainer, Marker, TileLayer, ZoomControl } from "react-leaflet";
-import MarkerClusterGroup from "react-leaflet-cluster";
-import type { PlaceSearchResult } from "./api";
-import {
-  createMarkerIconWithCount,
-  DRAFT_MARKER_ICON,
-  MARKER_ICON,
-  PIN_GROUP_DISTANCE_METERS,
-} from "./mapViewConstants";
-import { EventDraftForm } from "./EventDraftForm";
+import type { MapEvent, PlaceSearchResult } from "./api";
 import { EventPreviewModal } from "./EventPreviewModal";
-import { LeftSidebar } from "./LeftSidebar";
 import { MapAuthProvider } from "./MapAuthContext";
+import { MapCanvas } from "./MapCanvas";
+import { PIN_GROUP_DISTANCE_METERS } from "./mapViewConstants";
 import { groupEventsByDistance } from "./mapViewHelpers";
-import { MapClickHandler, RecenterMap } from "./MapLeafletHelpers";
+import { MapViewDesktopLayout } from "./MapViewDesktopLayout";
+import { MapViewMobileLayout } from "./MapViewMobileLayout";
 import { useDraftPinState } from "./useDraftPinState";
 import { useMapBootstrapData } from "./useMapBootstrapData";
 import { useMapPreviewNavigation } from "./useMapPreviewNavigation";
@@ -42,21 +35,21 @@ export default function MapView({ initialError = null }: MapViewProps) {
     visitCompanyOptions,
     globalError,
   } = useMapBootstrapData({ status, authToken, initialError });
-  
+
   useEffect(() => {
-    // If an initial/global error was provided via the URL (eg. ?error=event-not-found),
-    // remove the search param so the message does not persist on subsequent navigation.
-    if (!globalError) return;
+    if (!globalError) {
+      return;
+    }
+
     try {
       const url = new URL(window.location.href);
       if (url.searchParams.has("error")) {
         url.searchParams.delete("error");
         window.history.replaceState(null, "", url.toString());
       }
-    } catch {
-      // ignore - window or URL might not be available in some environments
-    }
+    } catch {}
   }, [globalError]);
+
   const [eventsVersion, setEventsVersion] = useState(0);
   const groupedEvents = useMemo(() => groupEventsByDistance(events, PIN_GROUP_DISTANCE_METERS), [events]);
   const {
@@ -67,6 +60,7 @@ export default function MapView({ initialError = null }: MapViewProps) {
     showNextEvent,
     showPreviousEvent,
   } = useMapPreviewNavigation(groupedEvents);
+
   const {
     draftPosition,
     draftAddress,
@@ -84,6 +78,38 @@ export default function MapView({ initialError = null }: MapViewProps) {
       setEvents((previousEvents) => [newEvent, ...previousEvents]);
     },
   });
+
+  function focusEventResult(event: MapEvent) {
+    setCenterState((previous) => ({
+      center: [event.lat, event.lng],
+      zoom: previous.zoom,
+    }));
+
+    const groupIndex = groupedEvents.findIndex((group) => group.events.some((groupEvent) => groupEvent.id === event.id));
+    if (groupIndex >= 0) {
+      openGroup(groupIndex);
+    }
+  }
+
+  function handleDesktopResultsLoaded(nextEvents: MapEvent[]) {
+    clearSelection();
+    setEvents(nextEvents);
+  }
+
+  function handleDesktopResultClick(event: MapEvent) {
+    focusEventResult(event);
+  }
+
+  function handleMobileResultsLoaded(nextEvents: MapEvent[]) {
+    clearSelection();
+    setEvents(nextEvents);
+    setIsLeftSidebarOpen(false);
+  }
+
+  function handleMobileResultClick(event: MapEvent) {
+    focusEventResult(event);
+    setIsLeftSidebarOpen(false);
+  }
 
   function handlePlaceSelect(place: PlaceSearchResult) {
     openDraftFromPlace(place);
@@ -131,213 +157,72 @@ export default function MapView({ initialError = null }: MapViewProps) {
     return () => window.removeEventListener("resize", updateViewport);
   }, []);
 
+  const desktopMapCanvas = (
+    <MapCanvas
+      centerState={centerState}
+      groupedEvents={groupedEvents}
+      draftPosition={draftPosition}
+      eventsVersion={eventsVersion}
+      eventsError={eventsError}
+      globalError={globalError}
+      onMapClick={handleMapClickDraft}
+      onOpenGroup={openGroup}
+    />
+  );
+
+  const mobileMapCanvas = (
+    <MapCanvas
+      centerState={centerState}
+      groupedEvents={groupedEvents}
+      draftPosition={draftPosition}
+      eventsVersion={eventsVersion}
+      showStatusOverlays={false}
+      onMapClick={handleMapClickDraft}
+      onOpenGroup={openGroup}
+    />
+  );
+
   return (
     <MapAuthProvider authToken={authToken} currentUserEmail={currentUserEmail}>
       <section className="relative h-[calc(100vh-var(--topbar-height))] w-full overflow-hidden" aria-label="map-view">
         {isMobileViewport ? (
-        <>
-          <button
-            type="button"
-            className="absolute left-3 top-3 z-[1200] rounded-full border border-[color:var(--border-soft)] bg-[color:var(--paper-surface)] px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-700 shadow"
-            onClick={() => setIsLeftSidebarOpen(true)}
-          >
-            Filters
-          </button>
-
-          {draftPosition && !isMobileDraftOpen && (
-            <button
-              type="button"
-              className="absolute right-3 top-3 z-[1200] rounded-full border border-[color:var(--border-soft)] bg-[color:var(--paper-surface)] px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-700 shadow"
-              onClick={() => setIsMobileDraftOpen(true)}
-            >
-              Draft
-            </button>
-          )}
-
-          {isLeftSidebarOpen && (
-            <div className="absolute inset-0 z-[1190] bg-[color:var(--topbar-bg)]/35" onClick={() => setIsLeftSidebarOpen(false)} aria-hidden="true" />
-          )}
-
-          <div
-            className={`absolute left-0 top-0 z-[1200] h-full w-[90%] max-w-[24rem] transition-transform duration-300 ${
-              isLeftSidebarOpen ? "translate-x-0" : "-translate-x-full"
-            }`}
-            aria-label="Mobile filters drawer"
-          >
-            <button
-              type="button"
-              aria-label="Close filters panel"
-              title="Close"
-              className="absolute right-3 top-3 z-[1210] inline-flex h-9 w-9 items-center justify-center rounded-full border border-[color:var(--border-soft)] bg-[color:var(--paper-surface)] text-slate-700 transition hover:bg-[color:var(--paper-muted)]"
-              onClick={() => setIsLeftSidebarOpen(false)}
-            >
-              <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M15 18l-6-6 6-6" />
-              </svg>
-            </button>
-            <LeftSidebar
-              labelOptions={labelOptions}
-              visitCompanyOptions={visitCompanyOptions}
-              onResultsLoaded={(nextEvents) => {
-                clearSelection();
-                setEvents(nextEvents);
-                setIsLeftSidebarOpen(false);
-              }}
-              onResultClick={(event) => {
-                setCenterState((previous) => ({
-                  center: [event.lat, event.lng],
-                  zoom: previous.zoom,
-                }));
-
-                const groupIndex = groupedEvents.findIndex((group) => group.events.some((groupEvent) => groupEvent.id === event.id));
-                if (groupIndex >= 0) {
-                  openGroup(groupIndex);
-                }
-
-                setIsLeftSidebarOpen(false);
-              }}
-            />
-          </div>
-
-          <div className="h-full">
-            <MapContainer center={centerState.center} zoom={centerState.zoom} className="h-full w-full" scrollWheelZoom zoomControl={false}>
-              <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
-              <ZoomControl position="bottomleft" />
-              <RecenterMap center={centerState.center} zoom={centerState.zoom} />
-              <MapClickHandler onClick={handleMapClickDraft} />
-              <MarkerClusterGroup key={eventsVersion}>
-                {groupedEvents.map((group, groupIndex) => (
-                  <Marker
-                    key={group.id}
-                    position={[group.lat, group.lng]}
-                    icon={group.events.length > 1 ? createMarkerIconWithCount(group.events.length) : MARKER_ICON}
-                    eventHandlers={{
-                      click: () => openGroup(groupIndex),
-                    }}
-                  />
-                ))}
-              </MarkerClusterGroup>
-              {draftPosition && <Marker position={[draftPosition.lat, draftPosition.lng]} icon={DRAFT_MARKER_ICON} />}
-            </MapContainer>
-
-            <div
-              className={`pointer-events-none absolute inset-y-0 right-0 z-[1300] h-full w-[90%] max-w-[24rem] transition-transform duration-300 ${
-                draftPosition && isMobileDraftOpen ? "translate-x-0" : "translate-x-full"
-              }`}
-            >
-              <div className="pointer-events-auto relative h-full overflow-y-auto rounded-l-[var(--radius-lg)] border-l border-[color:var(--border-soft)] bg-[color:var(--paper-muted)] p-4">
-                <button
-                  type="button"
-                  aria-label="Close draft panel"
-                  title="Close"
-                  className="absolute right-3 top-3 z-10 inline-flex h-9 w-9 items-center justify-center rounded-full border border-[color:var(--border-soft)] bg-[color:var(--paper-surface)] text-slate-700 transition hover:bg-[color:var(--paper-muted)]"
-                  onClick={handleCloseDraftForm}
-                >
-                  <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M9 18l6-6-6-6" />
-                  </svg>
-                </button>
-                <EventDraftForm
-                  draftPosition={draftPosition}
-                  isResolvingAddress={isResolvingAddress}
-                  draftAddress={draftAddress}
-                  saveError={saveError}
-                  isSaving={isSaving}
-                  labelOptions={labelOptions}
-                  visitCompanyOptions={visitCompanyOptions}
-                  onCancel={handleCancelDraft}
-                  onSave={saveDraftEvent}
-                  onPlaceSelect={handlePlaceSelect}
-                />
-              </div>
-            </div>
-          </div>
-        </>
-        ) : (
-        <div className="flex h-full">
-          <LeftSidebar
+          <MapViewMobileLayout
+            mapCanvas={mobileMapCanvas}
+            isLeftSidebarOpen={isLeftSidebarOpen}
+            isMobileDraftOpen={isMobileDraftOpen}
+            draftPosition={draftPosition}
+            draftAddress={draftAddress}
+            isResolvingAddress={isResolvingAddress}
+            saveError={saveError}
+            isSaving={isSaving}
             labelOptions={labelOptions}
             visitCompanyOptions={visitCompanyOptions}
-            onResultsLoaded={(nextEvents) => {
-              clearSelection();
-              setEvents(nextEvents);
-            }}
-            onResultClick={(event) => {
-              setCenterState((previous) => ({
-                center: [event.lat, event.lng],
-                zoom: previous.zoom,
-              }));
-
-              const groupIndex = groupedEvents.findIndex((group) => group.events.some((groupEvent) => groupEvent.id === event.id));
-              if (groupIndex >= 0) {
-                openGroup(groupIndex);
-              }
-            }}
+            onCloseDraft={handleCloseDraftForm}
+            onCloseSidebar={() => setIsLeftSidebarOpen(false)}
+            onCancelDraft={handleCancelDraft}
+            onOpenDraft={() => setIsMobileDraftOpen(true)}
+            onOpenSidebar={() => setIsLeftSidebarOpen(true)}
+            onPlaceSelect={handlePlaceSelect}
+            onResultClick={handleMobileResultClick}
+            onResultsLoaded={handleMobileResultsLoaded}
+            onSaveDraft={saveDraftEvent}
           />
-
-          <div className="h-full flex-1 p-4 lg:p-5">
-            <div className="relative h-full overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--border-soft)] shadow-[var(--shadow-soft)]">
-              <MapContainer center={centerState.center} zoom={centerState.zoom} className="h-full w-full" scrollWheelZoom zoomControl={false}>
-                <TileLayer
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
-                <ZoomControl position="bottomleft" />
-                <RecenterMap center={centerState.center} zoom={centerState.zoom} />
-                <MapClickHandler onClick={handleMapClickDraft} />
-                <MarkerClusterGroup key={eventsVersion}>
-                  {groupedEvents.map((group, groupIndex) => (
-                    <Marker
-                      key={group.id}
-                      position={[group.lat, group.lng]}
-                      icon={group.events.length > 1 ? createMarkerIconWithCount(group.events.length) : MARKER_ICON}
-                      eventHandlers={{
-                        click: () => openGroup(groupIndex),
-                      }}
-                    />
-                  ))}
-                </MarkerClusterGroup>
-                {draftPosition && <Marker position={[draftPosition.lat, draftPosition.lng]} icon={DRAFT_MARKER_ICON} />}
-              </MapContainer>
-
-              {eventsError && (
-                <div
-                  role="status"
-                  className="pointer-events-none absolute left-1/2 top-4 z-[1000] -translate-x-1/2 rounded bg-black/75 px-4 py-2 text-sm text-white"
-                >
-                  Unable to load events.
-                </div>
-              )}
-
-              {globalError && (
-                <div
-                  role="status"
-                  className="pointer-events-none absolute left-1/2 top-16 z-[1000] -translate-x-1/2 rounded bg-black/75 px-4 py-2 text-sm text-white"
-                >
-                  {globalError}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="h-full w-[23rem] min-w-[23rem] border-l border-[color:var(--border-soft)] bg-[color:var(--paper-muted)] p-4 lg:w-[26rem] lg:min-w-[26rem]">
-            <EventDraftForm
-              draftPosition={draftPosition}
-              isResolvingAddress={isResolvingAddress}
-              draftAddress={draftAddress}
-              saveError={saveError}
-              isSaving={isSaving}
-              labelOptions={labelOptions}
-              visitCompanyOptions={visitCompanyOptions}
-              onCancel={resetDraftState}
-              onSave={saveDraftEvent}
-              onPlaceSelect={handlePlaceSelect}
-            />
-          </div>
-        </div>
+        ) : (
+          <MapViewDesktopLayout
+            mapCanvas={desktopMapCanvas}
+            labelOptions={labelOptions}
+            visitCompanyOptions={visitCompanyOptions}
+            draftPosition={draftPosition}
+            draftAddress={draftAddress}
+            isResolvingAddress={isResolvingAddress}
+            saveError={saveError}
+            isSaving={isSaving}
+            onCancelDraft={resetDraftState}
+            onPlaceSelect={handlePlaceSelect}
+            onResultClick={handleDesktopResultClick}
+            onResultsLoaded={handleDesktopResultsLoaded}
+            onSaveDraft={saveDraftEvent}
+          />
         )}
 
         {selectedGroup && (
