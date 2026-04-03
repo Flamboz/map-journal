@@ -52,7 +52,7 @@ export default function MapView({ initialError = null }: MapViewProps) {
         url.searchParams.delete("error");
         window.history.replaceState(null, "", url.toString());
       }
-    } catch (e) {
+    } catch {
       // ignore - window or URL might not be available in some environments
     }
   }, [globalError]);

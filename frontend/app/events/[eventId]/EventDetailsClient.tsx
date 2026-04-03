@@ -64,10 +64,14 @@ export default function EventDetailsClient({ initialEvent, userId, currentUserEm
   const nextPinEventId = hasPinNavigation ? samePinEventIds[(currentPinEventIndex + 1) % samePinEventIds.length] : null;
 
   useEffect(() => {
-    if (canEdit && searchParams?.get("edit") === "true") {
-      startEditing();
+    if (!canEdit || state.isEditing || searchParams?.get("edit") !== "true") {
+      return;
     }
-  }, [canEdit, searchParams]);
+
+    dispatch({ type: "START_EDIT" });
+    reset(mapEventToFormState(state.event));
+    scrollToTop();
+  }, [canEdit, reset, searchParams, state.event, state.isEditing]);
 
   function redirectMissingEvent() {
     router.replace("/?error=event-not-found");

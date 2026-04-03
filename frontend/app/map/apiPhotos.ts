@@ -24,7 +24,7 @@ export async function uploadEventPhotos(
         try {
           const json = JSON.parse(xhr.responseText) as { photos?: MapEventPhoto[] };
           resolve(normalizePhotos(json.photos ?? []));
-        } catch (err) {
+        } catch {
           reject(createApiClientError("EVENT_PHOTOS_UPLOAD_FAILED"));
         }
         return;
