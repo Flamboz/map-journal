@@ -73,4 +73,42 @@ describe("eventDetailsReducer", () => {
     expect(saved.selectedLabels).toEqual(["Trip", "Park"]);
     expect(saved.startDateMin).toBe("2026-03-05");
   });
+
+  it("tracks uploaded photos separately during edit and clears them on cancel", () => {
+    const initial = createInitialEventDetailsState({
+      ...baseEvent,
+      photos: [
+        {
+          id: "550e8400-e29b-41d4-a716-446655440011",
+          path: "existing.jpg",
+          url: "/uploads/existing.jpg",
+          createdAt: "2026-03-01T10:00:00.000Z",
+        },
+      ],
+    });
+
+    const editing = eventDetailsReducer(initial, { type: "START_EDIT" });
+    const withUpload = eventDetailsReducer(editing, {
+      type: "ADD_UPLOADED_PHOTOS",
+      payload: [
+        {
+          id: "550e8400-e29b-41d4-a716-446655440099",
+          path: "uploaded.jpg",
+          url: "/uploads/uploaded.jpg",
+          createdAt: "2026-03-01T10:05:00.000Z",
+        },
+      ],
+    });
+
+    expect(withUpload.event.photos).toHaveLength(1);
+    expect(withUpload.draftPhotos).toHaveLength(2);
+    expect(withUpload.uploadedPhotoIds).toEqual(["550e8400-e29b-41d4-a716-446655440099"]);
+
+    const canceled = eventDetailsReducer(withUpload, { type: "CANCEL_EDIT" });
+
+    expect(canceled.isEditing).toBe(false);
+    expect(canceled.draftPhotos).toBeUndefined();
+    expect(canceled.uploadedPhotoIds).toEqual([]);
+    expect(canceled.event.photos).toHaveLength(1);
+  });
 });

@@ -14,6 +14,7 @@ export type EventDetailsState = {
   startDateMin: string;
   draftPhotos?: MapEventPhoto[];
   photosToDelete?: string[];
+  uploadedPhotoIds: string[];
 };
 
 export type EventDetailsAction =
@@ -31,6 +32,7 @@ export type EventDetailsAction =
   | { type: "SET_START_DATE_MIN"; payload: string }
   | { type: "SET_EVENT"; payload: MapEvent }
   | { type: "SAVE_SUCCESS"; payload: MapEvent }
+  | { type: "ADD_UPLOADED_PHOTOS"; payload: MapEventPhoto[] }
   | { type: "MARK_PHOTO_FOR_DELETION"; payload: string }
   | { type: "UNMARK_PHOTO_FOR_DELETION"; payload: string }
   | { type: "MARK_PHOTO_AS_PREVIEW"; payload: string };
@@ -56,6 +58,7 @@ export function createInitialEventDetailsState(initialEvent: MapEvent): EventDet
     ...getEditFieldsFromEvent(initialEvent),
     draftPhotos: undefined,
     photosToDelete: [],
+    uploadedPhotoIds: [],
   };
 }
 
@@ -69,6 +72,7 @@ export function eventDetailsReducer(state: EventDetailsState, action: EventDetai
         ...getEditFieldsFromEvent(state.event),
         draftPhotos: state.event.photos ? [...state.event.photos] : [],
         photosToDelete: [],
+        uploadedPhotoIds: [],
       };
     case "CANCEL_EDIT":
       return {
@@ -78,6 +82,7 @@ export function eventDetailsReducer(state: EventDetailsState, action: EventDetai
         ...getEditFieldsFromEvent(state.event),
         draftPhotos: undefined,
         photosToDelete: [],
+        uploadedPhotoIds: [],
       };
     case "OPEN_DELETE_MODAL":
       return {
@@ -131,22 +136,12 @@ export function eventDetailsReducer(state: EventDetailsState, action: EventDetai
         startDateMin: action.payload,
       };
     case "SET_EVENT":
-      if (state.isEditing) {
-        const serverPhotos = action.payload.photos ?? [];
-        const existingDraft = state.draftPhotos ?? [];
-        const toDelete = new Set(state.photosToDelete ?? []);
-        const existingIds = new Set(existingDraft.map((p) => p.id));
-        const appended = serverPhotos.filter((p) => !existingIds.has(p.id) && !toDelete.has(p.id));
-        const merged = [...existingDraft, ...appended];
-        return { ...state, event: action.payload, draftPhotos: merged, photosToDelete: state.photosToDelete ?? [] };
-      }
-
       return {
         ...state,
         event: action.payload,
-        // when event is set externally and not editing, clear any edit drafts
-        draftPhotos: undefined,
-        photosToDelete: [],
+        draftPhotos: state.isEditing ? state.draftPhotos : undefined,
+        photosToDelete: state.isEditing ? state.photosToDelete ?? [] : [],
+        uploadedPhotoIds: state.isEditing ? state.uploadedPhotoIds : [],
       };
     case "SAVE_SUCCESS":
       return {
@@ -156,7 +151,21 @@ export function eventDetailsReducer(state: EventDetailsState, action: EventDetai
         ...getEditFieldsFromEvent(action.payload),
         draftPhotos: undefined,
         photosToDelete: [],
+        uploadedPhotoIds: [],
       };
+    case "ADD_UPLOADED_PHOTOS": {
+      const existingDraft = state.draftPhotos ?? [];
+      const existingIds = new Set(existingDraft.map((photo) => photo.id));
+      const addedPhotos = action.payload.filter((photo) => !existingIds.has(photo.id));
+
+      return {
+        ...state,
+        draftPhotos: [...existingDraft, ...addedPhotos],
+        uploadedPhotoIds: Array.from(
+          new Set([...state.uploadedPhotoIds, ...addedPhotos.map((photo) => photo.id)]),
+        ),
+      };
+    }
     case "MARK_PHOTO_FOR_DELETION": {
       const id = action.payload;
       const nextDraft = state.draftPhotos ? state.draftPhotos.filter((p) => p.id !== id) : [];

@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useReducer } from "react";
-import { useSearchParams } from "next/navigation";
-import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useReducer } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -30,6 +29,7 @@ type EventDetailsClientProps = {
 };
 
 export default function EventDetailsClient({ initialEvent, authToken, currentUserEmail }: EventDetailsClientProps) {
+  const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [state, dispatch] = useReducer(eventDetailsReducer, initialEvent, createInitialEventDetailsState);
@@ -59,6 +59,17 @@ export default function EventDetailsClient({ initialEvent, authToken, currentUse
     : null;
   const nextPinEventId = hasPinNavigation ? samePinEventIds[(currentPinEventIndex + 1) % samePinEventIds.length] : null;
 
+  const clearEditSearchParam = useCallback(() => {
+    if (!searchParams || searchParams.get("edit") !== "true") {
+      return;
+    }
+
+    const nextParams = new URLSearchParams(searchParams.toString());
+    nextParams.delete("edit");
+    const nextQuery = nextParams.toString();
+    router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
+  }, [pathname, router, searchParams]);
+
   useEffect(() => {
     if (!canEdit || state.isEditing || searchParams?.get("edit") !== "true") {
       return;
@@ -67,7 +78,8 @@ export default function EventDetailsClient({ initialEvent, authToken, currentUse
     dispatch({ type: "START_EDIT" });
     reset(mapEventToFormState(state.event));
     scrollToTop();
-  }, [canEdit, reset, searchParams, state.event, state.isEditing]);
+    clearEditSearchParam();
+  }, [canEdit, clearEditSearchParam, reset, state.event, state.isEditing]);
 
   function redirectMissingEvent() {
     router.replace("/?error=event-not-found");
@@ -81,11 +93,6 @@ export default function EventDetailsClient({ initialEvent, authToken, currentUse
     dispatch({ type: "START_EDIT" });
     reset(mapEventToFormState(state.event));
     scrollToTop();
-  }
-
-  function cancelEditing() {
-    dispatch({ type: "CANCEL_EDIT" });
-    reset(mapEventToFormState(state.event));
   }
 
   function openDeleteModal() {
@@ -109,12 +116,13 @@ export default function EventDetailsClient({ initialEvent, authToken, currentUse
     }
   }
 
-  const { saveChanges, handleAddPhotos, handleDeletePhoto, handleSetPreviewPhoto } = useEventDetailsMutations({
+  const { cancelEditing, saveChanges, handleAddPhotos, handleDeletePhoto, handleSetPreviewPhoto } = useEventDetailsMutations({
     authToken,
     state,
     dispatch,
     reset,
     onMissingEvent: redirectMissingEvent,
+    onCancelSuccess: clearEditSearchParam,
     onSaveSuccess: () => {
       scrollToTop();
     },

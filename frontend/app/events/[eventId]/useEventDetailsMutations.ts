@@ -1,7 +1,9 @@
 import { useCallback } from "react";
 import type { UseFormReset } from "react-hook-form";
 import {
+  deleteEventPhoto,
   type MapEvent,
+  setEventPreviewPhoto,
   updateEvent,
   uploadEventPhotos,
 } from "../../map/api";
@@ -18,10 +20,12 @@ type UseEventDetailsMutationsArgs = {
   dispatch: Dispatch;
   reset: UseFormReset<EventFormState>;
   onMissingEvent: () => void;
+  onCancelSuccess?: () => void;
   onSaveSuccess?: (event: MapEvent) => void;
 };
 
 type UseEventDetailsMutationsResult = {
+  cancelEditing: () => Promise<void>;
   saveChanges: (values: EventFormState) => Promise<void>;
   handleAddPhotos: (files: File[]) => Promise<void>;
   handleDeletePhoto: (photoId: string) => Promise<void>;
@@ -41,8 +45,36 @@ export function useEventDetailsMutations({
   dispatch,
   reset,
   onMissingEvent,
+  onCancelSuccess,
   onSaveSuccess,
 }: UseEventDetailsMutationsArgs): UseEventDetailsMutationsResult {
+  const cancelEditing = useCallback(async () => {
+    dispatch({ type: "SET_SAVE_ERROR", payload: null });
+
+    if (state.uploadedPhotoIds.length > 0) {
+      dispatch({ type: "SET_PHOTO_ACTION_RUNNING", payload: true });
+    }
+
+    try {
+      for (const photoId of state.uploadedPhotoIds) {
+        await deleteEventPhoto(authToken, state.event.id, photoId);
+      }
+
+      dispatch({ type: "CANCEL_EDIT" });
+      reset(mapEventToFormState(state.event));
+      onCancelSuccess?.();
+    } catch (error) {
+      if (isMissingEventError(error)) {
+        onMissingEvent();
+        return;
+      }
+
+      dispatch({ type: "SET_SAVE_ERROR", payload: ATTACHMENT_ERROR_MESSAGE });
+    } finally {
+      dispatch({ type: "SET_PHOTO_ACTION_RUNNING", payload: false });
+    }
+  }, [authToken, dispatch, onCancelSuccess, onMissingEvent, reset, state]);
+
   const saveChanges = useCallback(
     async (values: EventFormState) => {
       dispatch({ type: "SET_SAVE_ERROR", payload: null });
@@ -95,7 +127,7 @@ export function useEventDetailsMutations({
 
       try {
         const photos = await uploadEventPhotos(authToken, state.event.id, files);
-        dispatch({ type: "SET_EVENT", payload: { ...state.event, photos } });
+        dispatch({ type: "ADD_UPLOADED_PHOTOS", payload: photos });
       } catch (error) {
         if (isMissingEventError(error)) {
           onMissingEvent();
@@ -167,6 +199,7 @@ export function useEventDetailsMutations({
   );
 
   return {
+    cancelEditing,
     saveChanges,
     handleAddPhotos,
     handleDeletePhoto,
