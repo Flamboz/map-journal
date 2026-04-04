@@ -9,6 +9,7 @@ import {
   fetchLastMapPosition,
   fetchUserEvents,
   searchPlaces,
+  uploadEventPhotos,
 } from "./api";
 import type { ReactNode } from "react";
 
@@ -26,6 +27,7 @@ vi.mock("./api", () => ({
   fetchUserEvents: vi.fn(),
   searchPlaces: vi.fn(),
   createEvent: vi.fn(),
+  uploadEventPhotos: vi.fn(),
 }));
 
 vi.mock("react-leaflet", () => ({
@@ -373,6 +375,14 @@ describe("MapView", () => {
       created_at: "2026-03-04T10:00:00.000Z",
       photos: [],
     });
+    vi.mocked(uploadEventPhotos).mockResolvedValue([
+      {
+        id: "00000000-0000-4000-8000-000000000011",
+        path: "test.jpg",
+        url: "/uploads/user-1/event-10/test.jpg",
+        createdAt: "2026-03-04T10:01:00.000Z",
+      },
+    ]);
 
     render(<MapView />);
 
@@ -397,8 +407,14 @@ describe("MapView", () => {
           name: "City Walk",
           lat: 50.45,
           lng: 30.52,
-          photos: [file],
         }),
+      );
+      expect(createEvent).toHaveBeenCalledWith("token-1", expect.not.objectContaining({ photos: expect.anything() }));
+      expect(uploadEventPhotos).toHaveBeenCalledWith(
+        "token-1",
+        "00000000-0000-4000-8000-000000000010",
+        [file],
+        expect.any(Function),
       );
     });
   });

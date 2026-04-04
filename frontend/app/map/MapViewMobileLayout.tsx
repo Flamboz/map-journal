@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import type { PlaceSearchResult, MapEvent } from "./api";
 import { EventDraftForm } from "./EventDraftForm";
 import { LeftSidebar } from "./LeftSidebar";
-import type { EventFormState } from "./mapViewTypes";
+import type { DraftSaveStatus, EventFormState } from "./mapViewTypes";
 
 type DraftCoordinates = {
   lat: number;
@@ -20,6 +20,8 @@ type MapViewMobileLayoutProps = {
   isResolvingAddress: boolean;
   saveError: string | null;
   isSaving: boolean;
+  saveStatus: DraftSaveStatus | null;
+  hasCreatedEvent: boolean;
   labelOptions: string[];
   visitCompanyOptions: string[];
   onCloseDraft: () => void;
@@ -42,6 +44,8 @@ export function MapViewMobileLayout({
   isResolvingAddress,
   saveError,
   isSaving,
+  saveStatus,
+  hasCreatedEvent,
   labelOptions,
   visitCompanyOptions,
   onCloseDraft,
@@ -128,6 +132,8 @@ export function MapViewMobileLayout({
             draftAddress={draftAddress}
             saveError={saveError}
             isSaving={isSaving}
+            saveStatus={saveStatus}
+            hasCreatedEvent={hasCreatedEvent}
             labelOptions={labelOptions}
             visitCompanyOptions={visitCompanyOptions}
             onCancel={onCancelDraft}

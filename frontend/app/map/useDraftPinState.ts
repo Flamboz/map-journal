@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { createEvent, fetchReverseGeocodeAddress, type MapEvent, type PlaceSearchResult } from "./api";
+import { createEvent, fetchReverseGeocodeAddress, type MapEvent, type PlaceSearchResult, uploadEventPhotos } from "./api";
 import { formatShortAddress } from "./mapViewHelpers";
-import type { EventFormState } from "./mapViewTypes";
+import type { DraftSaveStatus, EventFormState } from "./mapViewTypes";
 
 type Coordinates = {
   lat: number;
@@ -20,6 +20,8 @@ type UseDraftPinStateResult = {
   isResolvingAddress: boolean;
   saveError: string | null;
   isSaving: boolean;
+  saveStatus: DraftSaveStatus | null;
+  hasCreatedEvent: boolean;
   openDraftFromMapClick: (coords: Coordinates) => void;
   openDraftFromPlace: (place: PlaceSearchResult) => void;
   resetDraftState: () => void;
@@ -36,12 +38,16 @@ export function useDraftPinState({
   const [isResolvingAddress, setIsResolvingAddress] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<DraftSaveStatus | null>(null);
+  const [createdEventId, setCreatedEventId] = useState<string | null>(null);
 
   function resetDraftState() {
     setDraftPosition(null);
     setDraftAddress(null);
     setIsResolvingAddress(false);
     setSaveError(null);
+    setSaveStatus(null);
+    setCreatedEventId(null);
   }
 
   function openDraftFromMapClick(coords: Coordinates) {
@@ -49,6 +55,8 @@ export function useDraftPinState({
     setDraftPosition(coords);
     setDraftAddress(null);
     setSaveError(null);
+    setSaveStatus(null);
+    setCreatedEventId(null);
   }
 
   function openDraftFromPlace(place: PlaceSearchResult) {
@@ -56,18 +64,22 @@ export function useDraftPinState({
     setDraftPosition({ lat: place.lat, lng: place.lng });
     setDraftAddress(place.displayName);
     setSaveError(null);
+    setSaveStatus(null);
+    setCreatedEventId(null);
   }
 
   async function saveDraftEvent(formState: EventFormState) {
-    if (!authToken || !draftPosition) {
+    if (!authToken || !draftPosition || isSaving || createdEventId) {
       return;
     }
 
     setIsSaving(true);
     setSaveError(null);
+    setSaveStatus({ phase: "creating", totalFiles: formState.photos.length });
+    let createdEvent: MapEvent | null = null;
 
     try {
-      const createdEvent = await createEvent(authToken, {
+      createdEvent = await createEvent(authToken, {
         name: formState.name.trim(),
         startDate: formState.startDate,
         endDate: formState.endDate || undefined,
@@ -77,14 +89,62 @@ export function useDraftPinState({
         visitCompany: formState.visitCompany,
         lat: draftPosition.lat,
         lng: draftPosition.lng,
-        photos: formState.photos,
         visibility: formState.visibility,
         sharedWithEmails: formState.sharedWithEmails,
       });
 
+      setCreatedEventId(createdEvent.id);
       onEventSaved(createdEvent);
+
+      if (formState.photos.length === 0) {
+        resetDraftState();
+        return;
+      }
+
+      const totalFiles = formState.photos.length;
+      let uploadedPhotos = createdEvent.photos ?? [];
+
+      for (const [fileIndex, file] of formState.photos.entries()) {
+        const completedFiles = fileIndex;
+        const currentFileName = file.name || `Attachment ${fileIndex + 1}`;
+
+        setSaveStatus({
+          phase: "uploading",
+          totalFiles,
+          completedFiles,
+          currentFileName,
+          progressPercent: Math.round((completedFiles / totalFiles) * 100),
+        });
+
+        const nextPhotos = await uploadEventPhotos(authToken, createdEvent.id, [file], ({ loaded, total }) => {
+          const currentFileProgress = total > 0 ? loaded / total : 0;
+          const overallProgress = ((completedFiles + currentFileProgress) / totalFiles) * 100;
+
+          setSaveStatus({
+            phase: "uploading",
+            totalFiles,
+            completedFiles,
+            currentFileName,
+            progressPercent: Math.max(0, Math.min(100, Math.round(overallProgress))),
+          });
+        });
+
+        uploadedPhotos = [...uploadedPhotos, ...nextPhotos];
+        onEventSaved({
+          ...createdEvent,
+          photos: uploadedPhotos,
+        });
+      }
+
       resetDraftState();
     } catch {
+      setSaveStatus(null);
+
+      if (createdEvent) {
+        setSaveError("Event created, but attachment upload failed. You can add attachments later from the event page.");
+        return;
+      }
+
       setSaveError("Unable to save event. Please try again.");
     } finally {
       setIsSaving(false);
@@ -135,6 +195,8 @@ export function useDraftPinState({
     isResolvingAddress,
     saveError,
     isSaving,
+    saveStatus,
+    hasCreatedEvent: createdEventId !== null,
     openDraftFromMapClick,
     openDraftFromPlace,
     resetDraftState,

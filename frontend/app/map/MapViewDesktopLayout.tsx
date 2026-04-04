@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import type { PlaceSearchResult, MapEvent } from "./api";
 import { EventDraftForm } from "./EventDraftForm";
 import { LeftSidebar } from "./LeftSidebar";
-import type { EventFormState } from "./mapViewTypes";
+import type { DraftSaveStatus, EventFormState } from "./mapViewTypes";
 
 type DraftCoordinates = {
   lat: number;
@@ -20,6 +20,8 @@ type MapViewDesktopLayoutProps = {
   isResolvingAddress: boolean;
   saveError: string | null;
   isSaving: boolean;
+  saveStatus: DraftSaveStatus | null;
+  hasCreatedEvent: boolean;
   onCancelDraft: () => void;
   onPlaceSelect: (place: PlaceSearchResult) => void;
   onResultClick: (event: MapEvent) => void;
@@ -36,6 +38,8 @@ export function MapViewDesktopLayout({
   isResolvingAddress,
   saveError,
   isSaving,
+  saveStatus,
+  hasCreatedEvent,
   onCancelDraft,
   onPlaceSelect,
   onResultClick,
@@ -64,6 +68,8 @@ export function MapViewDesktopLayout({
           draftAddress={draftAddress}
           saveError={saveError}
           isSaving={isSaving}
+          saveStatus={saveStatus}
+          hasCreatedEvent={hasCreatedEvent}
           labelOptions={labelOptions}
           visitCompanyOptions={visitCompanyOptions}
           onCancel={onCancelDraft}

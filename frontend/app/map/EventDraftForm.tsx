@@ -15,7 +15,7 @@ import {
 import { EventVisibilityFields } from "../components/EventVisibilityFields";
 import { EMPTY_FORM_STATE } from "./mapViewConstants";
 import { eventDraftValidationSchema } from "./mapViewHelpers";
-import type { EventFormState } from "./mapViewTypes";
+import type { DraftSaveStatus, EventFormState } from "./mapViewTypes";
 
 type EventDraftFormProps = {
   draftPosition: { lat: number; lng: number } | null;
@@ -23,6 +23,8 @@ type EventDraftFormProps = {
   draftAddress: string | null;
   saveError: string | null;
   isSaving: boolean;
+  saveStatus: DraftSaveStatus | null;
+  hasCreatedEvent: boolean;
   labelOptions: string[];
   visitCompanyOptions: string[];
   onCancel: () => void;
@@ -36,6 +38,8 @@ export function EventDraftForm({
   draftAddress,
   saveError,
   isSaving,
+  saveStatus,
+  hasCreatedEvent,
   labelOptions,
   visitCompanyOptions,
   onCancel,
@@ -155,6 +159,9 @@ export function EventDraftForm({
       setIsSearchingPlaces(false);
     }
   }
+
+  const saveButtonLabel = saveStatus?.phase === "uploading" ? "Uploading..." : isSaving ? "Creating..." : "Save Event";
+  const cancelButtonLabel = hasCreatedEvent ? "Close" : "Cancel";
 
   return (
     <section className="paper-card flex h-full min-h-0 flex-col overflow-y-auto p-4">
@@ -290,6 +297,27 @@ export function EventDraftForm({
 
       {saveError && <p className="mt-3 text-sm text-red-600">{saveError}</p>}
 
+      {saveStatus && (
+        <div className="mt-3 rounded-[var(--radius-md)] border border-[color:var(--border-soft)] bg-[color:var(--paper-surface)] p-3">
+          <p className="text-sm font-medium text-slate-800">
+            {saveStatus.phase === "creating"
+              ? "Creating event..."
+              : `Uploading attachments ${saveStatus.completedFiles + 1}/${saveStatus.totalFiles}: ${saveStatus.currentFileName}`}
+          </p>
+          {saveStatus.phase === "uploading" && (
+            <>
+              <div className="mt-2 h-2 overflow-hidden rounded-full bg-[color:var(--paper-muted)]">
+                <div
+                  className="h-full rounded-full bg-[color:var(--accent-primary)] transition-[width]"
+                  style={{ width: `${saveStatus.progressPercent}%` }}
+                />
+              </div>
+              <p className="mt-2 text-xs text-slate-600">{saveStatus.progressPercent}% complete</p>
+            </>
+          )}
+        </div>
+      )}
+
       {draftPosition && (
         <div className="mt-4 flex justify-end gap-2 border-t border-[color:var(--border-soft)] pt-3">
           <button
@@ -298,15 +326,15 @@ export function EventDraftForm({
             className="rounded-[var(--radius-md)] border border-[color:var(--border-soft)] bg-[color:var(--paper-surface)] px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-[color:var(--paper-muted)]"
             disabled={isSaving}
           >
-            Cancel
+            {cancelButtonLabel}
           </button>
           <button
             type="button"
             onClick={handleSubmit(handleValidSubmit)}
             className="rounded-[var(--radius-md)] bg-[color:var(--accent-primary)] px-6 py-2 text-sm font-semibold text-white transition hover:translate-y-[-1px] hover:bg-[color:var(--accent-primary-strong)] hover:shadow-[0_10px_24px_rgba(180,72,42,0.35)] disabled:opacity-60"
-            disabled={isSaving}
+            disabled={isSaving || hasCreatedEvent}
           >
-            {isSaving ? "Saving..." : "Save Event"}
+            {saveButtonLabel}
           </button>
         </div>
       )}

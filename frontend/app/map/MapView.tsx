@@ -67,6 +67,8 @@ export default function MapView({ initialError = null }: MapViewProps) {
     isResolvingAddress,
     saveError,
     isSaving,
+    saveStatus,
+    hasCreatedEvent,
     openDraftFromMapClick,
     openDraftFromPlace,
     resetDraftState,
@@ -75,7 +77,14 @@ export default function MapView({ initialError = null }: MapViewProps) {
     authToken,
     onDraftOpened: clearSelection,
     onEventSaved: (newEvent) => {
-      setEvents((previousEvents) => [newEvent, ...previousEvents]);
+      setEvents((previousEvents) => {
+        const existingIndex = previousEvents.findIndex((event) => event.id === newEvent.id);
+        if (existingIndex === -1) {
+          return [newEvent, ...previousEvents];
+        }
+
+        return previousEvents.map((event) => (event.id === newEvent.id ? { ...event, ...newEvent } : event));
+      });
     },
   });
 
@@ -195,6 +204,8 @@ export default function MapView({ initialError = null }: MapViewProps) {
             isResolvingAddress={isResolvingAddress}
             saveError={saveError}
             isSaving={isSaving}
+            saveStatus={saveStatus}
+            hasCreatedEvent={hasCreatedEvent}
             labelOptions={labelOptions}
             visitCompanyOptions={visitCompanyOptions}
             onCloseDraft={handleCloseDraftForm}
@@ -217,6 +228,8 @@ export default function MapView({ initialError = null }: MapViewProps) {
             isResolvingAddress={isResolvingAddress}
             saveError={saveError}
             isSaving={isSaving}
+            saveStatus={saveStatus}
+            hasCreatedEvent={hasCreatedEvent}
             onCancelDraft={resetDraftState}
             onPlaceSelect={handlePlaceSelect}
             onResultClick={handleDesktopResultClick}

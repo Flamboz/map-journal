@@ -16,6 +16,19 @@ export type EventFormState = {
   sharedWithEmails: string[];
 };
 
+export type DraftSaveStatus =
+  | {
+      phase: "creating";
+      totalFiles: number;
+    }
+  | {
+      phase: "uploading";
+      totalFiles: number;
+      completedFiles: number;
+      currentFileName: string;
+      progressPercent: number;
+    };
+
 export type FormErrors = {
   name?: string;
   startDate?: string;
