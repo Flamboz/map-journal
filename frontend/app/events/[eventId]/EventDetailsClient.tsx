@@ -100,7 +100,7 @@ export default function EventDetailsClient({
     reset(mapEventToFormState(state.event));
     scrollToTop();
     clearEditSearchParam();
-  }, [canEdit, clearEditSearchParam, reset, state.event, state.isEditing]);
+  }, [canEdit, clearEditSearchParam, reset, searchParams, state.event, state.isEditing]);
 
   function redirectMissingEvent() {
     router.replace("/?error=event-not-found");
