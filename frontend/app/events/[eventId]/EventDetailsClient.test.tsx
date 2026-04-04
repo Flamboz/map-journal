@@ -269,9 +269,10 @@ describe("EventDetailsClient delete flow", () => {
   const pushMock = vi.fn();
   const replaceMock = vi.fn();
   const refreshMock = vi.fn();
+  let currentSearchParams = new URLSearchParams();
   const searchParamsMock = {
-    get: vi.fn(),
-    toString: vi.fn(),
+    get: vi.fn((key: string) => currentSearchParams.get(key)),
+    toString: vi.fn(() => currentSearchParams.toString()),
   };
   const resolvedEvent = {
     id: eventId,
@@ -297,14 +298,17 @@ describe("EventDetailsClient delete flow", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    currentSearchParams = new URLSearchParams();
+    replaceMock.mockImplementation((url: string) => {
+      const parsedUrl = new URL(url, "http://localhost");
+      currentSearchParams = new URLSearchParams(parsedUrl.search);
+    });
     vi.mocked(useRouter).mockReturnValue({
       push: pushMock,
       replace: replaceMock,
       refresh: refreshMock,
     } as unknown as ReturnType<typeof useRouter>);
     vi.mocked(usePathname).mockReturnValue(`/events/${eventId}`);
-    searchParamsMock.get.mockReturnValue(null);
-    searchParamsMock.toString.mockReturnValue("");
     vi.mocked(useSearchParams).mockReturnValue(searchParamsMock as unknown as ReturnType<typeof useSearchParams>);
 
     vi.mocked(fetchAllowedLabels).mockResolvedValue([]);
@@ -427,8 +431,7 @@ describe("EventDetailsClient delete flow", () => {
   });
 
   it("consumes edit query mode so cancel can leave edit state", async () => {
-    searchParamsMock.get.mockImplementation((key: string) => (key === "edit" ? "true" : null));
-    searchParamsMock.toString.mockReturnValue("edit=true");
+    currentSearchParams = new URLSearchParams("edit=true");
 
     render(<EventDetailsClient initialEvent={initialEvent} authToken="token-1" currentUserEmail={null} />);
 

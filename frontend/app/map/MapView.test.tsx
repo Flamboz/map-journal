@@ -9,7 +9,6 @@ import {
   fetchLastMapPosition,
   fetchUserEvents,
   searchPlaces,
-  uploadEventPhotos,
 } from "./api";
 import type { ReactNode } from "react";
 
@@ -27,7 +26,6 @@ vi.mock("./api", () => ({
   fetchUserEvents: vi.fn(),
   searchPlaces: vi.fn(),
   createEvent: vi.fn(),
-  uploadEventPhotos: vi.fn(),
 }));
 
 vi.mock("react-leaflet", () => ({
@@ -76,7 +74,6 @@ describe("MapView", () => {
     vi.mocked(fetchAllowedLabels).mockResolvedValue([]);
     vi.mocked(fetchAllowedVisitCompanies).mockResolvedValue([]);
     vi.mocked(searchPlaces).mockResolvedValue([]);
-    vi.mocked(uploadEventPhotos).mockResolvedValue([]);
   });
 
   it("prefers lastMapPosition over world defaults", async () => {
@@ -358,6 +355,8 @@ describe("MapView", () => {
   });
 
   it("creates an event and uploads photos", async () => {
+    const file = new File(["abc"], "test.jpg", { type: "image/jpeg" });
+
     vi.mocked(createEvent).mockResolvedValue({
       id: "00000000-0000-4000-8000-000000000010",
       user_id: 1,
@@ -375,15 +374,6 @@ describe("MapView", () => {
       photos: [],
     });
 
-    vi.mocked(uploadEventPhotos).mockResolvedValue([
-      {
-        id: "00000000-0000-4000-8000-000000000201",
-        path: "user-1/event-10/test.jpg",
-        url: "/uploads/user-1/event-10/test.jpg",
-        createdAt: "2026-03-04T10:00:00.000Z",
-      },
-    ]);
-
     render(<MapView />);
 
     act(() => {
@@ -394,7 +384,7 @@ describe("MapView", () => {
     fireEvent.change(screen.getByLabelText("Start date"), { target: { value: "2026-03-04" } });
     fireEvent.change(screen.getByLabelText("Attachments (photos and videos)"), {
       target: {
-        files: [new File(["abc"], "test.jpg", { type: "image/jpeg" })],
+        files: [file],
       },
     });
 
@@ -407,12 +397,8 @@ describe("MapView", () => {
           name: "City Walk",
           lat: 50.45,
           lng: 30.52,
+          photos: [file],
         }),
-      );
-      expect(uploadEventPhotos).toHaveBeenCalledWith(
-        "token-1",
-        "00000000-0000-4000-8000-000000000010",
-        expect.any(Array),
       );
     });
   });
