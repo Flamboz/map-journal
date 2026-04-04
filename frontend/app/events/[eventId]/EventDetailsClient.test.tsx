@@ -65,6 +65,13 @@ vi.mock("./EventPhotosCarousel", () => ({
   ),
 }));
 
+const defaultClientShellProps = {
+  authToken: "token-1",
+  currentUserEmail: null,
+  readOnlyContentId: "event-read-only",
+  mediaContentId: "event-media",
+} as const;
+
 it("sends staged photo deletions on save", async () => {
   const eventId = "550e8400-e29b-41d4-a716-446655440001";
   const photo1 = {
@@ -146,7 +153,7 @@ it("sends staged photo deletions on save", async () => {
     sharedWithEmails: [],
   };
 
-  render(<EventDetailsClient initialEvent={initialEvent} authToken="token-1" currentUserEmail={null} />);
+  render(<EventDetailsClient initialEvent={initialEvent} {...defaultClientShellProps} />);
 
   fireEvent.click(screen.getByRole("button", { name: "Edit event" }));
   fireEvent.click(screen.getByRole("button", { name: "Mock delete attachment" }));
@@ -244,7 +251,7 @@ it("stages preview during edit and applies on save", async () => {
     sharedWithEmails: [],
   };
 
-  render(<EventDetailsClient initialEvent={initialEvent} authToken="token-1" currentUserEmail={null} />);
+  render(<EventDetailsClient initialEvent={initialEvent} {...defaultClientShellProps} />);
 
   fireEvent.click(screen.getByRole("button", { name: "Edit event" }));
   fireEvent.click(screen.getByRole("button", { name: "Mock set preview" }));
@@ -343,7 +350,7 @@ describe("EventDetailsClient delete flow", () => {
   };
 
   it("opens delete confirmation modal when user clicks delete", async () => {
-    render(<EventDetailsClient initialEvent={initialEvent} authToken="token-1" currentUserEmail={null} />);
+    render(<EventDetailsClient initialEvent={initialEvent} {...defaultClientShellProps} />);
 
     fireEvent.click(screen.getByRole("button", { name: "Delete event" }));
 
@@ -353,7 +360,7 @@ describe("EventDetailsClient delete flow", () => {
   });
 
   it("deletes event after confirmation and navigates to map", async () => {
-    render(<EventDetailsClient initialEvent={initialEvent} authToken="token-1" currentUserEmail={null} />);
+    render(<EventDetailsClient initialEvent={initialEvent} {...defaultClientShellProps} />);
 
     fireEvent.click(screen.getByRole("button", { name: "Delete event" }));
     fireEvent.click(await screen.findByRole("button", { name: "Delete" }));
@@ -368,7 +375,7 @@ describe("EventDetailsClient delete flow", () => {
   it("redirects to map when save hits EVENT_NOT_FOUND", async () => {
     vi.mocked(updateEvent).mockRejectedValue(createApiClientError("EVENT_NOT_FOUND"));
 
-    render(<EventDetailsClient initialEvent={initialEvent} authToken="token-1" currentUserEmail={null} />);
+    render(<EventDetailsClient initialEvent={initialEvent} {...defaultClientShellProps} />);
 
     fireEvent.click(screen.getByRole("button", { name: "Edit event" }));
     fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
@@ -381,7 +388,7 @@ describe("EventDetailsClient delete flow", () => {
   it("shows save error when update fails for non-not-found reasons", async () => {
     vi.mocked(updateEvent).mockRejectedValue(createApiClientError("EVENT_UPDATE_FAILED"));
 
-    render(<EventDetailsClient initialEvent={initialEvent} authToken="token-1" currentUserEmail={null} />);
+    render(<EventDetailsClient initialEvent={initialEvent} {...defaultClientShellProps} />);
 
     fireEvent.click(screen.getByRole("button", { name: "Edit event" }));
     fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
@@ -392,7 +399,7 @@ describe("EventDetailsClient delete flow", () => {
   it("redirects when adding photos returns EVENT_NOT_FOUND", async () => {
     vi.mocked(uploadEventPhotos).mockRejectedValue(createApiClientError("EVENT_NOT_FOUND"));
 
-    render(<EventDetailsClient initialEvent={initialEvent} authToken="token-1" currentUserEmail={null} />);
+    render(<EventDetailsClient initialEvent={initialEvent} {...defaultClientShellProps} />);
 
     fireEvent.click(screen.getByRole("button", { name: "Edit event" }));
     fireEvent.click(screen.getByRole("button", { name: "Mock add attachments" }));
@@ -412,7 +419,7 @@ describe("EventDetailsClient delete flow", () => {
 
     vi.mocked(uploadEventPhotos).mockResolvedValue([uploadedPhoto]);
 
-    render(<EventDetailsClient initialEvent={initialEvent} authToken="token-1" currentUserEmail={null} />);
+    render(<EventDetailsClient initialEvent={initialEvent} {...defaultClientShellProps} />);
 
     fireEvent.click(screen.getByRole("button", { name: "Edit event" }));
     fireEvent.click(screen.getByRole("button", { name: "Mock add attachments" }));
@@ -433,7 +440,7 @@ describe("EventDetailsClient delete flow", () => {
   it("consumes edit query mode so cancel can leave edit state", async () => {
     currentSearchParams = new URLSearchParams("edit=true");
 
-    render(<EventDetailsClient initialEvent={initialEvent} authToken="token-1" currentUserEmail={null} />);
+    render(<EventDetailsClient initialEvent={initialEvent} {...defaultClientShellProps} />);
 
     expect(await screen.findByRole("button", { name: "Save changes" })).toBeInTheDocument();
 

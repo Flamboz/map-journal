@@ -1,9 +1,9 @@
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../../auth.config";
-import { fetchEventById } from "../../map/api";
-import { isApiErrorCode } from "../../map/apiErrors";
-import EventDetailsClient from "./EventDetailsClient";
+import EventDetailsLoadingView from "./EventDetailsLoadingView";
+import EventDetailsPageContent from "./EventDetailsPageContent";
 
 type EventDetailsPageProps = {
   params: Promise<{
@@ -21,16 +21,9 @@ export default async function EventDetailsPage({ params }: EventDetailsPageProps
     redirect("/auth/signin");
   }
 
-  let event;
-  try {
-    event = await fetchEventById(eventId, authToken);
-  } catch (error) {
-    if (isApiErrorCode(error, "EVENT_NOT_FOUND")) {
-      redirect("/?error=event-not-found");
-    }
-
-    throw error;
-  }
-
-  return <EventDetailsClient initialEvent={event} authToken={authToken} currentUserEmail={currentUserEmail} />;
+  return (
+    <Suspense fallback={<EventDetailsLoadingView />}>
+      <EventDetailsPageContent eventId={eventId} authToken={authToken} currentUserEmail={currentUserEmail} />
+    </Suspense>
+  );
 }

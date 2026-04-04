@@ -7,26 +7,18 @@ type EventDetailsReadOnlyViewProps = {
   event: MapEvent;
   dateText: string;
   visitCompany?: string | null;
-  canEdit: boolean;
-  isDeletingEvent: boolean;
-  onStartEditing: () => void;
-  onOpenDeleteModal: () => void;
 };
 
 export default function EventDetailsReadOnlyView({
   event,
   dateText,
   visitCompany,
-  canEdit,
-  isDeletingEvent,
-  onStartEditing,
-  onOpenDeleteModal,
 }: EventDetailsReadOnlyViewProps) {
   const safeRating = getSafeRating(event.rating);
   const sharedWithEmails = event.sharedWithEmails ?? [];
 
   return (
-    <div className="mt-6 space-y-6">
+    <div className="space-y-6">
       <div className="mx-auto w-full max-w-3xl">
         <div className="relative rounded-2xl bg-gradient-to-r from-slate-900/95 to-slate-800/95 p-6 text-white shadow-md">
           <h1 className="text-3xl font-semibold">{event.name ?? event.title}</h1>
@@ -134,32 +126,6 @@ export default function EventDetailsReadOnlyView({
           </div>
         </div>
       </div>
-
-      {canEdit ? (
-        <div className="mx-auto flex w-full max-w-3xl items-center justify-between">
-          <button
-            type="button"
-            onClick={onOpenDeleteModal}
-            disabled={isDeletingEvent}
-            className="rounded-lg border border-red-200 bg-white px-4 py-3 text-sm font-medium text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {isDeletingEvent ? "Deleting..." : "Delete event"}
-          </button>
-
-          <button
-            type="button"
-            onClick={onStartEditing}
-            disabled={isDeletingEvent}
-            className="rounded-full bg-slate-900 px-6 py-3 text-sm font-medium text-white hover:bg-slate-800"
-          >
-            Edit event
-          </button>
-        </div>
-      ) : (
-        <div className="mx-auto w-full max-w-3xl rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
-          This event is shared with you. You can view it here, but edits, deletes, and attachment changes are disabled.
-        </div>
-      )}
     </div>
   );
 }

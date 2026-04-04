@@ -2,20 +2,15 @@
 
 import { useCallback, useEffect, useMemo, useReducer } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  deleteEvent,
-  type MapEvent,
-} from "../../map/api";
+import { deleteEvent, type MapEvent } from "../../map/api";
 import { isApiErrorCode } from "../../map/apiErrors";
-import { eventDraftValidationSchema, formatEventDateRange } from "../../map/mapViewHelpers";
+import { eventDraftValidationSchema } from "../../map/mapViewHelpers";
 import type { EventFormState } from "../../map/mapViewTypes";
 import { scrollToTop } from "../../../lib/scrollToTop";
 import DeleteEventConfirmationModal from "./DeleteEventConfirmationModal";
 import EventDetailsEditForm from "./EventDetailsEditForm";
-import EventDetailsReadOnlyView from "./EventDetailsReadOnlyView";
 import EventPhotosCarousel from "./EventPhotosCarousel";
 import { mapEventToFormState } from "./eventDetailsFormState";
 import { createInitialEventDetailsState, eventDetailsReducer } from "./eventDetailsReducer";
@@ -26,9 +21,17 @@ type EventDetailsClientProps = {
   initialEvent: MapEvent;
   authToken: string;
   currentUserEmail: string | null;
+  readOnlyContentId: string;
+  mediaContentId: string;
 };
 
-export default function EventDetailsClient({ initialEvent, authToken, currentUserEmail }: EventDetailsClientProps) {
+export default function EventDetailsClient({
+  initialEvent,
+  authToken,
+  currentUserEmail,
+  readOnlyContentId,
+  mediaContentId,
+}: EventDetailsClientProps) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -51,14 +54,6 @@ export default function EventDetailsClient({ initialEvent, authToken, currentUse
   const sharedWithEmails = watch("sharedWithEmails");
   const canEdit = state.event.accessLevel === "owner";
 
-  const samePinEventIds = useMemo(() => state.event.samePinEventIds ?? [state.event.id], [state.event.id, state.event.samePinEventIds]);
-  const currentPinEventIndex = samePinEventIds.indexOf(state.event.id);
-  const hasPinNavigation = samePinEventIds.length > 1 && currentPinEventIndex >= 0;
-  const previousPinEventId = hasPinNavigation
-    ? samePinEventIds[(currentPinEventIndex - 1 + samePinEventIds.length) % samePinEventIds.length]
-    : null;
-  const nextPinEventId = hasPinNavigation ? samePinEventIds[(currentPinEventIndex + 1) % samePinEventIds.length] : null;
-
   const clearEditSearchParam = useCallback(() => {
     if (!searchParams || searchParams.get("edit") !== "true") {
       return;
@@ -69,6 +64,32 @@ export default function EventDetailsClient({ initialEvent, authToken, currentUse
     const nextQuery = nextParams.toString();
     router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
   }, [pathname, router, searchParams]);
+
+  useEffect(() => {
+    const mediaContent = document.getElementById(mediaContentId);
+    if (!mediaContent) {
+      return;
+    }
+
+    mediaContent.hidden = true;
+
+    return () => {
+      mediaContent.hidden = false;
+    };
+  }, [mediaContentId]);
+
+  useEffect(() => {
+    const readOnlyContent = document.getElementById(readOnlyContentId);
+    if (!readOnlyContent) {
+      return;
+    }
+
+    readOnlyContent.hidden = state.isEditing;
+
+    return () => {
+      readOnlyContent.hidden = false;
+    };
+  }, [readOnlyContentId, state.isEditing]);
 
   useEffect(() => {
     if (!canEdit || state.isEditing || searchParams?.get("edit") !== "true") {
@@ -149,86 +170,85 @@ export default function EventDetailsClient({ initialEvent, authToken, currentUse
     }
   }
 
-  const dateText = formatEventDateRange(state.event.startDate, state.event.endDate);
-  const visitCompany = state.event.visitCompany;
+  const displayedPhotos = useMemo(
+    () => (state.isEditing ? state.draftPhotos ?? state.event.photos : state.event.photos) ?? [],
+    [state.draftPhotos, state.event.photos, state.isEditing],
+  );
+  const eventName = state.event.name ?? state.event.title;
 
   return (
-    <section className="mx-auto w-full max-w-3xl space-y-6 p-6">
-      <h1 className="text-2xl font-semibold text-gray-900">Event details</h1>
-
-      {hasPinNavigation && (
-        <div className="flex flex-wrap items-center gap-3">
-          <Link
-            href={`/events/${previousPinEventId}`}
-            className="inline-flex rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-          >
-            Previous event at this pin
-          </Link>
-          <p className="text-sm text-gray-600">
-            Event {currentPinEventIndex + 1} of {samePinEventIds.length} at this pin
-          </p>
-          <Link
-            href={`/events/${nextPinEventId}`}
-            className="inline-flex rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-          >
-            Next event at this pin
-          </Link>
-        </div>
-      )}
-
-      <EventPhotosCarousel
-        photos={(state.isEditing ? state.draftPhotos ?? state.event.photos : state.event.photos) ?? []}
-        eventName={state.event.name ?? state.event.title}
-        isUpdatingPhotos={canEdit && state.isEditing ? state.isPhotoActionRunning || state.isSaving : false}
-        onAddPhotos={canEdit && state.isEditing ? handleAddPhotos : undefined}
-        onDeletePhoto={canEdit && state.isEditing ? handleDeletePhoto : undefined}
-        onSetPreviewPhoto={canEdit && state.isEditing ? handleSetPreviewPhoto : undefined}
-      />
-
+    <section className="space-y-6">
       {!state.isEditing && (
         <>
-          <EventDetailsReadOnlyView
-            event={state.event}
-            dateText={dateText}
-            visitCompany={visitCompany}
-            canEdit={canEdit}
-            isDeletingEvent={state.isDeletingEvent}
-            onStartEditing={startEditing}
-            onOpenDeleteModal={openDeleteModal}
-          />
+          <EventPhotosCarousel photos={displayedPhotos} eventName={eventName} />
+
+          {canEdit && (
+            <div className="flex items-center justify-between gap-4">
+              <button
+                type="button"
+                onClick={openDeleteModal}
+                disabled={state.isDeletingEvent}
+                className="rounded-lg border border-red-200 bg-white px-4 py-3 text-sm font-medium text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {state.isDeletingEvent ? "Deleting..." : "Delete event"}
+              </button>
+
+              <button
+                type="button"
+                onClick={startEditing}
+                disabled={state.isDeletingEvent}
+                className="rounded-full bg-slate-900 px-6 py-3 text-sm font-medium text-white hover:bg-slate-800"
+              >
+                Edit event
+              </button>
+            </div>
+          )}
+
+          {state.saveError && canEdit && <p className="text-sm text-red-600">{state.saveError}</p>}
         </>
       )}
 
       {state.isEditing && canEdit && (
-        <EventDetailsEditForm
-          register={register}
-          errors={errors}
-          labelOptions={labelOptions}
-          visitCompanyOptions={visitCompanyOptions}
-          selectedLabels={state.selectedLabels}
-          setSelectedLabels={(labels) => dispatch({ type: "SET_SELECTED_LABELS", payload: labels })}
-          selectedRating={state.selectedRating}
-          setSelectedRating={(rating) => dispatch({ type: "SET_SELECTED_RATING", payload: rating })}
-          hoveredRating={state.hoveredRating}
-          setHoveredRating={(rating) => dispatch({ type: "SET_HOVERED_RATING", payload: rating })}
-          startDateMin={state.startDateMin}
-          onStartDateChange={handleStartDateChange}
-          saveError={state.saveError}
-          isSaving={state.isSaving}
-          isPhotoActionRunning={state.isPhotoActionRunning}
-          authToken={authToken}
-          currentUserEmail={currentUserEmail}
-          visibility={visibility}
-          sharedWithEmails={sharedWithEmails}
-          onVisibilityChange={(nextVisibility) =>
-            setValue("visibility", nextVisibility, { shouldDirty: true, shouldValidate: true })
-          }
-          onSharedWithEmailsChange={(nextSharedWithEmails) =>
-            setValue("sharedWithEmails", nextSharedWithEmails, { shouldDirty: true, shouldValidate: true })
-          }
-          onCancel={cancelEditing}
-          onSubmit={handleSubmit(saveChanges)}
-        />
+        <>
+          <EventPhotosCarousel
+            photos={displayedPhotos}
+            eventName={eventName}
+            isUpdatingPhotos={state.isPhotoActionRunning || state.isSaving}
+            onAddPhotos={handleAddPhotos}
+            onDeletePhoto={handleDeletePhoto}
+            onSetPreviewPhoto={handleSetPreviewPhoto}
+          />
+
+          <EventDetailsEditForm
+            register={register}
+            errors={errors}
+            labelOptions={labelOptions}
+            visitCompanyOptions={visitCompanyOptions}
+            selectedLabels={state.selectedLabels}
+            setSelectedLabels={(labels) => dispatch({ type: "SET_SELECTED_LABELS", payload: labels })}
+            selectedRating={state.selectedRating}
+            setSelectedRating={(rating) => dispatch({ type: "SET_SELECTED_RATING", payload: rating })}
+            hoveredRating={state.hoveredRating}
+            setHoveredRating={(rating) => dispatch({ type: "SET_HOVERED_RATING", payload: rating })}
+            startDateMin={state.startDateMin}
+            onStartDateChange={handleStartDateChange}
+            saveError={state.saveError}
+            isSaving={state.isSaving}
+            isPhotoActionRunning={state.isPhotoActionRunning}
+            authToken={authToken}
+            currentUserEmail={currentUserEmail}
+            visibility={visibility}
+            sharedWithEmails={sharedWithEmails}
+            onVisibilityChange={(nextVisibility) =>
+              setValue("visibility", nextVisibility, { shouldDirty: true, shouldValidate: true })
+            }
+            onSharedWithEmailsChange={(nextSharedWithEmails) =>
+              setValue("sharedWithEmails", nextSharedWithEmails, { shouldDirty: true, shouldValidate: true })
+            }
+            onCancel={cancelEditing}
+            onSubmit={handleSubmit(saveChanges)}
+          />
+        </>
       )}
 
       {state.isDeleteModalOpen && (
