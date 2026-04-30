@@ -20,9 +20,15 @@ type ReverseGeocodeResult = {
 
 let lastRequestAt = 0;
 const MIN_INTERVAL_MS = 1100; // 1.1s between requests to be safe
+const DEFAULT_REQUEST_TIMEOUT_MS = 5000;
 
 function coordKey(lat: number, lon: number) {
   return `${lat.toFixed(6)},${lon.toFixed(6)}`;
+}
+
+function getRequestTimeoutMs(): number {
+  const parsedTimeout = Number(process.env.GEOCODER_TIMEOUT_MS);
+  return Number.isFinite(parsedTimeout) && parsedTimeout > 0 ? parsedTimeout : DEFAULT_REQUEST_TIMEOUT_MS;
 }
 
 function extractCity(address: ReverseGeocodeAddress | null, displayName: unknown): string {
@@ -95,7 +101,7 @@ async function reverseGeocode(lat: number, lon: number): Promise<ReverseGeocodeR
 
   if (provider === "nominatim") {
     const abortController = new AbortController();
-    const timeoutHandle = setTimeout(() => abortController.abort(), 5000);
+    const timeoutHandle = setTimeout(() => abortController.abort(), getRequestTimeoutMs());
 
     try {
       const url = new URL("https://nominatim.openstreetmap.org/reverse");
@@ -137,7 +143,7 @@ async function reverseGeocode(lat: number, lon: number): Promise<ReverseGeocodeR
 
     const ua = process.env.GEOCODER_USER_AGENT ?? "MapJournal/1.0";
     const abortController = new AbortController();
-    const timeoutHandle = setTimeout(() => abortController.abort(), 5000);
+    const timeoutHandle = setTimeout(() => abortController.abort(), getRequestTimeoutMs());
 
     try {
       const response = await fetchFn(url.toString(), {
