@@ -4,11 +4,13 @@ import path from "path";
 import type { FastifyInstance } from "fastify";
 import { vi } from "vitest";
 
+type DbModule = typeof import("../../src/db/sqlite");
+
 export type TestAppContext = {
   app: FastifyInstance;
-  run: (sql: string, params?: unknown[]) => Promise<unknown>;
-  get: (sql: string, params?: unknown[]) => Promise<unknown>;
-  all: (sql: string, params?: unknown[]) => Promise<unknown[]>;
+  run: DbModule["run"];
+  get: DbModule["get"];
+  all: DbModule["all"];
   cleanup: () => Promise<void>;
 };
 

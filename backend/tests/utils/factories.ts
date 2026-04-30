@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto";
 
-type RunFn = (sql: string, params?: unknown[]) => Promise<unknown>;
+type RunFn = (typeof import("../../src/db/sqlite"))["run"];
 
 export async function createUser(run: RunFn, email: string, passwordHash: string) {
   const result = (await run("INSERT INTO users (email, password_hash) VALUES (?, ?)", [
