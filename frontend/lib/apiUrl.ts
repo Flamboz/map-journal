@@ -4,10 +4,23 @@ function stripTrailingSlash(value: string): string {
   return value.replace(/\/+$/, "");
 }
 
-function resolveBase(): string {
+function joinPath(base: string, pathname: string): string {
+  if (!pathname) return base;
+  if (/^https?:\/\//i.test(pathname)) return pathname;
+  return `${base}${pathname.startsWith("/") ? "" : "/"}${pathname}`;
+}
+
+function resolveClientBase(): string {
+  const base = process.env.NEXT_PUBLIC_API_URL || DEFAULT_API_URL;
   if (typeof window !== "undefined") {
-    const clientBase = process.env.NEXT_PUBLIC_API_URL || DEFAULT_API_URL;
-    return stripTrailingSlash(new URL(clientBase, window.location.origin).toString());
+    return stripTrailingSlash(new URL(base, window.location.origin).toString());
+  }
+  return stripTrailingSlash(base);
+}
+
+function resolveFetchBase(): string {
+  if (typeof window !== "undefined") {
+    return resolveClientBase();
   }
 
   const backend = process.env.BACKEND_URL;
@@ -19,16 +32,11 @@ function resolveBase(): string {
   return DEFAULT_API_URL;
 }
 
-export const API_URL = resolveBase();
+export const API_URL = resolveFetchBase();
+
+const CLIENT_API_URL = resolveClientBase();
 
 export function resolveApiUrl(urlOrPath: string): string {
-  if (!urlOrPath) {
-    return urlOrPath;
-  }
-
-  if (/^https?:\/\//i.test(urlOrPath)) {
-    return urlOrPath;
-  }
-
-  return `${API_URL}${urlOrPath.startsWith("/") ? "" : "/"}${urlOrPath}`;
+  if (!urlOrPath) return urlOrPath;
+  return joinPath(CLIENT_API_URL, urlOrPath);
 }

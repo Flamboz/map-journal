@@ -1,4 +1,4 @@
-import { resolveApiUrl } from "../../lib/apiUrl";
+import { API_URL, resolveApiUrl } from "../../lib/apiUrl";
 import type { MapEvent, MapEventPhoto } from "./apiTypes";
 
 type ApiQueryValue = string | number | null | undefined;
@@ -12,7 +12,8 @@ export function buildAuthHeaders(authToken: string, headers: Record<string, stri
 }
 
 export function buildApiUrl(pathname: string, query?: ApiQuery): string {
-  const url = new URL(resolveApiUrl(pathname));
+  const base = `${API_URL}${pathname.startsWith("/") ? "" : "/"}${pathname}`;
+  const url = new URL(base);
 
   if (query) {
     for (const [key, value] of Object.entries(query)) {
@@ -39,25 +40,24 @@ export function buildApiUrl(pathname: string, query?: ApiQuery): string {
   return url.toString();
 }
 
+function detectMediaTypeFromUrl(url: string): "photo" | "video" {
+  const path = url.split("?")[0].split("#")[0];
+  const ext = path.split(".").pop()?.toLowerCase() ?? "";
+  const videoExts = new Set(["mp4", "webm", "ogg", "mov", "mkv", "m4v"]);
+  return videoExts.has(ext) ? "video" : "photo";
+}
+
 export function normalizePhotos(photos: MapEventPhoto[] = []): MapEventPhoto[] {
   return photos.map((photo) => ({
     ...photo,
     url: resolveApiUrl(photo.url),
     thumbnail_url: photo.thumbnail_url ? resolveApiUrl(photo.thumbnail_url) : photo.thumbnail_url,
 
-    media_type: (function () {
-      if (photo.media_type) return photo.media_type;
-      if (photo.mime_type) return photo.mime_type.startsWith("video/") ? "video" : "photo";
-      try {
-        const parsed = new URL(resolveApiUrl(photo.url));
-        const pathname = parsed.pathname || "";
-        const ext = pathname.split(".").pop()?.toLowerCase() ?? "";
-        const videoExts = new Set(["mp4", "webm", "ogg", "mov", "mkv", "m4v"]);
-        if (videoExts.has(ext)) return "video";
-      } catch {
-      }
-      return "photo";
-    })(),
+    media_type:
+      photo.media_type ??
+      (photo.mime_type
+        ? photo.mime_type.startsWith("video/") ? "video" : "photo"
+        : detectMediaTypeFromUrl(photo.url)),
   }));
 }
 
