@@ -1,4 +1,4 @@
-import { API_URL, resolveApiUrl } from "../../lib/apiUrl";
+import { resolveApiUrl } from "../../lib/apiUrl";
 import type { MapEvent, MapEventPhoto } from "./apiTypes";
 
 type ApiQueryValue = string | number | null | undefined;
@@ -12,7 +12,7 @@ export function buildAuthHeaders(authToken: string, headers: Record<string, stri
 }
 
 export function buildApiUrl(pathname: string, query?: ApiQuery): string {
-  const url = new URL(pathname, API_URL);
+  const url = new URL(resolveApiUrl(pathname));
 
   if (query) {
     for (const [key, value] of Object.entries(query)) {
@@ -49,7 +49,7 @@ export function normalizePhotos(photos: MapEventPhoto[] = []): MapEventPhoto[] {
       if (photo.media_type) return photo.media_type;
       if (photo.mime_type) return photo.mime_type.startsWith("video/") ? "video" : "photo";
       try {
-        const parsed = new URL(photo.url, API_URL);
+        const parsed = new URL(resolveApiUrl(photo.url));
         const pathname = parsed.pathname || "";
         const ext = pathname.split(".").pop()?.toLowerCase() ?? "";
         const videoExts = new Set(["mp4", "webm", "ogg", "mov", "mkv", "m4v"]);
