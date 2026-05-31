@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../auth.config";
+import { withBasePath } from "../../lib/basePath";
 import TimelineLoadingView from "./TimelineLoadingView";
 import TimelinePageContent from "./TimelinePageContent";
 
@@ -10,7 +11,7 @@ export default async function TimelinePage() {
   const authToken = session?.accessToken ?? "";
 
   if (!authToken) {
-    redirect("/auth/signin");
+    redirect(withBasePath("/auth/signin"));
   }
 
   return (

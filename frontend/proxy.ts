@@ -1,8 +1,9 @@
 import { withAuth } from "next-auth/middleware";
+import { withBasePath } from "./lib/basePath";
 
 export const proxy = withAuth({
   pages: {
-    signIn: "/auth/signin",
+    signIn: withBasePath("/auth/signin"),
   },
 });
 

@@ -3,6 +3,7 @@ import React from "react";
 import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { withBasePath } from "../lib/basePath";
 
 export default function Header() {
   const { data: session } = useSession();
@@ -41,7 +42,7 @@ export default function Header() {
             aria-label="Sign out"
             title="Sign out"
             className="rounded-full border border-[color:var(--topbar-text)]/25 bg-[color:var(--topbar-ctrl-bg)] px-4 py-2 text-sm font-medium text-[color:var(--topbar-text)] transition hover:bg-[color:var(--topbar-ctrl-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--topbar-text)]/40"
-            onClick={() => signOut({ callbackUrl: "/auth/signin" })}
+            onClick={() => signOut({ callbackUrl: withBasePath("/auth/signin") })}
           >
             Sign out
           </button>

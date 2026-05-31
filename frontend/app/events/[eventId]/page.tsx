@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../../auth.config";
+import { withBasePath } from "../../../lib/basePath";
 import EventDetailsLoadingView from "./EventDetailsLoadingView";
 import EventDetailsPageContent from "./EventDetailsPageContent";
 
@@ -18,7 +19,7 @@ export default async function EventDetailsPage({ params }: EventDetailsPageProps
   const currentUserEmail = session?.user?.email ?? null;
 
   if (!authToken) {
-    redirect("/auth/signin");
+    redirect(withBasePath("/auth/signin"));
   }
 
   return (

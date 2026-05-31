@@ -4,6 +4,7 @@ import type { NextAuthOptions } from "next-auth";
 import type { Session } from "next-auth";
 import type { JWT } from "next-auth/jwt";
 import { API_URL } from "./lib/apiUrl";
+import { withBasePath } from "./lib/basePath";
 
 
 export const authOptions: NextAuthOptions = {
@@ -62,8 +63,8 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   pages: {
-    signIn: "/auth/signin",
-    signOut: "/auth/signin",
+    signIn: withBasePath("/auth/signin"),
+    signOut: withBasePath("/auth/signin"),
   },
   callbacks: {
     async jwt({ token, user }) {
