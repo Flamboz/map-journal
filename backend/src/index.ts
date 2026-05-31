@@ -21,7 +21,7 @@ async function start() {
   const app = await buildApp();
 
   try {
-    await app.listen({ port: PORT, host: "0.0.0.0" });
+    await app.listen({ port: PORT, host: "127.0.0.1" });
     console.log(`Backend listening on http://localhost:${PORT}`);
   } catch (error) {
     app.log.error(error);
