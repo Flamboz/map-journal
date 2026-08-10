@@ -1,8 +1,14 @@
 import type { MapEvent } from "../map/api";
 
+export type TimelineDayGroup = {
+  date: string;
+  weekday: string;
+  events: MapEvent[];
+};
+
 export type TimelineMonthGroup = {
   month: string;
-  events: MapEvent[];
+  days: TimelineDayGroup[];
 };
 
 export type TimelineYearGroup = {
@@ -25,6 +31,15 @@ const monthOrder: Record<string, number> = {
   Nov: 11,
   Dec: 12,
 };
+
+const WEEKDAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+function getWeekday(dateStr: string): string {
+  if (!dateStr) return "";
+  const [year, month, day] = dateStr.split("-").map(Number);
+  if (!year || !month || !day) return "";
+  return WEEKDAY_NAMES[new Date(year, month - 1, day).getDay()] ?? "";
+}
 
 function formatYearMonth(dateStr?: string | null) {
   if (!dateStr) {
@@ -76,10 +91,19 @@ export function buildTimelineViewModel(events: MapEvent[]) {
       year,
       months: Array.from(months.entries())
         .sort(([leftMonth], [rightMonth]) => (monthOrder[leftMonth] ?? 0) < (monthOrder[rightMonth] ?? 0) ? 1 : -1)
-        .map(([month, monthEvents]) => ({
-          month,
-          events: monthEvents,
-        })),
+        .map(([month, monthEvents]) => {
+          const dayMap = new Map<string, MapEvent[]>();
+          for (const event of monthEvents) {
+            const date = event.startDate ?? "";
+            const bucket = dayMap.get(date) ?? [];
+            bucket.push(event);
+            dayMap.set(date, bucket);
+          }
+          const days = Array.from(dayMap.entries())
+            .sort(([a], [b]) => (a < b ? 1 : -1))
+            .map(([date, events]) => ({ date, weekday: getWeekday(date), events }));
+          return { month, days };
+        }),
     }));
 
   const yearCount = new Set(events.map((event) => (event.startDate ? event.startDate.split("-")[0] : ""))).size;
