@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import type { MapEvent, PlaceSearchResult } from "./api";
 import { EventPreviewModal } from "./EventPreviewModal";
@@ -49,6 +49,25 @@ export default function MapView({ initialError = null }: MapViewProps) {
       }
     } catch {}
   }, [globalError]);
+
+  const sectionRef = useRef<HTMLElement>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    function handleFullscreenChange() {
+      setIsFullscreen(!!document.fullscreenElement);
+    }
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
+  }, []);
+
+  function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+      void sectionRef.current?.requestFullscreen();
+    } else {
+      void document.exitFullscreen();
+    }
+  }
 
   const [eventsVersion, setEventsVersion] = useState(0);
   const groupedEvents = useMemo(() => groupEventsByDistance(events, PIN_GROUP_DISTANCE_METERS), [events]);
@@ -174,8 +193,10 @@ export default function MapView({ initialError = null }: MapViewProps) {
       eventsVersion={eventsVersion}
       eventsError={eventsError}
       globalError={globalError}
+      isFullscreen={isFullscreen}
       onMapClick={handleMapClickDraft}
       onOpenGroup={openGroup}
+      onToggleFullscreen={toggleFullscreen}
     />
   );
 
@@ -186,15 +207,21 @@ export default function MapView({ initialError = null }: MapViewProps) {
       draftPosition={draftPosition}
       eventsVersion={eventsVersion}
       showStatusOverlays={false}
+      isFullscreen={isFullscreen}
       onMapClick={handleMapClickDraft}
       onOpenGroup={openGroup}
+      onToggleFullscreen={toggleFullscreen}
     />
   );
 
   return (
     <MapAuthProvider authToken={authToken} currentUserEmail={currentUserEmail}>
-      <section className="relative h-[calc(100vh-var(--topbar-height))] w-full overflow-hidden" aria-label="map-view">
-        {isMobileViewport ? (
+      <section ref={sectionRef} className="relative h-[calc(100vh-var(--topbar-height))] w-full overflow-hidden" aria-label="map-view">
+        {isFullscreen ? (
+          <div className="relative h-full w-full">
+            {isMobileViewport ? mobileMapCanvas : desktopMapCanvas}
+          </div>
+        ) : isMobileViewport ? (
           <MapViewMobileLayout
             mapCanvas={mobileMapCanvas}
             isLeftSidebarOpen={isLeftSidebarOpen}
