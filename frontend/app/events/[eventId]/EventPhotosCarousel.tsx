@@ -132,9 +132,9 @@ export default function EventPhotosCarousel({
 
   return (
     <div className="relative">
-      <div className="relative h-72 md:h-96 lg:h-[360px] overflow-hidden rounded-2xl bg-gray-200 shadow-sm">
+      <div className="relative h-72 md:h-96 lg:h-[360px] overflow-hidden rounded-2xl bg-black shadow-sm">
         {(currentPhoto.media_type === "video" || (currentPhoto.mime_type && currentPhoto.mime_type.startsWith("video/"))) ? (
-          <video src={currentPhoto.url} className="h-full w-full object-cover" controls preload="metadata" />
+          <video src={currentPhoto.url} className="h-full w-full object-contain" controls preload="metadata" />
         ) : (
           <Image
             src={currentPhoto.url}
@@ -142,7 +142,7 @@ export default function EventPhotosCarousel({
             fill
             unoptimized
             loader={({ src }) => src}
-            className="h-full w-full object-cover"
+            className="object-contain"
           />
         )}
  
