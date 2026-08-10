@@ -16,9 +16,31 @@ type EventVisibilityFieldsProps = {
 };
 
 const EMAIL_REGEX = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+const RECENT_EMAILS_KEY = "map-journal:shared-emails";
+const MAX_RECENT = 15;
 
 function normalizeEmail(value: string): string {
   return value.trim().toLowerCase();
+}
+
+function loadRecentEmails(): string[] {
+  try {
+    const raw = localStorage.getItem(RECENT_EMAILS_KEY);
+    return raw ? (JSON.parse(raw) as string[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function persistRecentEmail(email: string): string[] {
+  try {
+    const current = loadRecentEmails();
+    const updated = [email, ...current.filter((e) => e !== email)].slice(0, MAX_RECENT);
+    localStorage.setItem(RECENT_EMAILS_KEY, JSON.stringify(updated));
+    return updated;
+  } catch {
+    return [];
+  }
 }
 
 export function EventVisibilityFields({
@@ -37,6 +59,12 @@ export function EventVisibilityFields({
   const [pendingEmail, setPendingEmail] = useState("");
   const [addError, setAddError] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
+  const [recentEmails, setRecentEmails] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  useEffect(() => {
+    setRecentEmails(loadRecentEmails());
+  }, []);
 
   useEffect(() => {
     setAddError(null);
@@ -81,7 +109,9 @@ export function EventVisibilityFields({
       }
 
       onSharedWithEmailsChange([...sharedWithEmails, existingEmail]);
+      setRecentEmails(persistRecentEmail(existingEmail));
       setPendingEmail("");
+      setShowSuggestions(false);
     } catch {
       setAddError("Unable to verify that email right now.");
     } finally {
@@ -116,20 +146,47 @@ export function EventVisibilityFields({
           <p className="text-sm text-slate-700">Add existing account emails. Shared users can view this event on their map with read-only access.</p>
 
           <div className="flex gap-2">
-            <input
-              id="event-share-email"
-              type="email"
-              value={pendingEmail}
-              onChange={(event) => {
-                setPendingEmail(event.target.value);
-                if (addError) {
-                  setAddError(null);
-                }
-              }}
-              disabled={disabled || isAdding}
-              placeholder="friend@example.com"
-              className="w-full rounded-[var(--radius-md)] border border-[color:var(--border-soft)] bg-[color:var(--paper-surface)] px-3 py-2 text-sm text-slate-900"
-            />
+            <div className="relative flex-1">
+              <input
+                id="event-share-email"
+                type="email"
+                value={pendingEmail}
+                onChange={(event) => {
+                  setPendingEmail(event.target.value);
+                  if (addError) setAddError(null);
+                }}
+                onFocus={() => setShowSuggestions(true)}
+                onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+                disabled={disabled || isAdding}
+                placeholder="friend@example.com"
+                className="w-full rounded-[var(--radius-md)] border border-[color:var(--border-soft)] bg-[color:var(--paper-surface)] px-3 py-2 text-sm text-slate-900"
+              />
+              {showSuggestions && (() => {
+                const needle = normalizeEmail(pendingEmail);
+                const suggestions = recentEmails.filter(
+                  (e) => !sharedWithEmails.includes(e) && (!needle || e.includes(needle)),
+                );
+                return suggestions.length > 0 ? (
+                  <ul className="absolute left-0 right-0 top-full z-20 mt-1 max-h-40 overflow-y-auto rounded-[var(--radius-md)] border border-[color:var(--border-soft)] bg-[color:var(--paper-surface)] shadow-[var(--shadow-soft)]">
+                    {suggestions.map((email) => (
+                      <li key={email}>
+                        <button
+                          type="button"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => {
+                            setPendingEmail(email);
+                            setShowSuggestions(false);
+                          }}
+                          className="w-full px-3 py-2 text-left text-sm text-slate-900 hover:bg-[color:var(--paper-muted)]"
+                        >
+                          {email}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null;
+              })()}
+            </div>
             <button
               type="button"
               onClick={() => void handleAddRecipient()}
