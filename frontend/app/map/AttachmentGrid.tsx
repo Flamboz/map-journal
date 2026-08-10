@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { AttachmentPreviewModal } from "./AttachmentPreviewModal";
+import { AttachmentUploadModal } from "./AttachmentUploadModal";
 
 type AttachmentGridProps = {
   files: File[];
@@ -10,9 +11,10 @@ type AttachmentGridProps = {
 };
 
 export function AttachmentGrid({ files, onChange }: AttachmentGridProps) {
-  const inputRef = useRef<HTMLInputElement>(null);
   const [objectUrls, setObjectUrls] = useState<string[]>([]);
   const [previewFile, setPreviewFile] = useState<File | null>(null);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [quickInputKey, setQuickInputKey] = useState(0);
 
   useEffect(() => {
     const urls = files.map((file) => URL.createObjectURL(file));
@@ -20,10 +22,10 @@ export function AttachmentGrid({ files, onChange }: AttachmentGridProps) {
     return () => urls.forEach((url) => URL.revokeObjectURL(url));
   }, [files]);
 
-  function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
-    if (!e.target.files) return;
+  function handleQuickUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    if (!e.target.files || e.target.files.length === 0) return;
     onChange([...files, ...Array.from(e.target.files)]);
-    e.target.value = "";
+    setQuickInputKey((k) => k + 1);
   }
 
   function handleRemove(index: number) {
@@ -33,12 +35,13 @@ export function AttachmentGrid({ files, onChange }: AttachmentGridProps) {
   return (
     <>
       <input
-        ref={inputRef}
+        key={quickInputKey}
+        id="attachment-quick-input"
         type="file"
         multiple
         accept="image/*,video/*"
         className="sr-only"
-        onChange={handleInputChange}
+        onChange={handleQuickUpload}
       />
 
       <div className="grid grid-cols-3 gap-2">
@@ -54,24 +57,12 @@ export function AttachmentGrid({ files, onChange }: AttachmentGridProps) {
             >
               {isVideo ? (
                 <div className="flex h-full w-full items-center justify-center bg-slate-800">
-                  <svg
-                    aria-hidden="true"
-                    className="h-8 w-8 text-white/70"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                  >
+                  <svg aria-hidden="true" className="h-8 w-8 text-white/70" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M8 5v14l11-7z" />
                   </svg>
                 </div>
               ) : url ? (
-                <Image
-                  src={url}
-                  alt={file.name}
-                  fill
-                  unoptimized
-                  loader={({ src }) => src}
-                  className="object-cover"
-                />
+                <Image src={url} alt={file.name} fill unoptimized loader={({ src }) => src} className="object-cover" />
               ) : (
                 <div className="h-full w-full bg-[color:var(--paper-muted)]" />
               )}
@@ -106,7 +97,7 @@ export function AttachmentGrid({ files, onChange }: AttachmentGridProps) {
         <button
           type="button"
           aria-label="Add attachment"
-          onClick={() => inputRef.current?.click()}
+          onClick={() => setIsUploadModalOpen(true)}
           className="aspect-square flex items-center justify-center rounded-[var(--radius-md)] border-2 border-dashed border-[color:var(--border-soft)] bg-[color:var(--paper-surface)] text-slate-500 transition-colors hover:border-[color:var(--accent-primary)] hover:text-[color:var(--accent-primary)]"
         >
           <svg
@@ -124,8 +115,22 @@ export function AttachmentGrid({ files, onChange }: AttachmentGridProps) {
         </button>
       </div>
 
+      <label
+        htmlFor="attachment-quick-input"
+        className="mt-1 cursor-pointer text-xs text-[color:var(--accent-primary)] underline underline-offset-2 hover:text-[color:var(--accent-primary-strong)]"
+      >
+        Quick upload
+      </label>
+
       {previewFile && (
         <AttachmentPreviewModal file={previewFile} onClose={() => setPreviewFile(null)} />
+      )}
+
+      {isUploadModalOpen && (
+        <AttachmentUploadModal
+          onAdd={(newFiles) => onChange([...files, ...newFiles])}
+          onClose={() => setIsUploadModalOpen(false)}
+        />
       )}
     </>
   );
