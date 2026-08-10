@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import type { MapEventPhoto } from "../../map/api";
 
@@ -129,6 +129,15 @@ export default function EventPhotosCarousel({
   function closeModal() {
     setIsModalOpen(false);
   }
+
+  useEffect(() => {
+    if (!isModalOpen) return;
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") closeModal();
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isModalOpen]);
 
   return (
     <div className="relative">

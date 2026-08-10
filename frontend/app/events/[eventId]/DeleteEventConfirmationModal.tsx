@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+
 type DeleteEventConfirmationModalProps = {
   isDeletingEvent: boolean;
   onCancel: () => void;
@@ -9,6 +11,14 @@ export default function DeleteEventConfirmationModal({
   onCancel,
   onConfirm,
 }: DeleteEventConfirmationModalProps) {
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape" && !isDeletingEvent) onCancel();
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isDeletingEvent, onCancel]);
+
   return (
     <div
       className="fixed inset-0 z-[1300] flex items-center justify-center p-4"

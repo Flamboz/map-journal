@@ -44,6 +44,19 @@ export function EventPreviewModal({
     setPhotoIndex(0);
   }, [currentIndex]);
 
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key !== "Escape") return;
+      if (isDeleteModalOpen) {
+        if (!isDeletingEvent) setIsDeleteModalOpen(false);
+      } else {
+        onClose();
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isDeleteModalOpen, isDeletingEvent, onClose]);
+
   if (!currentEvent) {
     return null;
   }
