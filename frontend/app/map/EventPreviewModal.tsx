@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import EmptyValue from "../components/EmptyValue";
 import StarRating from "../components/StarRating";
 import { deleteEvent } from "./api";
@@ -22,9 +22,6 @@ type EventPreviewModalProps = {
   onDelete?: (eventId: string) => void;
 };
 
-function getPreviewPhotoUrl(event: MapEvent): string {
-  return event.photos?.[0]?.url ?? "";
-}
 
 export function EventPreviewModal({
   events,
@@ -41,17 +38,21 @@ export function EventPreviewModal({
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeletingEvent, setIsDeletingEvent] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [photoIndex, setPhotoIndex] = useState(0);
+
+  useEffect(() => {
+    setPhotoIndex(0);
+  }, [currentIndex]);
 
   if (!currentEvent) {
     return null;
   }
 
   const hasMultipleEvents = events.length > 1;
-  const previousEvent = hasMultipleEvents ? events[(currentIndex - 1 + events.length) % events.length] : null;
-  const nextEvent = hasMultipleEvents ? events[(currentIndex + 1) % events.length] : null;
-  const previousPhotoUrl = previousEvent ? getPreviewPhotoUrl(previousEvent) : "";
-  const currentPhotoUrl = getPreviewPhotoUrl(currentEvent);
-  const nextPhotoUrl = nextEvent ? getPreviewPhotoUrl(nextEvent) : "";
+  const photos = currentEvent.photos ?? [];
+  const hasPhotos = photos.length > 0;
+  const currentPhoto = photos[Math.min(photoIndex, photos.length - 1)] ?? null;
+  const hasMultiplePhotos = photos.length > 1;
   const safeRating = getSafeRating(currentEvent.rating);
   const hasRating = safeRating > 0;
   const canEdit = currentEvent.accessLevel === "owner";
@@ -177,152 +178,70 @@ export function EventPreviewModal({
             </div>
           </div>
 
-          <div className="relative mb-0 h-56 overflow-hidden" style={{ background: "var(--paper-muted)" }}>
-            {hasMultipleEvents && (
-              <>
-                <div className="absolute left-0 top-0 h-full w-[24%] overflow-hidden rounded-r-md opacity-80">
-                  {previousPhotoUrl ? (
-                    <Image
-                      src={previousPhotoUrl}
-                      alt="Previous event preview"
-                      fill
-                      unoptimized
-                      loader={({ src }) => src}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <div className="h-full w-full bg-gray-300" />
-                  )}
-                </div>
-
-                <div className="absolute right-0 top-0 h-full w-[24%] overflow-hidden rounded-l-md opacity-80">
-                  {nextPhotoUrl ? (
-                    <Image
-                      src={nextPhotoUrl}
-                      alt="Next event preview"
-                      fill
-                      unoptimized
-                      loader={({ src }) => src}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <div className="h-full w-full bg-gray-300" />
-                  )}
-                </div>
-              </>
-            )}
-
-            <div className="absolute left-1/2 top-0 h-full w-[72%] -translate-x-1/2 overflow-hidden">
-              {currentPhotoUrl ? (
+          <div className="relative h-56 overflow-hidden bg-black">
+            {hasPhotos && currentPhoto ? (
+              (currentPhoto.media_type === "video" || currentPhoto.mime_type?.startsWith("video/")) ? (
+                <video
+                  src={currentPhoto.url}
+                  className="h-full w-full object-contain"
+                  controls
+                  preload="metadata"
+                />
+              ) : (
                 <Image
-                  src={currentPhotoUrl}
-                  alt={`${currentEvent.name ?? currentEvent.title} preview`}
+                  src={currentPhoto.url}
+                  alt={`${currentEvent.name ?? currentEvent.title} attachment ${photoIndex + 1}`}
                   fill
                   unoptimized
                   loader={({ src }) => src}
-                  className="h-full w-full object-cover"
+                  className="object-contain"
                 />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center bg-gray-300 text-sm text-gray-600">
-                  No photo
-                </div>
-              )}
-            </div>
-
-            <div className="absolute right-3 top-3 z-20 flex flex-col items-end gap-2">
-              <div
-                className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium text-white"
-                style={{ background: "rgba(var(--overlay-rgb),0.85)" }}
-              >
-                <svg
-                  aria-hidden="true"
-                  className="h-4 w-4 text-white/90"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={1.5}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M21.44 11.05l-8.49 8.49a5 5 0 1 1-7.07-7.07l8.49-8.49a3 3 0 0 1 4.24 4.24L9.12 16.68" />
-                </svg>
-                <span>
-                  {currentEvent.photos && currentEvent.photos.length > 0
-                    ? `${currentEvent.photos.length} attachment${currentEvent.photos.length > 1 ? "s" : ""}`
-                    : "0 attachments"}
-                </span>
+              )
+            ) : (
+              <div className="flex h-full w-full items-center justify-center text-sm text-gray-500">
+                No attachments
               </div>
+            )}
 
-              {currentEvent.visibility === "share_with" && (
-                <div
-                  className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium text-white"
-                  style={{ background: "rgba(var(--overlay-rgb),0.85)" }}
-                >
-                  <svg
-                    aria-hidden="true"
-                    className="h-4 w-4 text-white/90"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={1.8}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                    <circle cx="9" cy="7" r="4" />
-                    <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                  </svg>
-                  <span>Shared</span>
-                </div>
-              )}
-            </div>
-
-            {hasMultipleEvents && (
+            {hasMultiplePhotos && (
               <>
                 <button
                   type="button"
-                  aria-label="Previous event"
-                  className="absolute left-2 top-1/2 z-20 -translate-y-1/2 rounded-full bg-white/80 p-2 text-gray-800"
-                  onClick={onPrevious}
+                  aria-label="Previous attachment"
+                  className="absolute left-2 top-1/2 z-20 -translate-y-1/2 rounded-full bg-white/80 p-2 text-gray-800 hover:bg-white"
+                  onClick={() => setPhotoIndex((i) => (i - 1 + photos.length) % photos.length)}
                 >
-                  <svg
-                    aria-hidden="true"
-                    className="h-5 w-5"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={1.5}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
+                  <svg aria-hidden="true" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                     <path d="M15 18l-6-6 6-6" />
                   </svg>
                 </button>
                 <button
                   type="button"
-                  aria-label="Next event"
-                  className="absolute right-2 top-1/2 z-20 -translate-y-1/2 rounded-full bg-white/80 p-2 text-gray-800"
-                  onClick={onNext}
+                  aria-label="Next attachment"
+                  className="absolute right-2 top-1/2 z-20 -translate-y-1/2 rounded-full bg-white/80 p-2 text-gray-800 hover:bg-white"
+                  onClick={() => setPhotoIndex((i) => (i + 1) % photos.length)}
                 >
-                  <svg
-                    aria-hidden="true"
-                    className="h-5 w-5"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={1.5}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
+                  <svg aria-hidden="true" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                     <path d="M9 6l6 6-6 6" />
                   </svg>
                 </button>
               </>
             )}
+
+            {hasPhotos && (
+              <div
+                className="absolute bottom-2 right-2 rounded-full px-2 py-0.5 text-xs font-medium text-white"
+                style={{ background: "rgba(var(--overlay-rgb),0.85)" }}
+              >
+                {photoIndex + 1} / {photos.length}
+              </div>
+            )}
           </div>
 
           <div className="space-y-3 p-4">
+            {currentEvent.description && (
+              <p className="line-clamp-4 text-sm text-gray-700">{currentEvent.description}</p>
+            )}
             <div className="flex items-center gap-2">
               {hasRating ? (
                 <div className="flex items-center gap-2">
@@ -338,6 +257,31 @@ export function EventPreviewModal({
 
           <div className="flex items-center justify-between rounded-b-md border-t border-[color:var(--border-soft)] bg-[color:var(--actionbar-bg)] p-4">
             <div className="flex items-center gap-2">
+              {hasMultipleEvents && (
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    aria-label="Previous event"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-md border bg-white text-gray-700 hover:bg-gray-50"
+                    onClick={onPrevious}
+                  >
+                    <svg aria-hidden="true" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M15 18l-6-6 6-6" />
+                    </svg>
+                  </button>
+                  <span className="min-w-[2.5rem] text-center text-xs text-gray-500">{currentIndex + 1}/{events.length}</span>
+                  <button
+                    type="button"
+                    aria-label="Next event"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-md border bg-white text-gray-700 hover:bg-gray-50"
+                    onClick={onNext}
+                  >
+                    <svg aria-hidden="true" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M9 6l6 6-6 6" />
+                    </svg>
+                  </button>
+                </div>
+              )}
               {canEdit && (
                 <>
                   <button
