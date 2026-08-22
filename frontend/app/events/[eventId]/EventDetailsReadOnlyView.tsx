@@ -20,13 +20,13 @@ export default function EventDetailsReadOnlyView({
   return (
     <div className="space-y-6">
       <div className="mx-auto w-full max-w-3xl">
-        <div className="relative rounded-2xl bg-gradient-to-r from-slate-900/95 to-slate-800/95 p-6 text-white shadow-md">
-          <h1 className="text-3xl font-semibold">{event.name ?? event.title}</h1>
+        <div className="relative rounded-2xl bg-gradient-to-r from-slate-900/95 to-slate-800/95 p-5 text-white shadow-md sm:p-6">
+          <h1 className="break-words text-2xl font-semibold sm:text-3xl">{event.name ?? event.title}</h1>
         </div>
       </div>
 
       <div className="mx-auto grid w-full max-w-3xl grid-cols-1 gap-4 md:grid-cols-3">
-        <div className="rounded-lg bg-white p-5 shadow-sm">
+        <div className="rounded-lg bg-white p-4 shadow-sm sm:p-5">
           <p className="text-xs font-medium text-gray-500">DATE</p>
           <p className="mt-2 text-lg text-gray-900">
             <EmptyValue
@@ -38,12 +38,12 @@ export default function EventDetailsReadOnlyView({
           </p>
         </div>
 
-        <div className="rounded-lg bg-white p-5 shadow-sm">
+        <div className="rounded-lg bg-white p-4 shadow-sm sm:p-5">
           <p className="text-xs font-medium text-gray-500">VISIBILITY</p>
           <p className="mt-2 text-lg text-gray-900">{event.visibility === "share_with" ? "Shared" : "Private"}</p>
         </div>
 
-        <div className="rounded-lg bg-white p-5 shadow-sm">
+        <div className="rounded-lg bg-white p-4 shadow-sm sm:p-5">
           <p className="text-xs font-medium text-gray-500">VISIT COMPANY</p>
           <p className="mt-2 text-lg text-gray-900">
             <EmptyValue
@@ -57,7 +57,7 @@ export default function EventDetailsReadOnlyView({
       </div>
 
       <div className="mx-auto w-full max-w-3xl space-y-4">
-        <div className="rounded-lg bg-white p-5 shadow-sm">
+        <div className="rounded-lg bg-white p-4 shadow-sm sm:p-5">
           <p className="text-xs font-medium text-gray-500">DESCRIPTION</p>
           <p className="mt-2 text-base text-gray-700">
             <EmptyValue
@@ -69,7 +69,7 @@ export default function EventDetailsReadOnlyView({
           </p>
         </div>
 
-        <div className="rounded-lg bg-white p-5 shadow-sm">
+        <div className="rounded-lg bg-white p-4 shadow-sm sm:p-5">
           <p className="text-xs font-medium text-gray-500">RATING</p>
           <div className="mt-3 flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -95,7 +95,7 @@ export default function EventDetailsReadOnlyView({
           </div>
         </div>
 
-        <div className="rounded-lg bg-white p-5 shadow-sm">
+        <div className="rounded-lg bg-white p-4 shadow-sm sm:p-5">
           <p className="text-xs font-medium text-gray-500">LABELS</p>
           <div className="mt-3 flex flex-wrap items-center gap-2">
             {(event.labels ?? []).length ? (
@@ -108,14 +108,14 @@ export default function EventDetailsReadOnlyView({
           </div>
         </div>
 
-        <div className="rounded-lg bg-white p-5 shadow-sm">
+        <div className="rounded-lg bg-white p-4 shadow-sm sm:p-5">
           <p className="text-xs font-medium text-gray-500">SHARED WITH</p>
           <div className="mt-3 flex flex-wrap items-center gap-2">
             {sharedWithEmails.length > 0 ? (
               sharedWithEmails.map((email) => (
                 <span
                   key={email}
-                  className="rounded-full border border-gray-200 bg-[color:var(--background-2)] px-3 py-1 text-sm text-[color:var(--foreground)]"
+                  className="max-w-full break-all rounded-full border border-gray-200 bg-[color:var(--background-2)] px-3 py-1 text-sm text-[color:var(--foreground)]"
                 >
                   {email}
                 </span>

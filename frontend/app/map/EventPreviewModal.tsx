@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import EmptyValue from "../components/EmptyValue";
+import { getVideoPosterSrc, isVideoMedia } from "../../lib/media";
 import StarRating from "../components/StarRating";
 import { deleteEvent } from "./api";
 import { isApiErrorCode } from "./apiErrors";
@@ -110,7 +111,7 @@ export function EventPreviewModal({
         onClick={onClose}
       />
 
-      <div className="relative z-[1201] w-full max-w-md">
+      <div className="relative z-[1201] flex max-h-full w-full max-w-md flex-col">
         <button
           type="button"
           aria-label="Close"
@@ -133,142 +134,147 @@ export function EventPreviewModal({
           </svg>
         </button>
 
-        <div className="paper-card overflow-hidden rounded-lg bg-white shadow-lg">
-          <div className="mb-0 overflow-hidden">
-          <div
-            className="flex items-start justify-between px-4 py-4"
-            style={{ background: "linear-gradient(135deg, var(--modal-hero-1) 0%, var(--modal-hero-2) 100%)" }}
-          >
-            <div>
-              <h3 className="text-2xl font-semibold text-white" style={{ fontFamily: "var(--font-heading)" }}>
-                  {currentEvent.name ?? currentEvent.title}
-              </h3>
+        <div className="paper-card flex min-h-0 flex-col overflow-hidden rounded-lg bg-white shadow-lg">
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <div className="mb-0 overflow-hidden">
+            <div
+              className="flex items-start justify-between px-4 py-4"
+              style={{ background: "linear-gradient(135deg, var(--modal-hero-1) 0%, var(--modal-hero-2) 100%)" }}
+            >
+              <div>
+                <h3 className="text-2xl font-semibold text-white" style={{ fontFamily: "var(--font-heading)" }}>
+                    {currentEvent.name ?? currentEvent.title}
+                </h3>
 
-                <div className="mt-2 flex flex-wrap items-center gap-2 gap-y-2">
-                  <span
-                    className="inline-flex flex-shrink-0 items-center gap-2 rounded-full px-3 py-1 text-xs font-medium"
-                    style={{ background: "transparent", border: "1px solid rgba(var(--white-rgb),0.12)" }}
-                  >
-                    <svg
-                      aria-hidden="true"
-                      className="h-4 w-4 text-white/90"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={1.5}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <rect x="3" y="5" width="18" height="16" rx="2" />
-                      <path d="M16 3v4M8 3v4" />
-                      <path d="M3 11h18" />
-                    </svg>
-                    <span className="text-xs text-white/90">
-                      {formatEventDateRange(currentEvent.startDate, currentEvent.endDate)}
-                    </span>
-                  </span>
-
-                  {(currentEvent.labels ?? []).slice(0, 5).map((label) => (
+                  <div className="mt-2 flex flex-wrap items-center gap-2 gap-y-2">
                     <span
-                      key={label}
-                      className="inline-flex flex-shrink-0 items-center rounded-full px-3 py-1 text-xs font-medium text-white"
-                      style={{ background: "var(--accent-primary)", border: "1px solid var(--accent-primary-strong)" }}
+                      className="inline-flex flex-shrink-0 items-center gap-2 rounded-full px-3 py-1 text-xs font-medium"
+                      style={{ background: "transparent", border: "1px solid rgba(var(--white-rgb),0.12)" }}
                     >
-                      {label}
+                      <svg
+                        aria-hidden="true"
+                        className="h-4 w-4 text-white/90"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={1.5}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <rect x="3" y="5" width="18" height="16" rx="2" />
+                        <path d="M16 3v4M8 3v4" />
+                        <path d="M3 11h18" />
+                      </svg>
+                      <span className="text-xs text-white/90">
+                        {formatEventDateRange(currentEvent.startDate, currentEvent.endDate)}
+                      </span>
                     </span>
-                  ))}
 
-                  {currentEvent.visitCompany && (
-                    <span
-                      className="inline-flex flex-shrink-0 items-center rounded-full px-3 py-1 text-xs font-medium text-white"
-                      style={{ background: "var(--badge-visit-bg)", border: "1px solid var(--badge-visit-border)" }}
-                    >
-                      {currentEvent.visitCompany}
-                    </span>
-                  )}
+                    {(currentEvent.labels ?? []).slice(0, 5).map((label) => (
+                      <span
+                        key={label}
+                        className="inline-flex flex-shrink-0 items-center rounded-full px-3 py-1 text-xs font-medium text-white"
+                        style={{ background: "var(--accent-primary)", border: "1px solid var(--accent-primary-strong)" }}
+                      >
+                        {label}
+                      </span>
+                    ))}
+
+                    {currentEvent.visitCompany && (
+                      <span
+                        className="inline-flex flex-shrink-0 items-center rounded-full px-3 py-1 text-xs font-medium text-white"
+                        style={{ background: "var(--badge-visit-bg)", border: "1px solid var(--badge-visit-border)" }}
+                      >
+                        {currentEvent.visitCompany}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <div className="relative h-56 overflow-hidden bg-black">
-            {hasPhotos && currentPhoto ? (
-              (currentPhoto.media_type === "video" || currentPhoto.mime_type?.startsWith("video/")) ? (
-                <video
-                  src={currentPhoto.url}
-                  className="h-full w-full object-contain"
-                  controls
-                  preload="metadata"
-                />
+            <div className="relative h-48 overflow-hidden bg-black sm:h-56">
+              {hasPhotos && currentPhoto ? (
+                isVideoMedia(currentPhoto) ? (
+                  <video
+                    key={currentPhoto.id}
+                    src={getVideoPosterSrc(currentPhoto.url)}
+                    className="h-full w-full object-contain"
+                    controls
+                    playsInline
+                    preload="metadata"
+                  />
+                ) : (
+                  <Image
+                    src={currentPhoto.url}
+                    alt={`${currentEvent.name ?? currentEvent.title} attachment ${photoIndex + 1}`}
+                    fill
+                    unoptimized
+                    loader={({ src }) => src}
+                    className="object-contain"
+                  />
+                )
               ) : (
-                <Image
-                  src={currentPhoto.url}
-                  alt={`${currentEvent.name ?? currentEvent.title} attachment ${photoIndex + 1}`}
-                  fill
-                  unoptimized
-                  loader={({ src }) => src}
-                  className="object-contain"
-                />
-              )
-            ) : (
-              <div className="flex h-full w-full items-center justify-center text-sm text-gray-500">
-                No attachments
-              </div>
-            )}
-
-            {hasMultiplePhotos && (
-              <>
-                <button
-                  type="button"
-                  aria-label="Previous attachment"
-                  className="absolute left-2 top-1/2 z-20 -translate-y-1/2 rounded-full bg-white/80 p-2 text-gray-800 hover:bg-white"
-                  onClick={() => setPhotoIndex((i) => (i - 1 + photos.length) % photos.length)}
-                >
-                  <svg aria-hidden="true" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M15 18l-6-6 6-6" />
-                  </svg>
-                </button>
-                <button
-                  type="button"
-                  aria-label="Next attachment"
-                  className="absolute right-2 top-1/2 z-20 -translate-y-1/2 rounded-full bg-white/80 p-2 text-gray-800 hover:bg-white"
-                  onClick={() => setPhotoIndex((i) => (i + 1) % photos.length)}
-                >
-                  <svg aria-hidden="true" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M9 6l6 6-6 6" />
-                  </svg>
-                </button>
-              </>
-            )}
-
-            {hasPhotos && (
-              <div
-                className="absolute bottom-2 right-2 rounded-full px-2 py-0.5 text-xs font-medium text-white"
-                style={{ background: "rgba(var(--overlay-rgb),0.85)" }}
-              >
-                {photoIndex + 1} / {photos.length}
-              </div>
-            )}
-          </div>
-
-          <div className="space-y-3 p-4">
-            {currentEvent.description && (
-              <p className="line-clamp-4 text-sm text-gray-700">{currentEvent.description}</p>
-            )}
-            <div className="flex items-center gap-2">
-              {hasRating ? (
-                <div className="flex items-center gap-2">
-                  <div className="text-sm font-medium text-gray-600">Rating</div>
-                  <StarRating rating={safeRating} className="text-sm" />
-                  <div className="text-sm font-medium text-gray-800">{safeRating}/10</div>
+                <div className="flex h-full w-full items-center justify-center text-sm text-gray-500">
+                  No attachments
                 </div>
-              ) : (
-                <EmptyValue value={undefined} placeholder="Not rated" className="text-sm text-gray-600" />
+              )}
+
+              {hasMultiplePhotos && (
+                <>
+                  <button
+                    type="button"
+                    aria-label="Previous attachment"
+                    className="absolute left-2 top-1/2 z-20 -translate-y-1/2 rounded-full bg-white/80 p-2 text-gray-800 hover:bg-white"
+                    onClick={() => setPhotoIndex((i) => (i - 1 + photos.length) % photos.length)}
+                  >
+                    <svg aria-hidden="true" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M15 18l-6-6 6-6" />
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Next attachment"
+                    className="absolute right-2 top-1/2 z-20 -translate-y-1/2 rounded-full bg-white/80 p-2 text-gray-800 hover:bg-white"
+                    onClick={() => setPhotoIndex((i) => (i + 1) % photos.length)}
+                  >
+                    <svg aria-hidden="true" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M9 6l6 6-6 6" />
+                    </svg>
+                  </button>
+                </>
+              )}
+
+              {hasPhotos && (
+                <div
+                  className="absolute bottom-2 right-2 rounded-full px-2 py-0.5 text-xs font-medium text-white"
+                  style={{ background: "rgba(var(--overlay-rgb),0.85)" }}
+                >
+                  {photoIndex + 1} / {photos.length}
+                </div>
               )}
             </div>
+
+            <div className="space-y-3 p-4">
+              {currentEvent.description && (
+                <p className="line-clamp-4 text-sm text-gray-700">{currentEvent.description}</p>
+              )}
+              <div className="flex items-center gap-2">
+                {hasRating ? (
+                  <div className="flex items-center gap-2">
+                    <div className="text-sm font-medium text-gray-600">Rating</div>
+                    <StarRating rating={safeRating} className="text-sm" />
+                    <div className="text-sm font-medium text-gray-800">{safeRating}/10</div>
+                  </div>
+                ) : (
+                  <EmptyValue value={undefined} placeholder="Not rated" className="text-sm text-gray-600" />
+                )}
+              </div>
+            </div>
+
           </div>
 
-          <div className="flex items-center justify-between rounded-b-md border-t border-[color:var(--border-soft)] bg-[color:var(--actionbar-bg)] p-4">
+          <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 rounded-b-md border-t border-[color:var(--border-soft)] bg-[color:var(--actionbar-bg)] p-3 sm:p-4">
             <div className="flex items-center gap-2">
               {hasMultipleEvents && (
                 <div className="flex items-center gap-1">

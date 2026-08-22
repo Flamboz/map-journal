@@ -1,13 +1,13 @@
 export default function TimelineLoadingView() {
   return (
-    <main className="mx-auto w-full max-w-3xl space-y-6 p-6" aria-busy="true" aria-label="Loading timeline">
-      <header className="mb-6 flex items-start justify-between gap-4">
+    <main className="mx-auto w-full max-w-3xl space-y-6 p-4 sm:p-6" aria-busy="true" aria-label="Loading timeline">
+      <header className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
         <div className="space-y-2">
-          <div className="h-9 w-52 rounded bg-slate-200" />
+          <div className="h-8 w-44 rounded bg-slate-200 sm:h-9 sm:w-52" />
           <div className="h-4 w-40 rounded bg-slate-100" />
         </div>
 
-        <div className="flex flex-wrap justify-end gap-2">
+        <div className="flex flex-wrap gap-2 sm:justify-end">
           <div className="h-9 w-16 rounded-full bg-slate-100" />
           <div className="h-9 w-20 rounded-full bg-slate-100" />
           <div className="h-9 w-24 rounded-full bg-slate-100" />
@@ -15,9 +15,9 @@ export default function TimelineLoadingView() {
       </header>
 
       <section className="relative">
-        <div className="absolute bottom-0 left-8 top-0 w-px bg-gray-200/70" />
+        <div className="absolute bottom-0 left-3 top-0 w-px bg-gray-200/70 sm:left-8" />
 
-        <div className="space-y-8 pl-20">
+        <div className="space-y-8 pl-8 sm:pl-20">
           {Array.from({ length: 2 }, (_, yearIndex) => (
             <div key={yearIndex} className="space-y-5">
               <div className="h-4 w-12 rounded bg-slate-100" />
@@ -28,8 +28,8 @@ export default function TimelineLoadingView() {
 
                   {Array.from({ length: 2 }, (_, eventIndex) => (
                     <article key={eventIndex} className="relative flex items-start gap-6">
-                      <div className="absolute -left-12 top-10 z-10 h-3 w-3 -translate-x-1/2 rounded-full bg-slate-200" />
-                      <div className="paper-card flex-1 space-y-4 p-4">
+                      <div className="absolute -left-5 top-10 z-10 h-3 w-3 -translate-x-1/2 rounded-full bg-slate-200 sm:-left-12" />
+                      <div className="paper-card flex-1 space-y-4 p-3 sm:p-4">
                         <div className="flex items-start gap-4">
                           <div className="flex-1 space-y-2">
                             <div className="h-6 w-40 rounded bg-slate-200" />

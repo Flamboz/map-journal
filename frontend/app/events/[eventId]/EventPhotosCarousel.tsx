@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import type { MapEventPhoto } from "../../map/api";
+import { getVideoPosterSrc, isVideoMedia } from "../../../lib/media";
 
 type EventPhotosCarouselProps = {
   photos: MapEventPhoto[];
@@ -141,9 +142,16 @@ export default function EventPhotosCarousel({
 
   return (
     <div className="relative">
-      <div className="relative h-72 md:h-96 lg:h-[360px] overflow-hidden rounded-2xl bg-black shadow-sm">
-        {(currentPhoto.media_type === "video" || (currentPhoto.mime_type && currentPhoto.mime_type.startsWith("video/"))) ? (
-          <video src={currentPhoto.url} className="h-full w-full object-contain" controls preload="metadata" />
+      <div className="relative h-56 overflow-hidden rounded-2xl bg-black shadow-sm sm:h-72 md:h-96 lg:h-[360px]">
+        {isVideoMedia(currentPhoto) ? (
+          <video
+            key={currentPhoto.id}
+            src={getVideoPosterSrc(currentPhoto.url)}
+            className="h-full w-full object-contain"
+            controls
+            playsInline
+            preload="metadata"
+          />
         ) : (
           <Image
             src={currentPhoto.url}
@@ -263,7 +271,7 @@ export default function EventPhotosCarousel({
       {/* Floating add-photo button moved into the image area; duplicate removed. */}
 
       {isModalOpen && (
-        <div className="fixed inset-0 z-[1300] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Attachment viewer">
+        <div className="fixed inset-0 z-[1300] flex items-center justify-center p-3 sm:p-4" role="dialog" aria-modal="true" aria-label="Attachment viewer">
           <button
             type="button"
             aria-label="Close attachment viewer backdrop"
@@ -271,7 +279,7 @@ export default function EventPhotosCarousel({
             className="absolute inset-0 bg-black/70"
           />
 
-          <div className="relative z-[1301] w-full max-w-5xl rounded-xl bg-white p-4 shadow-lg">
+          <div className="relative z-[1301] max-h-full w-full max-w-5xl overflow-y-auto rounded-xl bg-white p-3 shadow-lg sm:p-4">
             <button
               type="button"
               aria-label="Close attachment viewer"
@@ -281,9 +289,16 @@ export default function EventPhotosCarousel({
               ×
             </button>
 
-            <div className="relative h-[70vh] overflow-hidden rounded-lg bg-black">
-              {(currentPhoto.media_type === "video" || (currentPhoto.mime_type && currentPhoto.mime_type.startsWith("video/"))) ? (
-                <video src={currentPhoto.url} className="h-full w-full object-contain" controls preload="metadata" />
+            <div className="relative h-[60vh] overflow-hidden rounded-lg bg-black sm:h-[70vh]">
+              {isVideoMedia(currentPhoto) ? (
+                <video
+                  key={currentPhoto.id}
+                  src={getVideoPosterSrc(currentPhoto.url)}
+                  className="h-full w-full object-contain"
+                  controls
+                  playsInline
+                  preload="metadata"
+                />
               ) : (
                 <Image
                   src={currentPhoto.url}

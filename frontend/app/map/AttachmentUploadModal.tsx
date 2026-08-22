@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
+import { MediaThumbnail } from "../components/MediaThumbnail";
 
 type AttachmentUploadModalProps = {
   onAdd: (files: File[]) => void;
@@ -103,8 +103,8 @@ export function AttachmentUploadModal({ onAdd, onClose }: AttachmentUploadModalP
     >
       <button type="button" aria-label="Close" className="absolute inset-0 bg-black/50" onClick={onClose} />
 
-      <div className="relative z-[1401] w-full max-w-lg rounded-xl bg-white shadow-xl">
-        <div className="flex items-center justify-between border-b border-[color:var(--border-soft)] px-5 py-4">
+      <div className="relative z-[1401] flex max-h-full w-full max-w-lg flex-col rounded-xl bg-white shadow-xl">
+        <div className="flex shrink-0 items-center justify-between border-b border-[color:var(--border-soft)] px-5 py-4">
           <h2 className="text-base font-semibold text-slate-900">Add attachments</h2>
           <button
             type="button"
@@ -119,7 +119,7 @@ export function AttachmentUploadModal({ onAdd, onClose }: AttachmentUploadModalP
           </button>
         </div>
 
-        <div className="space-y-4 p-5">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-5">
           <input
             key={inputKey}
             id="attachment-file-input"
@@ -154,14 +154,8 @@ export function AttachmentUploadModal({ onAdd, onClose }: AttachmentUploadModalP
                     key={index}
                     className="relative aspect-square overflow-hidden rounded-[var(--radius-md)] border border-[color:var(--border-soft)] bg-[color:var(--paper-muted)]"
                   >
-                    {isVideo ? (
-                      <div className="flex h-full w-full items-center justify-center bg-slate-800">
-                        <svg aria-hidden="true" className="h-6 w-6 text-white/70" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M8 5v14l11-7z" />
-                        </svg>
-                      </div>
-                    ) : url ? (
-                      <Image src={url} alt={file.name} fill unoptimized loader={({ src }) => src} className="object-cover" />
+                    {url ? (
+                      <MediaThumbnail src={url} isVideo={isVideo} alt={file.name} playBadgeClassName="h-6 w-6" />
                     ) : (
                       <div className="h-full w-full bg-[color:var(--paper-muted)]" />
                     )}
@@ -183,7 +177,7 @@ export function AttachmentUploadModal({ onAdd, onClose }: AttachmentUploadModalP
           )}
         </div>
 
-        <div className="flex items-center justify-end gap-2 border-t border-[color:var(--border-soft)] px-5 py-4">
+        <div className="flex shrink-0 items-center justify-end gap-2 border-t border-[color:var(--border-soft)] px-5 py-4">
           <button
             type="button"
             onClick={onClose}

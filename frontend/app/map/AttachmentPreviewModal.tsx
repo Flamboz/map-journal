@@ -42,7 +42,7 @@ export function AttachmentPreviewModal({ file, onClose }: AttachmentPreviewModal
         onClick={onClose}
       />
 
-      <div className="relative z-[1301] w-full max-w-4xl">
+      <div className="relative z-[1301] max-h-full w-full max-w-4xl overflow-y-auto">
         <button
           type="button"
           aria-label="Close"
@@ -68,12 +68,13 @@ export function AttachmentPreviewModal({ file, onClose }: AttachmentPreviewModal
           {isVideo ? (
             <video
               src={objectUrl}
-              className="max-h-[80vh] w-full object-contain"
+              className="max-h-[70vh] w-full object-contain sm:max-h-[80vh]"
               controls
+              playsInline
               autoPlay
             />
           ) : (
-            <div className="relative h-[80vh]">
+            <div className="relative h-[70vh] sm:h-[80vh]">
               <Image
                 src={objectUrl}
                 alt={file.name}

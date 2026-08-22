@@ -5,6 +5,11 @@ import type { EventFormState } from "./mapViewTypes";
 export const WORLD_CENTER: LatLngExpression = [20, 0];
 export const WORLD_ZOOM = 2;
 export const PIN_GROUP_DISTANCE_METERS = 20;
+/**
+ * Below this width the three-column desktop layout (sidebar + map + draft panel)
+ * cannot fit without overflowing, so the drawer-based mobile layout is used instead.
+ */
+export const MOBILE_LAYOUT_MAX_WIDTH = 1024;
 
 export const MARKER_ICON = new Icon({
   iconUrl: withBasePath("/leaflet/pin.svg"),

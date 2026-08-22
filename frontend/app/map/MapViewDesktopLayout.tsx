@@ -61,7 +61,7 @@ export function MapViewDesktopLayout({
         </div>
       </div>
 
-      <div className="h-full w-[23rem] min-w-[23rem] border-l border-[color:var(--border-soft)] bg-[color:var(--paper-muted)] p-4 lg:w-[26rem] lg:min-w-[26rem]">
+      <div className="h-full w-[23rem] min-w-[23rem] border-l border-[color:var(--border-soft)] bg-[color:var(--paper-muted)] p-4 xl:w-[26rem] xl:min-w-[26rem]">
         <EventDraftForm
           draftPosition={draftPosition}
           isResolvingAddress={isResolvingAddress}

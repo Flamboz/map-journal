@@ -108,6 +108,26 @@ h3,
   box-shadow: var(--shadow-soft);
 }
 
+/* Viewport helpers: the dvh fallback keeps mobile browser chrome from clipping content. */
+.h-screen-minus-topbar {
+  height: calc(100vh - var(--topbar-height));
+  height: calc(100dvh - var(--topbar-height));
+}
+
+.min-h-screen-minus-topbar {
+  min-height: calc(100vh - var(--topbar-height));
+  min-height: calc(100dvh - var(--topbar-height));
+}
+
+/* Horizontally scrollable chip rows on mobile read better without a visible bar. */
+.scrollbar-none {
+  scrollbar-width: none;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
 .marker-cluster div {
   color: #111827;
   font-weight: 700;

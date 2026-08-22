@@ -1,13 +1,13 @@
 export default function EventDetailsLoadingView() {
   return (
-    <main className="mx-auto w-full max-w-3xl space-y-6 p-6" aria-busy="true" aria-label="Loading event details">
+    <main className="mx-auto w-full max-w-3xl space-y-6 p-4 sm:p-6" aria-busy="true" aria-label="Loading event details">
       <div className="flex flex-wrap items-center gap-3">
         <div className="h-10 w-40 rounded-md bg-slate-100" />
         <div className="h-4 w-32 rounded bg-slate-100" />
         <div className="h-10 w-36 rounded-md bg-slate-100" />
       </div>
 
-      <div className="rounded-2xl bg-slate-200 p-6 shadow-md">
+      <div className="rounded-2xl bg-slate-200 p-5 shadow-md sm:p-6">
         <div className="h-9 w-56 rounded bg-slate-100/90" />
       </div>
 

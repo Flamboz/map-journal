@@ -12,6 +12,10 @@ type TimelineClientProps = {
   children: ReactNode;
 };
 
+function formatCount(value: number, noun: string): string {
+  return `${value} ${noun}${value === 1 ? "" : "s"}`;
+}
+
 export default function TimelineClient({ labels, stats, children }: TimelineClientProps) {
   const [filter, setFilter] = useState("All");
   const containerRef = useRef<HTMLDivElement>(null);
@@ -47,23 +51,23 @@ export default function TimelineClient({ labels, stats, children }: TimelineClie
   }, [filter]);
 
   return (
-    <main className="mx-auto w-full max-w-3xl space-y-6 p-6">
-      <header className="mb-6 flex items-start justify-between gap-4">
+    <main className="mx-auto w-full max-w-3xl space-y-6 p-4 sm:p-6">
+      <header className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
         <div>
-          <h1 className="mb-1 text-3xl font-serif">Journey timeline</h1>
+          <h1 className="mb-1 font-serif text-2xl sm:text-3xl">Journey timeline</h1>
           <p className="text-sm text-gray-500">
-            {stats.count} events across {stats.years} years
+            {formatCount(stats.count, "event")} across {formatCount(stats.years, "year")}
           </p>
         </div>
 
-        <div className="flex flex-wrap justify-end gap-2">
+        <div className="scrollbar-none -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:justify-end sm:overflow-visible sm:px-0 sm:pb-0">
           {labels.map((label) => (
             <button
               key={label}
               type="button"
               onClick={() => setFilter(label)}
               aria-pressed={filter === label}
-              className={`rounded-full px-3 py-1 text-sm font-medium transition ${
+              className={`shrink-0 rounded-full border px-3 py-1 text-sm font-medium transition ${
                 filter === label
                   ? "border-[color:var(--accent-weak)] bg-[color:var(--accent-weak-bg)] text-[color:var(--accent-weak-text)]"
                   : "border-[color:var(--border-soft)] bg-[color:var(--paper-surface)] text-slate-700 hover:bg-[color:var(--paper-muted)]"

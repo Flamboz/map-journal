@@ -6,7 +6,7 @@ import type { MapEvent, PlaceSearchResult } from "./api";
 import { EventPreviewModal } from "./EventPreviewModal";
 import { MapAuthProvider } from "./MapAuthContext";
 import { MapCanvas } from "./MapCanvas";
-import { PIN_GROUP_DISTANCE_METERS } from "./mapViewConstants";
+import { MOBILE_LAYOUT_MAX_WIDTH, PIN_GROUP_DISTANCE_METERS } from "./mapViewConstants";
 import { groupEventsByDistance } from "./mapViewHelpers";
 import { MapViewDesktopLayout } from "./MapViewDesktopLayout";
 import { MapViewMobileLayout } from "./MapViewMobileLayout";
@@ -176,7 +176,7 @@ export default function MapView({ initialError = null }: MapViewProps) {
 
   useEffect(() => {
     function updateViewport() {
-      setIsMobileViewport(window.innerWidth < 640);
+      setIsMobileViewport(window.innerWidth < MOBILE_LAYOUT_MAX_WIDTH);
     }
 
     updateViewport();
@@ -216,7 +216,7 @@ export default function MapView({ initialError = null }: MapViewProps) {
 
   return (
     <MapAuthProvider authToken={authToken} currentUserEmail={currentUserEmail}>
-      <section ref={sectionRef} className="relative h-[calc(100vh-var(--topbar-height))] w-full overflow-hidden" aria-label="map-view">
+      <section ref={sectionRef} className="h-screen-minus-topbar relative w-full overflow-hidden" aria-label="map-view">
         {isFullscreen ? (
           <div className="relative h-full w-full">
             {isMobileViewport ? mobileMapCanvas : desktopMapCanvas}

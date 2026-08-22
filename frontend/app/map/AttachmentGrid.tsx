@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
+import { MediaThumbnail } from "../components/MediaThumbnail";
 import { AttachmentPreviewModal } from "./AttachmentPreviewModal";
 import { AttachmentUploadModal } from "./AttachmentUploadModal";
 
@@ -55,14 +55,8 @@ export function AttachmentGrid({ files, onChange }: AttachmentGridProps) {
               className="relative aspect-square cursor-pointer overflow-hidden rounded-[var(--radius-md)] border border-[color:var(--border-soft)] bg-[color:var(--paper-muted)]"
               onClick={() => setPreviewFile(file)}
             >
-              {isVideo ? (
-                <div className="flex h-full w-full items-center justify-center bg-slate-800">
-                  <svg aria-hidden="true" className="h-8 w-8 text-white/70" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M8 5v14l11-7z" />
-                  </svg>
-                </div>
-              ) : url ? (
-                <Image src={url} alt={file.name} fill unoptimized loader={({ src }) => src} className="object-cover" />
+              {url ? (
+                <MediaThumbnail src={url} isVideo={isVideo} alt={file.name} />
               ) : (
                 <div className="h-full w-full bg-[color:var(--paper-muted)]" />
               )}

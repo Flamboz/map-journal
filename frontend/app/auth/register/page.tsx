@@ -37,7 +37,7 @@ function RegisterPageContent() {
   }
 
   return (
-    <section className="min-h-[calc(100vh-var(--topbar-height))] bg-[radial-gradient(circle_at_top_left,_rgba(var(--accent-primary-rgb),0.14),_transparent_32%),linear-gradient(180deg,_var(--background)_0%,_var(--background-2)_100%)] px-4 py-8 sm:px-6 lg:px-10 lg:py-12">
+    <section className="min-h-screen-minus-topbar bg-[radial-gradient(circle_at_top_left,_rgba(var(--accent-primary-rgb),0.14),_transparent_32%),linear-gradient(180deg,_var(--background)_0%,_var(--background-2)_100%)] px-4 py-8 sm:px-6 lg:px-10 lg:py-12">
       <div className="mx-auto max-w-xl">
         <div className="paper-card flex flex-col justify-between p-6 sm:p-8 lg:p-10">
           <div>

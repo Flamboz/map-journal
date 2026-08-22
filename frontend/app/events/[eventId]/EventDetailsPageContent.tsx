@@ -52,7 +52,7 @@ export default async function EventDetailsPageContent({
   const samePinNavigation = buildSamePinNavigation(event.id, samePinEventIds);
 
   return (
-    <main className="mx-auto w-full max-w-3xl space-y-6 p-6">
+    <main className="mx-auto w-full max-w-3xl space-y-6 p-4 sm:p-6">
       <div id={readOnlyContentId} className="space-y-6">
         {samePinNavigation && (
           <div className="flex flex-wrap items-center gap-3">

@@ -17,7 +17,7 @@ export function LeftSidebar({
   onResultClick,
 }: LeftSidebarProps) {
   return (
-    <aside className="flex h-full w-full flex-col gap-4 overflow-y-auto bg-[color:var(--paper-muted)] p-4 md:w-[22rem] md:min-w-[22rem] md:border-r md:border-[color:var(--border-soft)] lg:w-[25rem] lg:min-w-[25rem]">
+    <aside className="flex h-full w-full flex-col gap-4 overflow-y-auto bg-[color:var(--paper-muted)] p-4 lg:w-[22rem] lg:min-w-[22rem] lg:border-r lg:border-[color:var(--border-soft)] xl:w-[25rem] xl:min-w-[25rem]">
       <EventSearchFilterPanel
         labelOptions={labelOptions}
         visitCompanyOptions={visitCompanyOptions}
