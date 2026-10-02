@@ -6,10 +6,11 @@ import type { MapEvent, PlaceSearchResult } from "./api";
 import { EventPreviewModal } from "./EventPreviewModal";
 import { MapAuthProvider } from "./MapAuthContext";
 import { MapCanvas } from "./MapCanvas";
-import { MOBILE_LAYOUT_MAX_WIDTH, PIN_GROUP_DISTANCE_METERS } from "./mapViewConstants";
+import { MAP_MAX_ZOOM, MOBILE_LAYOUT_MAX_WIDTH, PIN_GROUP_DISTANCE_METERS } from "./mapViewConstants";
 import { groupEventsByDistance } from "./mapViewHelpers";
 import { MapViewDesktopLayout } from "./MapViewDesktopLayout";
 import { MapViewMobileLayout } from "./MapViewMobileLayout";
+import { useCurrentLocation } from "./useCurrentLocation";
 import { useDraftPinState } from "./useDraftPinState";
 import { useMapBootstrapData } from "./useMapBootstrapData";
 import { useMapPreviewNavigation } from "./useMapPreviewNavigation";
@@ -154,6 +155,13 @@ export default function MapView({ initialError = null }: MapViewProps) {
     setIsMobileDraftOpen(true);
   }
 
+  const { isLocating, locationError, locate } = useCurrentLocation({
+    onLocated: (coords) => {
+      handleMapClickDraft(coords);
+      setCenterState({ center: [coords.lat, coords.lng], zoom: MAP_MAX_ZOOM });
+    },
+  });
+
   function handleCloseDraftForm() {
     setIsMobileDraftOpen(false);
   }
@@ -194,9 +202,12 @@ export default function MapView({ initialError = null }: MapViewProps) {
       eventsError={eventsError}
       globalError={globalError}
       isFullscreen={isFullscreen}
+      isLocating={isLocating}
+      locationError={locationError}
       onMapClick={handleMapClickDraft}
       onOpenGroup={openGroup}
       onToggleFullscreen={toggleFullscreen}
+      onLocate={locate}
     />
   );
 
@@ -208,9 +219,12 @@ export default function MapView({ initialError = null }: MapViewProps) {
       eventsVersion={eventsVersion}
       showStatusOverlays={false}
       isFullscreen={isFullscreen}
+      isLocating={isLocating}
+      locationError={locationError}
       onMapClick={handleMapClickDraft}
       onOpenGroup={openGroup}
       onToggleFullscreen={toggleFullscreen}
+      onLocate={locate}
     />
   );
 

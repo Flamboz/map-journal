@@ -356,6 +356,30 @@ describe("MapView", () => {
     expect(await screen.findByText("Name is required.")).toBeInTheDocument();
   });
 
+  it("moves the draft pin to the current location at max zoom", async () => {
+    vi.stubGlobal("navigator", {
+      ...navigator,
+      geolocation: {
+        getCurrentPosition: (onSuccess: (position: { coords: { latitude: number; longitude: number } }) => void) =>
+          onSuccess({ coords: { latitude: 49.84, longitude: 24.03 } }),
+      },
+    });
+
+    render(<MapView />);
+
+    await waitFor(() => {
+      expect(fetchUserEvents).toHaveBeenCalledWith("token-1");
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Go to current location" }));
+
+    expect(await screen.findByText("New Event")).toBeInTheDocument();
+    expect(screen.getByTestId("marker")).toHaveTextContent("49.84,24.03");
+    expect(mockSetView).toHaveBeenLastCalledWith([49.84, 24.03], 18);
+
+    vi.unstubAllGlobals();
+  });
+
   it("creates an event and uploads photos", async () => {
     const file = new File(["abc"], "test.jpg", { type: "image/jpeg" });
 

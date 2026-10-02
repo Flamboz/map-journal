@@ -5,6 +5,8 @@ import type { EventFormState } from "./mapViewTypes";
 export const WORLD_CENTER: LatLngExpression = [20, 0];
 export const WORLD_ZOOM = 2;
 export const PIN_GROUP_DISTANCE_METERS = 20;
+/** Highest zoom level the map allows; also used when jumping to the user's current location. */
+export const MAP_MAX_ZOOM = 18;
 /**
  * Below this width the three-column desktop layout (sidebar + map + draft panel)
  * cannot fit without overflowing, so the drawer-based mobile layout is used instead.

@@ -5,6 +5,7 @@ import MarkerClusterGroup from "react-leaflet-cluster";
 import {
   createMarkerIconWithCount,
   DRAFT_MARKER_ICON,
+  MAP_MAX_ZOOM,
   MARKER_ICON,
 } from "./mapViewConstants";
 import { MapClickHandler, RecenterMap } from "./MapLeafletHelpers";
@@ -25,9 +26,12 @@ type MapCanvasProps = {
   globalError?: string | null;
   showStatusOverlays?: boolean;
   isFullscreen: boolean;
+  isLocating?: boolean;
+  locationError?: string | null;
   onMapClick: (coords: DraftCoordinates) => void;
   onOpenGroup: (groupIndex: number) => void;
   onToggleFullscreen: () => void;
+  onLocate: () => void;
 };
 
 export function MapCanvas({
@@ -39,9 +43,12 @@ export function MapCanvas({
   globalError = null,
   showStatusOverlays = true,
   isFullscreen,
+  isLocating = false,
+  locationError = null,
   onMapClick,
   onOpenGroup,
   onToggleFullscreen,
+  onLocate,
 }: MapCanvasProps) {
   return (
     <>
@@ -49,6 +56,7 @@ export function MapCanvas({
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          maxZoom={MAP_MAX_ZOOM}
         />
         <ZoomControl position="bottomleft" />
         <RecenterMap center={centerState.center} zoom={centerState.zoom} />
@@ -67,6 +75,22 @@ export function MapCanvas({
         </MarkerClusterGroup>
         {draftPosition && <Marker position={[draftPosition.lat, draftPosition.lng]} icon={DRAFT_MARKER_ICON} />}
       </MapContainer>
+
+      <button
+        type="button"
+        aria-label="Go to current location"
+        title="Current location"
+        onClick={onLocate}
+        disabled={isLocating}
+        aria-busy={isLocating}
+        className="absolute bottom-[4.5rem] right-3 z-[1000] inline-flex h-8 w-8 items-center justify-center rounded bg-white/90 text-gray-700 shadow hover:bg-white disabled:cursor-wait"
+      >
+        <svg aria-hidden="true" className={`h-4 w-4 ${isLocating ? "animate-pulse" : ""}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="7" />
+          <circle cx="12" cy="12" r="2" fill="currentColor" />
+          <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+        </svg>
+      </button>
 
       <button
         type="button"
@@ -90,6 +114,15 @@ export function MapCanvas({
           </svg>
         )}
       </button>
+
+      {locationError && (
+        <div
+          role="status"
+          className="pointer-events-none absolute bottom-[4.5rem] right-14 z-[1000] rounded bg-black/75 px-3 py-1.5 text-sm text-white"
+        >
+          {locationError}
+        </div>
+      )}
 
       {showStatusOverlays && eventsError && (
         <div
